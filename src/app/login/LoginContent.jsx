@@ -1,7 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -9,11 +9,44 @@ import Card from '@/components/ui/Card';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, loginWithGoogle } = useAuth();
+  const searchParams = useSearchParams();
+  const { login, loginWithGoogle, user, loading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Verificar si hay error en la URL (de middleware)
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+    if (errorParam === 'account_suspended') {
+      setError('🚫 Tu cuenta ha sido suspendida. Por favor, contacta al administrador para más información.');
+    } else if (errorParam === 'profile_not_found') {
+      setError('❌ Error al cargar tu perfil. Contacta al administrador.');
+    } else if (errorParam === 'auth_error') {
+      setError('❌ Error de autenticación. Intenta nuevamente.');
+    } else if (errorParam === 'no_code') {
+      setError('❌ No se recibió código de autenticación. Intenta nuevamente.');
+    } else if (errorParam) {
+      setError(`❌ Error: ${errorParam.replace(/_/g, ' ')}`);
+    }
+  }, [searchParams]);
+
+  // Si ya está autenticado, redirigir
+  useEffect(() => {
+    if (!authLoading && user) {
+      const role = user.role || 'cliente';
+      let dashboardRoute = '/dashboard/cliente';
+      
+      if (role === 'admin') {
+        dashboardRoute = '/dashboard/admin';
+      } else if (role === 'vendedor') {
+        dashboardRoute = '/dashboard/vendedor';
+      }
+      
+      router.push(dashboardRoute);
+    }
+  }, [user, authLoading, router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,44 +56,67 @@ export default function LoginPage() {
     try {
       const result = await login(email, password);
       if (result.success) {
-        // Redirigir según el rol
-        const user = result.user;
-        if (user.role === 'admin') {
-          router.push('/dashboard/admin');
-        } else if (user.role === 'vendedor') {
-          router.push('/dashboard/vendedor');
-        } else {
-          router.push('/dashboard/cliente');
+        const userRole = result.user?.role || 'cliente';
+        let dashboardRoute = '/dashboard/cliente';
+        
+        if (userRole === 'admin') {
+          dashboardRoute = '/dashboard/admin';
+        } else if (userRole === 'vendedor') {
+          dashboardRoute = '/dashboard/vendedor';
         }
+        
+        router.push(dashboardRoute);
       } else {
-        setError(result.error || 'Credenciales inválidas');
+        // Manejar errores específicos de login
+        if (result.error?.toLowerCase().includes('suspend') || result.error?.toLowerCase().includes('suspended')) {
+          setError('🚫 Tu cuenta ha sido suspendida. Por favor, contacta al administrador.');
+        } else if (result.error?.toLowerCase().includes('invalid') || result.error?.toLowerCase().includes('credentials')) {
+          setError('❌ Credenciales inválidas. Verifica tu email y contraseña.');
+        } else if (result.error?.toLowerCase().includes('not found')) {
+          setError('❌ Usuario no encontrado. Verifica tu email o regístrate.');
+        } else {
+          setError(result.error || '❌ Error al iniciar sesión. Intenta nuevamente.');
+        }
       }
     } catch (err) {
-      setError('Ocurrió un error al iniciar sesión');
+      setError('❌ Ocurrió un error al iniciar sesión. Intenta nuevamente.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
-  setLoading(true)
-  setError('')
-  try {
-    const result = await loginWithGoogle()
-    console.log('📦 Resultado del login:', result)
-    
-    if (!result.success) {
-      console.error('❌ Error en login con Google:', result.error)
-      setError(result.error || 'Error al iniciar sesión con Google')
-      setLoading(false)
+    setLoading(true);
+    setError('');
+    try {
+      const result = await loginWithGoogle();
+      console.log('📦 Resultado del login:', result);
+      
+      if (!result.success) {
+        console.error('❌ Error en login con Google:', result.error);
+        if (result.error?.toLowerCase().includes('suspend') || result.error?.toLowerCase().includes('suspended')) {
+          setError('🚫 Tu cuenta ha sido suspendida. Por favor, contacta al administrador.');
+        } else {
+          setError(result.error || '❌ Error al iniciar sesión con Google');
+        }
+        setLoading(false);
+      }
+      // La redirección es manejada por el callback
+    } catch (error) {
+      console.error('❌ Error en Google login:', error);
+      setError('❌ Error al iniciar sesión con Google. Intenta nuevamente.');
+      setLoading(false);
     }
-    // La redirección es manejada por el callback
-  } catch (error) {
-    console.error('❌ Error en Google login:', error)
-    setError('Error al iniciar sesión con Google')
-    setLoading(false)
+  };
+
+  // Mostrar loading mientras verifica autenticación
+  if (authLoading) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
-}
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
@@ -71,8 +127,30 @@ export default function LoginPage() {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-            {error}
+          <div className={`mb-4 p-4 rounded-lg border ${
+            error.includes('suspendida') 
+              ? 'bg-red-50 border-red-300 text-red-700' 
+              : 'bg-red-50 border-red-200 text-red-600'
+          }`}>
+            <div className="flex items-start gap-2">
+              <span className="text-lg">
+                {error.includes('suspendida') ? '🚫' : '⚠️'}
+              </span>
+              <div>
+                <p className="font-medium">
+                  {error.includes('suspendida') ? 'Cuenta suspendida' : 'Error'}
+                </p>
+                <p className="text-sm mt-1">{error}</p>
+                {error.includes('suspendida') && (
+                  <button 
+                    onClick={() => window.location.href = 'mailto:soporte@apexcommerce.com'}
+                    className="mt-2 text-sm text-blue-600 hover:text-blue-800 underline"
+                  >
+                    📧 Contactar soporte
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         )}
 

@@ -125,6 +125,11 @@ export default function AdminDashboard() {
             </div>
           </Card>
         </div>
+        <Link href="/dashboard/admin/usuarios">
+  <Button className="w-full" variant="outline">
+    👥 Gestionar usuarios
+  </Button>
+</Link>
 
         {/* Alertas del sistema */}
         <div>
