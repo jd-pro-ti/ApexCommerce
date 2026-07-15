@@ -12,6 +12,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState({});
   const [recentUsers, setRecentUsers] = useState([]);
   const [systemAlerts, setSystemAlerts] = useState([]);
+  
 
   useEffect(() => {
     // Simular carga de datos
