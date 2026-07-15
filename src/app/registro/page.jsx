@@ -15,7 +15,6 @@ export default function RegistroPage() {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'cliente',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -57,27 +56,21 @@ export default function RegistroPage() {
 
     setLoading(true);
     try {
+      // Siempre registrar como cliente
       const result = await register(
         formData.email,
         formData.password,
         {
           name: formData.name,
-          role: formData.role
+          role: 'cliente' // Rol fijo
         }
       );
       
       if (result.success) {
         setSuccess(true);
-        // Esperar 2 segundos y redirigir
+        // Esperar 2 segundos y redirigir al dashboard de cliente
         setTimeout(() => {
-          // Redirigir según el rol seleccionado
-          if (formData.role === 'admin') {
-            router.push('/dashboard/admin');
-          } else if (formData.role === 'vendedor') {
-            router.push('/dashboard/vendedor');
-          } else {
-            router.push('/dashboard/cliente');
-          }
+          router.push('/dashboard/cliente');
         }, 2000);
       } else {
         setError(result.error || 'Error al registrar usuario');
@@ -115,10 +108,7 @@ export default function RegistroPage() {
             ¡Registro exitoso!
           </h2>
           <p className="text-gray-600 mb-6">
-            Tu cuenta ha sido creada correctamente.
-            {formData.role === 'admin' && ' Serás redirigido al panel de administración.'}
-            {formData.role === 'vendedor' && ' Serás redirigido al panel de vendedor.'}
-            {formData.role === 'cliente' && ' Serás redirigido a tu dashboard.'}
+            Tu cuenta ha sido creada correctamente. Serás redirigido a tu dashboard de cliente.
           </p>
           <div className="animate-pulse text-sm text-gray-500">
             Redirigiendo...
@@ -133,7 +123,7 @@ export default function RegistroPage() {
       <Card className="max-w-md w-full">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-gray-900">Crear Cuenta</h2>
-          <p className="text-gray-600 mt-2">Únete a APEX Commerce hoy</p>
+          <p className="text-gray-600 mt-2">Únete a APEX Commerce como cliente</p>
         </div>
 
         {error && (
@@ -178,50 +168,11 @@ export default function RegistroPage() {
             required
           />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              ¿Qué tipo de cuenta deseas crear?
-            </label>
-            <div className="grid grid-cols-3 gap-3">
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, role: 'cliente' })}
-                className={`p-3 rounded-lg border-2 text-center transition-all ${
-                  formData.role === 'cliente'
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <div className="text-2xl mb-1">🛒</div>
-                <div className="text-sm font-medium">Cliente</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, role: 'vendedor' })}
-                className={`p-3 rounded-lg border-2 text-center transition-all ${
-                  formData.role === 'vendedor'
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <div className="text-2xl mb-1">🏪</div>
-                <div className="text-sm font-medium">Vendedor</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, role: 'admin' })}
-                className={`p-3 rounded-lg border-2 text-center transition-all ${
-                  formData.role === 'admin'
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <div className="text-2xl mb-1">👑</div>
-                <div className="text-sm font-medium">Admin</div>
-              </button>
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              * Solo el primer usuario registrado puede ser administrador
+          {/* Mensaje informativo en lugar de selector de rol */}
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-700">
+              📝 Te registrarás como <strong>Cliente</strong>. 
+              Podrás comprar productos y gestionar tus pedidos.
             </p>
           </div>
 
@@ -231,7 +182,7 @@ export default function RegistroPage() {
             size="lg"
             loading={loading}
           >
-            Registrarse
+            Registrarse como Cliente
           </Button>
         </form>
 
