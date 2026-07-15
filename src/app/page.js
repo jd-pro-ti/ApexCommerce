@@ -47,7 +47,7 @@ export default function Home() {
               <div className="flex flex-wrap gap-4">
                 <Link href="/catalogo">
                   <Button variant="secondary" size="lg">
-                    Explorar Producto
+                    Explorar Productos
                   </Button>
                 </Link>
                 <Link href="/registro">
