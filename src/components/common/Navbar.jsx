@@ -1,19 +1,39 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import Button from '@/components/ui/Button';
 
 const Navbar = () => {
+  const router = useRouter();
   const { user, isAuthenticated, logout, role } = useAuth();
   const { itemsCount } = useCart();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const getDashboardRoute = () => {
     if (role === 'admin') return '/dashboard/admin';
     if (role === 'vendedor') return '/dashboard/vendedor';
     return '/dashboard/cliente';
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      const result = await logout();
+      if (result.success) {
+        // Redirigir al login después de cerrar sesión
+        router.push('/login');
+      } else {
+        console.error('Error al cerrar sesión:', result.error);
+        setIsLoggingOut(false);
+      }
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -54,8 +74,12 @@ const Navbar = () => {
                     <Link href="/perfil" className="block px-4 py-2 text-gray-700 hover:bg-gray-50">
                       Mi Perfil
                     </Link>
-                    <button onClick={logout} className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-50">
-                      Cerrar Sesión
+                    <button 
+                      onClick={handleLogout} 
+                      disabled={isLoggingOut}
+                      className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar Sesión'}
                     </button>
                   </div>
                 </div>
@@ -100,8 +124,12 @@ const Navbar = () => {
                 <Link href="/perfil" className="block py-2 text-gray-700 hover:text-blue-600">
                   Mi Perfil
                 </Link>
-                <button onClick={logout} className="block w-full text-left py-2 text-red-600 hover:text-red-700">
-                  Cerrar Sesión
+                <button 
+                  onClick={handleLogout} 
+                  disabled={isLoggingOut}
+                  className="block w-full text-left py-2 text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar Sesión'}
                 </button>
               </>
             ) : (

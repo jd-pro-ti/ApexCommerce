@@ -1,17 +1,12 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase-admin'
 
-// Verificar configuración al inicio
-if (!isSupabaseConfigured()) {
-  console.error('❌ Supabase no está configurado correctamente. Verifica tus variables de entorno.')
-}
-
 export const authService = {
   // Iniciar sesión con email y contraseña
   async login(email, password) {
     try {
       if (!isSupabaseConfigured()) {
-        throw new Error('Supabase no está configurado. Verifica las variables de entorno.')
+        throw new Error('Supabase no está configurado')
       }
 
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -44,7 +39,7 @@ export const authService = {
   async register(email, password, userData = {}) {
     try {
       if (!isSupabaseConfigured()) {
-        throw new Error('Supabase no está configurado. Verifica las variables de entorno.')
+        throw new Error('Supabase no está configurado')
       }
 
       const { data, error } = await supabase.auth.signUp({
@@ -54,16 +49,25 @@ export const authService = {
           data: {
             full_name: userData.name,
             name: userData.name,
-            avatar_url: userData.avatar_url || null
+            role: userData.role || 'cliente'
           }
         }
       })
       
       if (error) throw error
       
+      // Esperar a que se cree el perfil (trigger)
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Obtener el perfil creado
+      const profile = await this.getProfile(data.user.id)
+      
       return {
         success: true,
-        user: data.user
+        user: {
+          ...data.user,
+          ...profile
+        }
       }
     } catch (error) {
       console.error('Error en registro:', error)
@@ -78,7 +82,7 @@ export const authService = {
   async loginWithGoogle() {
     try {
       if (!isSupabaseConfigured()) {
-        throw new Error('Supabase no está configurado. Verifica las variables de entorno.')
+        throw new Error('Supabase no está configurado')
       }
 
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -111,7 +115,7 @@ export const authService = {
   async logout() {
     try {
       if (!isSupabaseConfigured()) {
-        throw new Error('Supabase no está configurado. Verifica las variables de entorno.')
+        throw new Error('Supabase no está configurado')
       }
 
       const { error } = await supabase.auth.signOut()
@@ -173,9 +177,12 @@ export const authService = {
   async getProfile(userId) {
     try {
       if (!isSupabaseConfigured()) {
+        console.warn('⚠️ Supabase no configurado')
         return null
       }
 
+      console.log('🔍 Buscando perfil para:', userId)
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -183,13 +190,55 @@ export const authService = {
         .single()
       
       if (error) {
-        console.warn('Error al obtener perfil:', error)
+        console.warn('⚠️ Error al obtener perfil:', error.message)
+        
+        // Si el error es que no existe, crear el perfil
+        if (error.code === 'PGRST116') {
+          console.log('🔄 Perfil no encontrado, creando...')
+          
+          // Obtener datos del usuario
+          const { data: userData } = await supabase.auth.getUser()
+          
+          if (userData?.user) {
+            // Verificar si es el primer usuario
+            const { count } = await supabase
+              .from('profiles')
+              .select('*', { count: 'exact', head: true })
+            
+            const isFirstUser = count === 0
+            const role = isFirstUser ? 'admin' : 'cliente'
+            
+            console.log('📝 Creando perfil con rol:', role)
+            
+            const { data: newProfile, error: insertError } = await supabase
+              .from('profiles')
+              .insert({
+                id: userId,
+                email: userData.user.email,
+                name: userData.user.user_metadata?.full_name || userData.user.user_metadata?.name || 'Usuario',
+                avatar_url: userData.user.user_metadata?.avatar_url || userData.user.user_metadata?.picture || null,
+                role: role
+              })
+              .select()
+              .single()
+            
+            if (insertError) {
+              console.error('❌ Error al crear perfil:', insertError)
+              return null
+            }
+            
+            console.log('✅ Perfil creado exitosamente:', newProfile)
+            return newProfile
+          }
+        }
+        
         return null
       }
       
+      console.log('✅ Perfil encontrado:', data)
       return data
     } catch (error) {
-      console.warn('Error al obtener perfil:', error)
+      console.error('❌ Error en getProfile:', error)
       return null
     }
   },
@@ -230,7 +279,6 @@ export const authService = {
         throw new Error('Supabase Admin no está configurado correctamente')
       }
 
-      // Verificar que el usuario actual es admin
       const currentUser = await this.getSession()
       if (!currentUser.success || !currentUser.user) {
         throw new Error('No autenticado')
@@ -238,7 +286,7 @@ export const authService = {
       
       const currentProfile = await this.getProfile(currentUser.user.id)
       if (!currentProfile || currentProfile.role !== 'admin') {
-        throw new Error('No autorizado - Se requieren permisos de administrador')
+        throw new Error('No autorizado')
       }
       
       const { data, error } = await supabaseAdmin
@@ -282,7 +330,6 @@ export const authService = {
         throw new Error('Supabase Admin no está configurado correctamente')
       }
 
-      // Verificar admin
       const isAdmin = await this.isAdmin()
       if (!isAdmin) {
         throw new Error('No autorizado - Se requieren permisos de administrador')

@@ -11,41 +11,35 @@ export function AuthProvider({ children }) {
   const [role, setRole] = useState(null);
   const [error, setError] = useState(null);
 
- useEffect(() => {
-  const checkSession = async () => {
-    try {
-      if (!isSupabaseConfigured()) {
-        console.warn('⚠️ Supabase no está configurado')
-        setLoading(false)
-        return
-      }
-
-      const result = await authService.getSession();
-      console.log('📊 Resultado de sesión:', result)
-      
-      if (result.success && result.user) {
-        // Forzar el rol si es el usuario admin
-        if (result.user.email === 'jdchavezr917@gmail.com') {
-          result.user.role = 'admin'
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        if (!isSupabaseConfigured()) {
+          console.warn('⚠️ Supabase no está configurado')
+          setLoading(false)
+          return
         }
+
+        const result = await authService.getSession();
+        console.log('📊 Resultado de sesión:', result)
         
-        setUser(result.user);
-        setRole(result.user.role || 'cliente');
-        console.log('✅ Sesión activa:', result.user.email, 'Rol:', result.user.role)
-      } else {
-        console.log('ℹ️ No hay sesión activa')
+        if (result.success && result.user) {
+          setUser(result.user);
+          setRole(result.user.role || 'cliente');
+          console.log('✅ Sesión activa:', result.user.email, 'Rol:', result.user.role)
+        } else {
+          console.log('ℹ️ No hay sesión activa')
+        }
+      } catch (error) {
+        console.error('Error al verificar sesión:', error);
+        setError(error.message);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error al verificar sesión:', error);
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  checkSession();
+    checkSession();
 
-    // Suscribirse a cambios de autenticación
     if (supabase) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event, session) => {
@@ -59,7 +53,7 @@ export function AuthProvider({ children }) {
                 setRole(result.user.role || 'cliente');
                 console.log('✅ Usuario autenticado con rol:', result.user.role)
               }
-            }, 500)
+            }, 1000)
           } else if (event === 'SIGNED_OUT') {
             setUser(null);
             setRole(null);
@@ -75,49 +69,92 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const loginWithGoogle = async () => {
+  // Función de login
+  const login = async (email, password) => {
     try {
-      if (!isSupabaseConfigured()) {
-        throw new Error('Supabase no está configurado')
+      const result = await authService.login(email, password);
+      if (result.success) {
+        setUser(result.user);
+        setRole(result.user.role || 'cliente');
+        return { success: true, user: result.user };
       }
-
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent'
-          }
-        }
-      })
-      
-      if (error) throw error
-      
-      if (data?.url) {
-        window.location.href = data.url
-        return { success: true }
-      }
-      
-      return { success: false, error: 'No se obtuvo URL de redirección' }
+      return { success: false, error: result.error };
     } catch (error) {
-      console.error('Error en login con Google:', error)
-      return { success: false, error: error.message }
+      return { success: false, error: error.message };
     }
   };
 
-  // ... resto de funciones (login, register, logout, etc.) igual que antes
+  // Función de registro
+  const register = async (email, password, userData) => {
+    try {
+      const result = await authService.register(email, password, userData);
+      if (result.success) {
+        setUser(result.user);
+        setRole(result.user.role || 'cliente');
+        return { success: true, user: result.user };
+      }
+      return { success: false, error: result.error };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  // Función de login con Google
+  const loginWithGoogle = async () => {
+    try {
+      const result = await authService.loginWithGoogle();
+      if (result.success) {
+        window.location.href = result.url;
+        return { success: true };
+      }
+      return { success: false, error: result.error };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  // Función de logout
+  const logout = async () => {
+    try {
+      const result = await authService.logout();
+      if (result.success) {
+        setUser(null);
+        setRole(null);
+        return { success: true };
+      }
+      return { success: false, error: result.error };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  // Función de actualizar perfil
+  const updateProfile = async (updates) => {
+    if (!user) {
+      return { success: false, error: 'No autenticado' };
+    }
+    try {
+      const result = await authService.updateProfile(user.id, updates);
+      if (result.success) {
+        setUser({ ...user, ...result.profile });
+        setRole(result.profile.role || role);
+      }
+      return result;
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
 
   const value = {
     user,
     role,
     loading,
     error,
-    login: authService.login,
+    login,
+    register,
     loginWithGoogle,
-    register: authService.register,
-    logout: authService.logout,
-    updateProfile: authService.updateProfile,
+    logout,
+    updateProfile,
     isAuthenticated: !!user,
     isAdmin: role === 'admin',
     isSeller: role === 'vendedor',
