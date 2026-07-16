@@ -182,6 +182,11 @@ export default function SellerDashboard() {
             ⚙️ Configurar tienda
           </Button>
         </Link>
+        <Link href="/dashboard/vendedor/productos">
+          <Button className="w-full" variant="outline">
+            📦 Mis Productos
+          </Button>
+        </Link>
       </div>
     </div>
   );
