@@ -354,6 +354,154 @@ export const authService = {
       }
     }
   },
+  // Agregar estos métodos al authService
+
+// Obtener todos los usuarios (solo admin)
+async getAllUsers() {
+  try {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase no está configurado')
+    }
+
+    // Verificar admin
+    const isAdmin = await this.isAdmin()
+    if (!isAdmin) {
+      throw new Error('No autorizado - Se requieren permisos de administrador')
+    }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+
+    return {
+      success: true,
+      users: data
+    }
+  } catch (error) {
+    console.error('Error al obtener usuarios:', error)
+    return {
+      success: false,
+      error: error.message || 'Error al obtener usuarios'
+    }
+  }
+},
+
+// Actualizar rol de usuario (solo admin)
+async updateUserRole(userId, newRole) {
+  try {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase no está configurado')
+    }
+
+    // Verificar admin
+    const isAdmin = await this.isAdmin()
+    if (!isAdmin) {
+      throw new Error('No autorizado - Se requieren permisos de administrador')
+    }
+
+    // Validar rol
+    if (!['admin', 'vendedor', 'cliente'].includes(newRole)) {
+      throw new Error('Rol inválido')
+    }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ role: newRole, updated_at: new Date() })
+      .eq('id', userId)
+      .select()
+      .single()
+
+    if (error) throw error
+
+    return {
+      success: true,
+      user: data
+    }
+  } catch (error) {
+    console.error('Error al actualizar rol:', error)
+    return {
+      success: false,
+      error: error.message || 'Error al actualizar rol'
+    }
+  }
+},
+
+// Actualizar estado de usuario (solo admin)
+async updateUserStatus(userId, status) {
+  try {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase no está configurado')
+    }
+
+    // Verificar admin
+    const isAdmin = await this.isAdmin()
+    if (!isAdmin) {
+      throw new Error('No autorizado - Se requieren permisos de administrador')
+    }
+
+    // Validar estado
+    if (!['active', 'suspended'].includes(status)) {
+      throw new Error('Estado inválido')
+    }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ status, updated_at: new Date() })
+      .eq('id', userId)
+      .select()
+      .single()
+
+    if (error) throw error
+
+    return {
+      success: true,
+      user: data
+    }
+  } catch (error) {
+    console.error('Error al actualizar estado:', error)
+    return {
+      success: false,
+      error: error.message || 'Error al actualizar estado'
+    }
+  }
+},
+
+// Eliminar usuario (solo admin)
+async deleteUser(userId) {
+  try {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase no está configurado')
+    }
+
+    // Verificar admin
+    const isAdmin = await this.isAdmin()
+    if (!isAdmin) {
+      throw new Error('No autorizado - Se requieren permisos de administrador')
+    }
+
+    // Eliminar el perfil
+    const { error } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', userId)
+
+    if (error) throw error
+
+    return {
+      success: true,
+      message: 'Usuario eliminado correctamente'
+    }
+  } catch (error) {
+    console.error('Error al eliminar usuario:', error)
+    return {
+      success: false,
+      error: error.message || 'Error al eliminar usuario'
+    }
+  }
+},
 
   // Refresh token
   async refreshSession() {

@@ -1,29 +1,93 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
+import { productService } from '@/services/productService';
 import { useCart } from '@/context/CartContext';
-import { MOCK_PRODUCTS } from '@/utils/constants';
+import { useAuth } from '@/context/AuthContext';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
-export default function ProductDetailPage() {
-  const { id } = useParams();
+export default function ProductDetail() {
+  const params = useParams();
+  const router = useRouter();
   const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
+  const productId = params.id;
+  
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [addingToCart, setAddingToCart] = useState(false);
 
   useEffect(() => {
+    if (productId) {
+      loadProduct();
+    }
+  }, [productId]);
+
+  const loadProduct = async () => {
     setLoading(true);
-    setTimeout(() => {
-      const found = MOCK_PRODUCTS.find(p => p.id === id);
-      setProduct(found || null);
+    setError('');
+    try {
+      const result = await productService.getPublicProductById(productId);
+      if (result.success && result.product) {
+        setProduct(result.product);
+        // Verificar si el producto tiene imágenes
+        if (result.product.images && result.product.images.length > 0) {
+          setSelectedImage(0);
+        }
+      } else {
+        setError('Producto no encontrado');
+      }
+    } catch (error) {
+      console.error('Error al cargar producto:', error);
+      setError('Error al cargar el producto');
+    } finally {
       setLoading(false);
-    }, 400);
-  }, [id]);
+    }
+  };
+
+  const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      router.push('/login?redirect=/producto/' + productId);
+      return;
+    }
+    
+    if (product.stock <= 0) return;
+    
+    setAddingToCart(true);
+    // Agregar al carrito con la cantidad seleccionada
+    for (let i = 0; i < quantity; i++) {
+      addToCart(product);
+    }
+    setTimeout(() => {
+      setAddingToCart(false);
+    }, 1000);
+  };
+
+  const handleQuantityChange = (e) => {
+    const value = parseInt(e.target.value);
+    if (value >= 1 && value <= (product?.stock || 10)) {
+      setQuantity(value);
+    }
+  };
+
+  const incrementQuantity = () => {
+    if (quantity < (product?.stock || 10)) {
+      setQuantity(quantity + 1);
+    }
+  };
+
+  const decrementQuantity = () => {
+    if (quantity > 1) {
+      setQuantity(quantity - 1);
+    }
+  };
 
   if (loading) {
     return (
@@ -33,171 +97,211 @@ export default function ProductDetailPage() {
     );
   }
 
-  if (!product) {
+  if (error || !product) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
-        <div className="text-6xl mb-4">🔍</div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Producto no encontrado</h2>
-        <p className="text-gray-600 mb-6">El producto que buscas no existe o ha sido eliminado</p>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center py-12 px-4">
+        <div className="text-6xl mb-6">🔍</div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">Producto no encontrado</h1>
+        <p className="text-gray-600 mb-8 text-center max-w-md">
+          {error || 'El producto que buscas no existe o ha sido eliminado'}
+        </p>
         <Link href="/catalogo">
-          <Button>Ver catálogo</Button>
+          <Button size="lg">Ver catálogo</Button>
         </Link>
       </div>
     );
   }
 
-  const handleAddToCart = () => {
-    addToCart(product, quantity);
-  };
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-4">
-        <Link href="/catalogo" className="text-blue-600 hover:text-blue-700">
-          ← Volver al catálogo
-        </Link>
-      </div>
+      {/* Migas de pan */}
+      <nav className="flex text-sm text-gray-500 mb-6">
+        <Link href="/" className="hover:text-blue-600">Inicio</Link>
+        <span className="mx-2">/</span>
+        <Link href="/catalogo" className="hover:text-blue-600">Catálogo</Link>
+        <span className="mx-2">/</span>
+        <span className="text-gray-900">{product.name}</span>
+      </nav>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Imagen del producto */}
+        {/* Galería de imágenes */}
         <div>
-          <div className="bg-gray-100 rounded-xl h-96 flex items-center justify-center">
-            {product.image ? (
+          <div className="bg-gray-100 rounded-xl overflow-hidden h-96 mb-4">
+            {product.images && product.images.length > 0 ? (
               <img
-                src={product.image}
+                src={product.images[selectedImage]}
                 alt={product.name}
                 className="w-full h-full object-contain"
               />
             ) : (
-              <span className="text-8xl">📦</span>
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="text-8xl">📦</span>
+              </div>
             )}
           </div>
-          <div className="flex gap-2 mt-4">
-            {[1, 2, 3, 4].map((i) => (
-              <button
-                key={i}
-                onClick={() => setSelectedImage(i - 1)}
-                className={`w-20 h-20 rounded-lg border-2 ${
-                  selectedImage === i - 1 ? 'border-blue-600' : 'border-gray-200'
-                } bg-gray-100 flex items-center justify-center`}
-              >
-                <span className="text-2xl">📦</span>
-              </button>
-            ))}
-          </div>
+          
+          {/* Miniaturas */}
+          {product.images && product.images.length > 1 && (
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {product.images.map((image, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedImage(index)}
+                  className={`w-20 h-20 rounded-lg overflow-hidden border-2 flex-shrink-0 ${
+                    selectedImage === index ? 'border-blue-600' : 'border-gray-200'
+                  }`}
+                >
+                  <img
+                    src={image}
+                    alt={`${product.name} ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Información del producto */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
-          <div className="flex items-center gap-4 mb-4">
-            <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-sm">
-              {product.category}
-            </span>
-            <span className="flex items-center text-yellow-500">
-              ⭐ {product.rating || 4.5}
-            </span>
-            <span className="text-gray-500">{product.seller}</span>
-          </div>
-
-          <p className="text-3xl font-bold text-gray-900 mb-4">
-            ${product.price.toFixed(2)}
-          </p>
-
-          <p className="text-gray-600 mb-6 leading-relaxed">
-            {product.description || 'Descripción del producto no disponible.'}
-          </p>
-
-          <div className="flex items-center gap-4 mb-6">
-            <span className={`text-sm font-medium px-3 py-1 rounded-full ${
-              product.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-            }`}>
-              {product.stock > 0 ? `✅ ${product.stock} disponibles` : '❌ Agotado'}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex items-center border border-gray-300 rounded-lg">
-              <button
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="px-3 py-2 hover:bg-gray-100"
-                disabled={product.stock === 0}
-              >
-                -
-              </button>
-              <span className="px-4 py-2 border-x border-gray-300 min-w-[3rem] text-center">
-                {quantity}
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-sm">
+                {product.category}
               </span>
-              <button
-                onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                className="px-3 py-2 hover:bg-gray-100"
-                disabled={product.stock === 0 || quantity >= product.stock}
-              >
-                +
-              </button>
+              {product.featured && (
+                <span className="bg-yellow-50 text-yellow-600 px-3 py-1 rounded-full text-sm">
+                  ⭐ Destacado
+                </span>
+              )}
+              <span className={`px-3 py-1 rounded-full text-sm ${
+                product.stock > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
+              }`}>
+                {product.stock > 0 ? '✓ Disponible' : '❌ Agotado'}
+              </span>
             </div>
+            
+            <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
+            
+            {product.profiles && (
+              <p className="text-sm text-gray-500 mt-1">
+                Vendido por: <span className="font-medium">{product.profiles.name}</span>
+              </p>
+            )}
+          </div>
+
+          <div className="mb-6">
+            <span className="text-4xl font-bold text-blue-600">
+              ${product.price.toFixed(2)}
+            </span>
+            {product.stock > 0 && product.stock <= 5 && (
+              <p className="text-sm text-orange-600 mt-1">
+                ⚡ ¡Últimas {product.stock} unidades disponibles!
+              </p>
+            )}
+            {product.stock > 0 && (
+              <p className="text-sm text-gray-500 mt-1">
+                Stock disponible: {product.stock} unidades
+              </p>
+            )}
+          </div>
+
+          {/* Descripción */}
+          {product.description && (
+            <div className="mb-6">
+              <h3 className="font-semibold text-gray-900 mb-2">Descripción</h3>
+              <p className="text-gray-600 whitespace-pre-line">{product.description}</p>
+            </div>
+          )}
+
+          {/* Cantidad y compra */}
+          {product.stock > 0 && (
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Cantidad
+              </label>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center border border-gray-300 rounded-lg">
+                  <button
+                    onClick={decrementQuantity}
+                    className="px-3 py-2 hover:bg-gray-100 rounded-l-lg"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    min="1"
+                    max={product.stock}
+                    value={quantity}
+                    onChange={handleQuantityChange}
+                    className="w-16 text-center border-0 focus:ring-0 py-2"
+                  />
+                  <button
+                    onClick={incrementQuantity}
+                    className="px-3 py-2 hover:bg-gray-100 rounded-r-lg"
+                  >
+                    +
+                  </button>
+                </div>
+                <span className="text-sm text-gray-500">
+                  max. {product.stock}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-3">
             <Button
               onClick={handleAddToCart}
-              disabled={product.stock === 0}
-              size="lg"
+              disabled={product.stock === 0 || addingToCart}
               className="flex-1"
+              size="lg"
             >
-              🛒 Agregar al carrito
+              {addingToCart ? 'Agregando...' : product.stock === 0 ? 'Agotado' : '🛒 Agregar al carrito'}
             </Button>
+            {isAuthenticated && (
+              <Button variant="outline" size="lg" className="px-6">
+                ❤️
+              </Button>
+            )}
           </div>
 
-          <Card className="p-4 bg-gray-50">
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">SKU:</span>
-                <span className="font-medium">PRD-{String(product.id).padStart(4, '0')}</span>
+          {/* Información adicional */}
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-gray-500">Categoría</p>
+                <p className="font-medium">{product.category}</p>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Categoría:</span>
-                <span className="font-medium">{product.category}</span>
+              <div>
+                <p className="text-gray-500">Estado</p>
+                <p className="font-medium capitalize">{product.status}</p>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Vendedor:</span>
-                <span className="font-medium">{product.seller}</span>
+              <div>
+                <p className="text-gray-500">Publicado</p>
+                <p className="font-medium">
+                  {new Date(product.created_at).toLocaleDateString()}
+                </p>
               </div>
+              {product.profiles && (
+                <div>
+                  <p className="text-gray-500">Vendedor</p>
+                  <p className="font-medium">{product.profiles.name}</p>
+                </div>
+              )}
             </div>
-          </Card>
+          </div>
         </div>
       </div>
 
-      {/* Sección de reseñas */}
-      <div className="mt-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Reseñas</h2>
-        <Card>
-          <div className="space-y-4">
-            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center font-bold text-blue-600">
-                M
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">María García</span>
-                  <span className="text-yellow-500">⭐⭐⭐⭐⭐</span>
-                </div>
-                <p className="text-gray-600 text-sm">Excelente producto, muy recomendado.</p>
-                <p className="text-xs text-gray-400">Hace 2 días</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center font-bold text-blue-600">
-                J
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">Juan Pérez</span>
-                  <span className="text-yellow-500">⭐⭐⭐⭐</span>
-                </div>
-                <p className="text-gray-600 text-sm">Buena calidad, el envío fue rápido.</p>
-                <p className="text-xs text-gray-400">Hace 5 días</p>
-              </div>
-            </div>
+      {/* Productos relacionados (opcional) */}
+      <div className="mt-12 pt-8 border-t border-gray-200">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Productos relacionados</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="text-center text-gray-500 py-8">
+            Próximamente más productos relacionados
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   );

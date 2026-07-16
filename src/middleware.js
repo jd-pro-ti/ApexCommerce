@@ -74,45 +74,69 @@ export async function middleware(request) {
     return NextResponse.redirect(redirectUrl)
   }
   
-  // Si está autenticado y trata de acceder a login/registro
-  if (session && (path === '/login' || path === '/registro')) {
-    // Obtener el rol del usuario
-    const { data: profile } = await supabase
+  // Si está autenticado, verificar estado y rol
+  if (session) {
+    // Obtener perfil completo del usuario
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, status')
       .eq('id', session.user.id)
       .single()
     
-    const role = profile?.role || 'cliente'
-    let dashboardRoute = '/dashboard/cliente'
-    
-    if (role === 'admin') {
-      dashboardRoute = '/dashboard/admin'
-    } else if (role === 'vendedor') {
-      dashboardRoute = '/dashboard/vendedor'
+    // Si hay error o no existe perfil, redirigir a login
+    if (profileError || !profile) {
+      await supabase.auth.signOut()
+      return NextResponse.redirect(new URL('/login?error=profile_not_found', request.url))
     }
     
-    return NextResponse.redirect(new URL(dashboardRoute, request.url))
-  }
-  
-  // Verificar permisos por rol para rutas de dashboard
-  if (session && path.startsWith('/dashboard')) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', session.user.id)
-      .single()
+    // Verificar si el usuario está suspendido
+    if (profile.status === 'suspended') {
+      // Cerrar sesión y redirigir al login con mensaje
+      await supabase.auth.signOut()
+      const redirectUrl = new URL('/login', request.url)
+      redirectUrl.searchParams.set('error', 'account_suspended')
+      return NextResponse.redirect(redirectUrl)
+    }
     
     const role = profile?.role || 'cliente'
     
-    // Admin routes
-    if (path.startsWith('/dashboard/admin') && role !== 'admin') {
-      return NextResponse.redirect(new URL('/dashboard/cliente', request.url))
+    // Si está autenticado y trata de acceder a login/registro
+    if (path === '/login' || path === '/registro') {
+      let dashboardRoute = '/dashboard/cliente'
+      
+      if (role === 'admin') {
+        dashboardRoute = '/dashboard/admin'
+      } else if (role === 'vendedor') {
+        dashboardRoute = '/dashboard/vendedor'
+      }
+      
+      return NextResponse.redirect(new URL(dashboardRoute, request.url))
     }
     
-    // Seller routes
-    if (path.startsWith('/dashboard/vendedor') && !['admin', 'vendedor'].includes(role)) {
-      return NextResponse.redirect(new URL('/dashboard/cliente', request.url))
+    // Verificar permisos por rol para rutas de dashboard
+    if (path.startsWith('/dashboard')) {
+      // Admin routes - solo admin
+      if (path.startsWith('/dashboard/admin') && role !== 'admin') {
+        return NextResponse.redirect(new URL('/dashboard/cliente', request.url))
+      }
+      
+      // Seller routes - admin o vendedor
+      if (path.startsWith('/dashboard/vendedor') && !['admin', 'vendedor'].includes(role)) {
+        return NextResponse.redirect(new URL('/dashboard/cliente', request.url))
+      }
+      
+      // Cliente routes - cualquiera autenticado
+      if (path.startsWith('/dashboard/cliente')) {
+        // Todos los roles pueden acceder al dashboard de cliente
+        return response
+      }
+    }
+    
+    // Proteger rutas de carrito y perfil (requieren autenticación)
+    if ((path === '/carrito' || path === '/perfil') && !session) {
+      const redirectUrl = new URL('/login', request.url)
+      redirectUrl.searchParams.set('redirect', path)
+      return NextResponse.redirect(redirectUrl)
     }
   }
 
