@@ -1,25 +1,18 @@
 import './globals.css';
-import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
-import Navbar from '@/components/common/Navbar';
-import Footer from '@/components/common/Footer';
-
-export const metadata = {
-  title: 'APEX COMMERCE - Marketplace Multivendor',
-  description: 'El mejor marketplace para compradores y vendedores',
-};
+import { AuthProvider } from '@/context/AuthContext';
+import AppWrapper from '@/components/common/AppWrapper'; // Importa el envoltorio
 
 export default function RootLayout({ children }) {
   return (
     <html lang="es">
-      <body className="min-h-screen flex flex-col bg-gray-50">
+      <body className="bg-[#f8f9fa] antialiased">
         <AuthProvider>
           <CartProvider>
-            <Navbar />
-            <main className="flex-1">
+            {/* El AppWrapper se encarga de mostrar u ocultar la UI según la ruta */}
+            <AppWrapper>
               {children}
-            </main>
-            <Footer />
+            </AppWrapper>
           </CartProvider>
         </AuthProvider>
       </body>

@@ -1,21 +1,69 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Registro de la paleta de colores de Apex Commerce para Tailwind v4 */
+@theme {
+  --color-surface: #fbf9fa;
+  --color-surface-dim: #dbd9da;
+  --color-surface-bright: #fbf9fa;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f5f3f4;
+  --color-surface-container: #efedef;
+  --color-surface-container-high: #e9e8e9;
+  --color-surface-container-highest: #e4e2e3;
+  --color-on-surface: #1b1c1d;
+  --color-on-surface-variant: #44474c;
+  --color-inverse-surface: #303031;
+  --color-inverse-on-surface: #f2f0f1;
+  --color-outline: #74777d;
+  --color-outline-variant: #c4c6cd;
+  --color-surface-tint: #516073;
+  
+  --color-primary: #010f20;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #162536;
+  --color-on-primary-container: #7d8ca1;
+  --color-inverse-primary: #b8c8de;
+  
+  --color-secondary: #545f6d;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #d8e3f4;
+  --color-on-secondary-container: #5a6573;
+  
+  --color-tertiary: #1a0b00;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #391d00;
+  --color-on-tertiary-container: #bb7e3e;
+  
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+  
+  --color-warm-accent: #dd9448;
+  --color-glass-stroke: #ffffff;
 }
 
+:root {
+  /* Usamos el color de fondo premium del manual de marca */
+  --background: #fbf9fa; 
+  --foreground: #1b1c1d;
+}
+
+/* Opcional: Si quieres mantener un modo oscuro manual o el del sistema, puedes mapearlo aquí. 
+   Si de momento solo quieren el diseño claro premium de la marca, puedes comentar o remover este bloque media */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #010f20; /* Primary oscuro */
+    --foreground: #f2f0f1;
   }
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: 'Open Sans', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Scrollbar personalizada */
@@ -25,17 +73,17 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #efedef;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: #bcc7d8;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: #516073;
 }
 
 /* Animaciones */
