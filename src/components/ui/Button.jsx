@@ -14,11 +14,11 @@ const Button = ({
   const baseStyles = 'inline-flex items-center justify-center font-medium transition-all duration-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
   
   const variants = {
-    primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900',
-    secondary: 'bg-gray-200 text-gray-800 hover:bg-gray-300 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900',
-    outline: 'border-2 border-blue-600 text-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900',
-    danger: 'bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900',
-    success: 'bg-green-600 text-white hover:bg-green-700 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900',
+    primary: 'bg-[#010f20] text-white hover:bg-[#031d3d] focus:outline-none focus:ring-1 focus:ring-[#010f20]',
+    secondary: 'bg-gray-200 text-gray-800 hover:bg-gray-300 focus:outline-none focus:ring-1 focus:ring-[#010f20]',
+    outline: 'border-2 border-[#010f20] text-[#010f20] hover:bg-[#010f20] hover:text-white focus:outline-none focus:ring-1 focus:ring-[#010f20]',
+    danger: 'bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:ring-1 focus:ring-red-900',
+    success: 'bg-emerald-600 text-white hover:bg-emerald-700 focus:outline-none focus:ring-1 focus:ring-emerald-900',
   };
 
   const sizes = {
@@ -27,7 +27,7 @@ const Button = ({
     lg: 'px-6 py-3 text-lg',
   };
 
-  const classes = `${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`;
+  const classes = `${baseStyles} ${variants[variant] || variants.primary} ${sizes[size] || sizes.md} ${className}`;
 
   return (
     <button

@@ -27,7 +27,8 @@ const ProductCard = ({ product }) => {
     <div className="group bg-white rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 h-full flex flex-col overflow-hidden">
       
       <Link href={`/producto/${product.id}`}>
-        <div className="relative aspect-square bg-gray-50 overflow-hidden">
+        {/* Cambiamos aspect-square por una altura fija controlada h-60 y overflow-hidden estricto */}
+        <div className="relative h-60 w-full bg-gray-50 overflow-hidden flex items-center justify-center">
           {product.images?.[0] ? (
             <img
               src={product.images[0]}
@@ -44,7 +45,7 @@ const ProductCard = ({ product }) => {
             <button 
               onClick={handleAddToCart}
               disabled={isAdding}
-              className={`absolute bottom-2 right-2 p-2.5 rounded-full shadow-lg transition-all backdrop-blur-sm
+              className={`absolute bottom-2 right-2 p-2.5 rounded-full shadow-lg transition-all backdrop-blur-sm z-10
                 ${showAdded 
                   ? 'bg-emerald-600 text-white' 
                   : 'bg-[#010f20]/90 text-white hover:bg-[#dd9448]'}
@@ -69,7 +70,7 @@ const ProductCard = ({ product }) => {
 
           {/* Badges de estado */}
           {product.stock > 0 && product.stock <= 5 && (
-            <span className="absolute top-2 left-2 bg-[#dd9448] text-white text-[8px] font-bold px-2 py-0.5 rounded uppercase">Urgente</span>
+            <span className="absolute top-2 left-2 bg-[#dd9448] text-white text-[8px] font-bold px-2 py-0.5 rounded uppercase z-10">Tendencia</span>
           )}
         </div>
       </Link>
