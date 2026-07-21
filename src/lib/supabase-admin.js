@@ -9,7 +9,6 @@ if (!supabaseUrl) {
 }
 
 if (!supabaseServiceKey) {
-  console.warn('⚠️ SUPABASE_SERVICE_ROLE_KEY no está definida - Las operaciones admin no funcionarán')
 }
 
 // Crear cliente admin solo si tenemos las credenciales

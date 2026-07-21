@@ -51,12 +51,7 @@
 
 /* Opcional: Si quieres mantener un modo oscuro manual o el del sistema, puedes mapearlo aquí. 
    Si de momento solo quieren el diseño claro premium de la marca, puedes comentar o remover este bloque media */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #010f20; /* Primary oscuro */
-    --foreground: #f2f0f1;
-  }
-}
+
 
 body {
   background-color: var(--background);
