@@ -4,10 +4,15 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { productService } from '@/services/productService';
-import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { 
+  Save, 
+  Image as ImageIcon, 
+  Trash2, 
+  ArrowLeft 
+} from 'lucide-react';
 
 export default function EditProduct() {
   const router = useRouter();
@@ -55,7 +60,6 @@ export default function EditProduct() {
       const result = await productService.getProductById(productId);
       if (result.success) {
         const product = result.product;
-        // Verificar que el vendedor es el dueño del producto
         if (product.seller_id !== user.id) {
           setError('No tienes permiso para editar este producto');
           setLoading(false);
@@ -130,7 +134,6 @@ export default function EditProduct() {
     setSuccess('');
     setSaving(true);
 
-    // Validaciones
     if (!formData.name.trim()) {
       setError('El nombre del producto es requerido');
       setSaving(false);
@@ -186,203 +189,293 @@ export default function EditProduct() {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="min-h-[60vh] flex items-center justify-center bg-[#f8f9fa]">
         <LoadingSpinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Editar Producto</h1>
-        <p className="text-gray-600 mt-1">Actualiza la información de tu producto</p>
-      </div>
-
-      {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-          {error}
+    <div className="bg-[#f8f9fa] min-h-screen pt-28 md:pt-32 pb-20">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Cabecera y Navegación */}
+        <div className="mb-8">
+          <Link 
+            href="/dashboard/vendedor/productos"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#44474c]/70 hover:text-[#010f20] mb-3 transition-colors"
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+          >
+            <ArrowLeft className="w-4 h-4" /> Volver a mis productos
+          </Link>
+          <span 
+            className="text-[11px] font-bold tracking-widest text-[#dd9448] uppercase block mb-1"
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+          >
+            INVENTARIO
+          </span>
+          <h1 
+            className="text-3xl sm:text-4xl font-bold text-[#010f20] tracking-tight"
+            style={{ fontFamily: "'Montserrat', sans-serif" }}
+          >
+            Editar Producto
+          </h1>
+          <p 
+            className="text-sm text-[#44474c]/70 mt-1.5"
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+          >
+            Actualiza la información y detalles de tu producto.
+          </p>
         </div>
-      )}
 
-      {success && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
-          {success}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Card>
-              <div className="space-y-4">
-                <Input
-                  label="Nombre del producto *"
-                  name="name"
-                  placeholder="Ej: Smartphone X Pro"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                />
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Descripción
-                  </label>
-                  <textarea
-                    name="description"
-                    rows="4"
-                    placeholder="Describe tu producto..."
-                    value={formData.description}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="Precio *"
-                    type="number"
-                    name="price"
-                    placeholder="99.99"
-                    value={formData.price}
-                    onChange={handleChange}
-                    step="0.01"
-                    min="0"
-                    required
-                  />
-
-                  <Input
-                    label="Stock *"
-                    type="number"
-                    name="stock"
-                    placeholder="10"
-                    value={formData.stock}
-                    onChange={handleChange}
-                    min="0"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Categoría *
-                  </label>
-                  <select
-                    name="category"
-                    value={formData.category}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                    required
-                  >
-                    <option value="">Selecciona una categoría</option>
-                    {categories.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Estado
-                  </label>
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                  >
-                    <option value="active">Activo</option>
-                    <option value="draft">Borrador</option>
-                    <option value="inactive">Inactivo</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    name="featured"
-                    checked={formData.featured}
-                    onChange={handleChange}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <label className="ml-2 text-sm text-gray-700">
-                    Destacar producto en la tienda
-                  </label>
-                </div>
-              </div>
-            </Card>
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-medium" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            {error}
           </div>
+        )}
 
-          <div>
-            <Card>
-              <h3 className="font-semibold text-gray-900 mb-4">Imágenes del producto</h3>
-              
-              <div className="space-y-4">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleImageUpload}
-                    className="hidden"
-                    id="image-upload"
-                    disabled={uploadingImages}
+        {success && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm font-medium" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            {success}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            {/* Columna Principal: Información General */}
+            <div className="lg:col-span-2">
+              <div className="bg-white rounded-2xl border border-[#efedef] p-8 sm:p-10 shadow-sm">
+                <h3 
+                  className="font-bold text-[#010f20] text-lg mb-6 pb-4 border-b border-[#efedef]"
+                  style={{ fontFamily: "'Montserrat', sans-serif" }}
+                >
+                  Información del Producto
+                </h3>
+
+                <div className="space-y-6">
+                  <Input
+                    label="Nombre del producto"
+                    name="name"
+                    placeholder="Ej: Smartphone X Pro"
+                    value={formData.name}
+                    onChange={handleChange}
+                    style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                    required
                   />
-                  <label
-                    htmlFor="image-upload"
-                    className="cursor-pointer block"
-                  >
-                    <div className="text-4xl mb-2">🖼️</div>
-                    <p className="text-sm text-gray-600">
-                      {uploadingImages ? 'Subiendo...' : 'Haz clic para subir imágenes'}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      JPG, PNG, WebP (máx. 5MB)
-                    </p>
-                  </label>
-                </div>
 
-                {images.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2">
-                    {images.map((image, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={image}
-                          alt={`Imagen ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-lg"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(image)}
-                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
+                  <div>
+                    <label 
+                      className="block text-xs font-bold text-[#010f20] uppercase tracking-wider mb-2"
+                      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                    >
+                      Descripción
+                    </label>
+                    <textarea
+                      name="description"
+                      rows="5"
+                      placeholder="Describe las características principales de tu producto..."
+                      value={formData.description}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3.5 rounded-xl border border-gray-300 focus:ring-1 focus:ring-slate-800 focus:border-slate-800 bg-white text-sm text-slate-800 shadow-sm"
+                      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                    />
                   </div>
-                )}
 
-                <div className="text-xs text-gray-500">
-                  {images.length} imágenes subidas
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <Input
+                      label="Precio ($)"
+                      type="number"
+                      name="price"
+                      placeholder="99.99"
+                      value={formData.price}
+                      onChange={handleChange}
+                      step="0.01"
+                      min="0"
+                      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                      required
+                    />
+
+                    <Input
+                      label="Stock disponible"
+                      type="number"
+                      name="stock"
+                      placeholder="10"
+                      value={formData.stock}
+                      onChange={handleChange}
+                      min="0"
+                      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                      <label 
+                        className="block text-xs font-bold text-[#010f20] uppercase tracking-wider mb-2"
+                        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                      >
+                        Categoría *
+                      </label>
+                      <select
+                        name="category"
+                        value={formData.category}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3.5 rounded-xl border border-gray-300 focus:ring-1 focus:ring-slate-800 focus:border-slate-800 bg-white text-sm text-slate-800 shadow-sm"
+                        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                        required
+                      >
+                        <option value="">Selecciona una categoría</option>
+                        {categories.map(cat => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label 
+                        className="block text-xs font-bold text-[#010f20] uppercase tracking-wider mb-2"
+                        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                      >
+                        Estado
+                      </label>
+                      <select
+                        name="status"
+                        value={formData.status}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3.5 rounded-xl border border-gray-300 focus:ring-1 focus:ring-slate-800 focus:border-slate-800 bg-white text-sm text-slate-800 shadow-sm"
+                        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                      >
+                        <option value="active">Activo</option>
+                        <option value="draft">Borrador</option>
+                        <option value="inactive">Inactivo</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center pt-3">
+                    <input
+                      type="checkbox"
+                      id="featured"
+                      name="featured"
+                      checked={formData.featured}
+                      onChange={handleChange}
+                      className="h-5 w-5 text-slate-900 focus:ring-slate-800 border-gray-300 rounded cursor-pointer"
+                    />
+                    <label 
+                      htmlFor="featured" 
+                      className="ml-3 text-sm font-medium text-slate-700 select-none cursor-pointer"
+                      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                    >
+                      Destacar producto en la tienda principal
+                    </label>
+                  </div>
                 </div>
               </div>
-            </Card>
-
-            <div className="mt-6 flex gap-3">
-              <Button type="submit" className="flex-1" size="lg" loading={saving}>
-                {saving ? 'Guardando...' : '💾 Guardar Cambios'}
-              </Button>
-              <Link href="/dashboard/vendedor/productos" className="flex-1">
-                <Button variant="outline" className="w-full" size="lg">
-                  Cancelar
-                </Button>
-              </Link>
             </div>
+
+            {/* Columna Lateral: Imágenes y Acciones */}
+            <div className="space-y-6">
+              <div className="bg-white rounded-2xl border border-[#efedef] p-8 shadow-sm">
+                <h3 
+                  className="font-bold text-[#010f20] text-lg mb-5 pb-3 border-b border-[#efedef]"
+                  style={{ fontFamily: "'Montserrat', sans-serif" }}
+                >
+                  Imágenes
+                </h3>
+                
+                <div className="space-y-5">
+                  <div className="border-2 border-dashed border-gray-200 hover:border-slate-400 rounded-2xl p-8 text-center transition-colors bg-[#fafbfc]">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="image-upload"
+                      disabled={uploadingImages}
+                    />
+                    <label
+                      htmlFor="image-upload"
+                      className="cursor-pointer block"
+                    >
+                      <div className="w-14 h-14 bg-white text-slate-500 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-sm border border-gray-100">
+                        <ImageIcon className="w-7 h-7" />
+                      </div>
+                      <p 
+                        className="text-sm font-semibold text-slate-800 mb-1"
+                        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                      >
+                        {uploadingImages ? 'Subiendo imágenes...' : 'Haz clic para subir'}
+                      </p>
+                      <p 
+                        className="text-xs text-slate-400"
+                        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                      >
+                        JPG, PNG, WebP (máx. 5MB)
+                      </p>
+                    </label>
+                  </div>
+
+                  {images.length > 0 && (
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                      {images.map((image, index) => (
+                        <div key={index} className="relative group rounded-xl overflow-hidden border border-gray-200 h-28 bg-slate-50 shadow-sm">
+                          <img
+                            src={image}
+                            alt={`Imagen ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(image)}
+                            className="absolute top-2 right-2 bg-red-600 text-white rounded-lg w-7 h-7 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div 
+                    className="text-xs font-medium text-slate-500 pt-1"
+                    style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                  >
+                    {images.length} {images.length === 1 ? 'imagen subida' : 'imágenes subidas'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Botones de acción */}
+              <div className="bg-white rounded-2xl border border-[#efedef] p-6 shadow-sm space-y-3">
+                <Button 
+                  type="submit" 
+                  className="w-full !bg-[#0b1523] hover:!bg-slate-800 !text-white text-sm font-bold py-4 rounded-xl transition-all shadow-sm focus:ring-0 uppercase tracking-wide flex items-center justify-center gap-2"
+                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                  loading={saving}
+                >
+                  <Save className="w-4 h-4" /> {saving ? 'Guardando...' : 'Guardar Cambios'}
+                </Button>
+                
+                <Link href="/dashboard/vendedor/productos" className="block">
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    className="w-full border border-gray-200 hover:border-slate-800 text-slate-700 text-sm font-semibold py-3.5 rounded-xl transition-all shadow-sm focus:ring-0"
+                    style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                  >
+                    Cancelar
+                  </Button>
+                </Link>
+              </div>
+
+            </div>
+
           </div>
-        </div>
-      </form>
+        </form>
+
+      </div>
     </div>
   );
 }
