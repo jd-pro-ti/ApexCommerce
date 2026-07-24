@@ -1,8 +1,9 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { productService } from '@/services/productService';
+import SpecificationsInput from '@/components/dashboard/SpecificationsInput';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -21,28 +22,36 @@ export default function NewProduct() {
   const [error, setError] = useState('');
   const [images, setImages] = useState([]);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [specifications, setSpecifications] = useState({});
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     price: '',
-    category: '',
+    category_id: '',
     stock: '',
     status: 'active',
     featured: false
   });
 
-  const categories = [
-    'Electrónicos',
-    'Ropa',
-    'Hogar',
-    'Deportes',
-    'Libros',
-    'Juguetes',
-    'Alimentos',
-    'Belleza',
-    'Salud',
-    'Otros'
-  ];
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    setLoadingCategories(true);
+    try {
+      const result = await productService.getCategories();
+      if (result.success) {
+        setCategories(result.categories);
+      }
+    } catch (error) {
+      console.error('Error al cargar categorías:', error);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -101,7 +110,7 @@ export default function NewProduct() {
       return;
     }
 
-    if (!formData.category) {
+    if (!formData.category_id) {
       setError('La categoría es requerida');
       setLoading(false);
       return;
@@ -119,9 +128,10 @@ export default function NewProduct() {
         name: formData.name.trim(),
         description: formData.description.trim(),
         price: parseFloat(formData.price),
-        category: formData.category,
+        category_id: formData.category_id,
         stock: parseInt(formData.stock),
         images: images,
+        specifications: specifications,
         status: formData.status,
         featured: formData.featured
       };
@@ -265,18 +275,24 @@ export default function NewProduct() {
                         Categoría *
                       </label>
                       <select
-                        name="category"
-                        value={formData.category}
+                        name="category_id"
+                        value={formData.category_id}
                         onChange={handleChange}
                         className="w-full px-4 py-3.5 rounded-xl border border-gray-300 focus:ring-1 focus:ring-slate-800 focus:border-slate-800 bg-white text-sm text-slate-800 shadow-sm"
                         style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                         required
+                        disabled={loadingCategories}
                       >
                         <option value="">Selecciona una categoría</option>
                         {categories.map(cat => (
-                          <option key={cat} value={cat}>{cat}</option>
+                          <option key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </option>
                         ))}
                       </select>
+                      {loadingCategories && (
+                        <p className="text-xs text-gray-400 mt-1">Cargando categorías...</p>
+                      )}
                     </div>
 
                     <div>
@@ -298,6 +314,14 @@ export default function NewProduct() {
                         <option value="inactive">Inactivo</option>
                       </select>
                     </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <SpecificationsInput
+                      value={specifications}
+                      onChange={setSpecifications}
+                      label="Especificaciones técnicas"
+                    />
                   </div>
 
                   <div className="flex items-center pt-3">

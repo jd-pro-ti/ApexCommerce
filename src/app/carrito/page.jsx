@@ -12,7 +12,6 @@ export default function CartPage() {
   const { isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
-  const [promoCode, setPromoCode] = useState('APEX-BIENVENIDO');
 
   const subtotal = total;
   const shipping = subtotal > 150 ? 0 : 19.99;

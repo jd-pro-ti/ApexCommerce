@@ -73,6 +73,40 @@ export default function ProductDetail() {
     setOpenAccordion(openAccordion === section ? null : section);
   };
 
+  // Función para renderizar las especificaciones
+  const renderSpecifications = () => {
+    if (!product?.specifications || Object.keys(product.specifications).length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="mt-8 border-t border-gray-100 pt-8">
+        <h2 className="text-lg font-extrabold mb-4 uppercase tracking-widest text-slate-900" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+          Especificaciones técnicas
+        </h2>
+        <div className="bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
+            {Object.entries(product.specifications).map(([key, value], index) => (
+              <div 
+                key={index} 
+                className={`flex items-center justify-between p-4 ${
+                  index % 2 === 0 ? 'bg-white/50' : 'bg-gray-50/50'
+                }`}
+              >
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  {key}
+                </span>
+                <span className="text-sm font-medium text-slate-900">
+                  {typeof value === 'object' ? JSON.stringify(value) : value}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-white"><LoadingSpinner size="lg" /></div>;
 
   if (error || !product) return (
@@ -241,7 +275,10 @@ export default function ProductDetail() {
           {product.description || 'Sin descripción detallada disponible.'}
         </p>
 
-        <div className="border-t border-gray-200">
+        {/* SECCIÓN DE ESPECIFICACIONES TÉCNICAS */}
+        {renderSpecifications()}
+
+        <div className="border-t border-gray-200 mt-8">
           {[
             { id: 'detalles', title: 'Detalles del producto', content: 'Diseñado bajo los más altos estándares de calidad. Producto original garantizado.' },
             { id: 'materiales', title: 'Materiales y componentes', content: 'Fabricado con materiales seleccionados de alta durabilidad y rendimiento óptimo.' },

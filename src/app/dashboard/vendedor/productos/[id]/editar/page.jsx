@@ -4,6 +4,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { productService } from '@/services/productService';
+import SpecificationsInput from '@/components/dashboard/SpecificationsInput';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
@@ -26,32 +27,37 @@ export default function EditProduct() {
   const [success, setSuccess] = useState('');
   const [images, setImages] = useState([]);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [specifications, setSpecifications] = useState({});
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     price: '',
-    category: '',
+    category_id: '',
     stock: '',
     status: 'active',
     featured: false
   });
 
-  const categories = [
-    'Electrónicos',
-    'Ropa',
-    'Hogar',
-    'Deportes',
-    'Libros',
-    'Juguetes',
-    'Alimentos',
-    'Belleza',
-    'Salud',
-    'Otros'
-  ];
-
   useEffect(() => {
+    loadCategories();
     loadProduct();
   }, [productId]);
+
+  const loadCategories = async () => {
+    setLoadingCategories(true);
+    try {
+      const result = await productService.getCategories();
+      if (result.success) {
+        setCategories(result.categories);
+      }
+    } catch (error) {
+      console.error('Error al cargar categorías:', error);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
 
   const loadProduct = async () => {
     setLoading(true);
@@ -60,6 +66,7 @@ export default function EditProduct() {
       const result = await productService.getProductById(productId);
       if (result.success) {
         const product = result.product;
+        // Verificar que el vendedor es el dueño del producto
         if (product.seller_id !== user.id) {
           setError('No tienes permiso para editar este producto');
           setLoading(false);
@@ -69,12 +76,13 @@ export default function EditProduct() {
           name: product.name,
           description: product.description || '',
           price: product.price.toString(),
-          category: product.category,
+          category_id: product.category_id || '',
           stock: product.stock.toString(),
           status: product.status || 'active',
           featured: product.featured || false
         });
         setImages(product.images || []);
+        setSpecifications(product.specifications || {});
       } else {
         setError(result.error || 'Error al cargar el producto');
       }
@@ -146,7 +154,7 @@ export default function EditProduct() {
       return;
     }
 
-    if (!formData.category) {
+    if (!formData.category_id) {
       setError('La categoría es requerida');
       setSaving(false);
       return;
@@ -163,9 +171,10 @@ export default function EditProduct() {
         name: formData.name.trim(),
         description: formData.description.trim(),
         price: parseFloat(formData.price),
-        category: formData.category,
+        category_id: formData.category_id,
         stock: parseInt(formData.stock),
         images: images,
+        specifications: specifications,
         status: formData.status,
         featured: formData.featured
       };
@@ -224,7 +233,7 @@ export default function EditProduct() {
             className="text-sm text-[#44474c]/70 mt-1.5"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
-            Actualiza la información y detalles de tu producto.
+            Actualiza la información de tu producto.
           </p>
         </div>
 
@@ -318,18 +327,24 @@ export default function EditProduct() {
                         Categoría *
                       </label>
                       <select
-                        name="category"
-                        value={formData.category}
+                        name="category_id"
+                        value={formData.category_id}
                         onChange={handleChange}
                         className="w-full px-4 py-3.5 rounded-xl border border-gray-300 focus:ring-1 focus:ring-slate-800 focus:border-slate-800 bg-white text-sm text-slate-800 shadow-sm"
                         style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                         required
+                        disabled={loadingCategories}
                       >
                         <option value="">Selecciona una categoría</option>
                         {categories.map(cat => (
-                          <option key={cat} value={cat}>{cat}</option>
+                          <option key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </option>
                         ))}
                       </select>
+                      {loadingCategories && (
+                        <p className="text-xs text-gray-400 mt-1">Cargando categorías...</p>
+                      )}
                     </div>
 
                     <div>
@@ -351,6 +366,14 @@ export default function EditProduct() {
                         <option value="inactive">Inactivo</option>
                       </select>
                     </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <SpecificationsInput
+                      value={specifications}
+                      onChange={setSpecifications}
+                      label="Especificaciones técnicas"
+                    />
                   </div>
 
                   <div className="flex items-center pt-3">
@@ -406,7 +429,7 @@ export default function EditProduct() {
                         className="text-sm font-semibold text-slate-800 mb-1"
                         style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                       >
-                        {uploadingImages ? 'Subiendo imágenes...' : 'Haz clic para subir'}
+                        {uploadingImages ? 'Subiendo imágenes...' : 'Agregar o reemplazar imágenes'}
                       </p>
                       <p 
                         className="text-xs text-slate-400"
@@ -442,7 +465,7 @@ export default function EditProduct() {
                     className="text-xs font-medium text-slate-500 pt-1"
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                   >
-                    {images.length} {images.length === 1 ? 'imagen subida' : 'imágenes subidas'}
+                    {images.length} {images.length === 1 ? 'imagen' : 'imágenes'}
                   </div>
                 </div>
               </div>
