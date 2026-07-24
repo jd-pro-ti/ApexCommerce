@@ -2,13 +2,16 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
+import { useWishlist } from '@/context/WishlistContext';
 import { useAuth } from '@/context/AuthContext';
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
   const { isAuthenticated } = useAuth();
   const [isAdding, setIsAdding] = useState(false);
   const [showAdded, setShowAdded] = useState(false);
+  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
 
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -23,11 +26,27 @@ const ProductCard = ({ product }) => {
     }, 2000);
   };
 
+  const handleToggleWishlist = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!isAuthenticated) {
+      // Redirigir al login
+      window.location.href = '/login';
+      return;
+    }
+
+    setIsWishlistLoading(true);
+    await toggleWishlist(product);
+    setIsWishlistLoading(false);
+  };
+
+  const isFavorite = isInWishlist(product.id);
+
   return (
     <div className="group bg-white rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 h-full flex flex-col overflow-hidden">
       
       <Link href={`/producto/${product.id}`}>
-        {/* Cambiamos aspect-square por una altura fija controlada h-60 y overflow-hidden estricto */}
         <div className="relative h-60 w-full bg-gray-50 overflow-hidden flex items-center justify-center">
           {product.images?.[0] ? (
             <img
@@ -40,7 +59,38 @@ const ProductCard = ({ product }) => {
             <div className="w-full h-full flex items-center justify-center bg-gray-100 text-xl opacity-30">📦</div>
           )}
 
-          {/* BOTÓN FLOTANTE CON ICONO */}
+          {/* Botón Favoritos - Esquina superior derecha */}
+          <button
+            onClick={handleToggleWishlist}
+            disabled={isWishlistLoading}
+            className={`absolute top-2 right-2 p-2 rounded-full shadow-md transition-all backdrop-blur-sm z-10
+              ${isFavorite 
+                ? 'bg-red-500 text-white hover:bg-red-600' 
+                : 'bg-white/80 text-gray-600 hover:bg-white hover:text-red-500'
+              }
+              ${isWishlistLoading ? 'opacity-50 cursor-not-allowed' : ''}
+            `}
+            title={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+          >
+            {isWishlistLoading ? (
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            ) : (
+              <svg 
+                className="w-4 h-4" 
+                fill={isFavorite ? 'currentColor' : 'none'} 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            )}
+          </button>
+
+          {/* Botón Agregar al Carrito - Esquina inferior derecha */}
           {product.stock > 0 && (
             <button 
               onClick={handleAddToCart}
@@ -71,6 +121,9 @@ const ProductCard = ({ product }) => {
           {/* Badges de estado */}
           {product.stock > 0 && product.stock <= 5 && (
             <span className="absolute top-2 left-2 bg-[#dd9448] text-white text-[8px] font-bold px-2 py-0.5 rounded uppercase z-10">Tendencia</span>
+          )}
+          {product.featured && (
+            <span className="absolute top-2 left-2 bg-amber-500 text-white text-[8px] font-bold px-2 py-0.5 rounded uppercase z-10">⭐ Destacado</span>
           )}
         </div>
       </Link>

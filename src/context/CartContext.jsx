@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { productService } from '@/services/productService';
 import { useAuth } from './AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -12,6 +12,7 @@ export function CartProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState(null);
+  const syncedUserIdRef = useRef(null);
 
   // Cargar carrito desde la base de datos
   const loadCart = useCallback(async () => {
@@ -81,23 +82,27 @@ export function CartProvider({ children }) {
     }
   };
 
-  // Efecto para cargar carrito cuando cambia el usuario
+  // Al autenticarse, sincronizar primero el carrito local y cargar después el
+  // resultado desde la BD. Esto evita que una lectura anterior al guardado deje
+  // el estado visualmente vacío hasta el siguiente refresco.
   useEffect(() => {
-    loadCart();
-  }, [loadCart]);
-
-  // Efecto para sincronizar cuando el usuario se autentica
-  useEffect(() => {
-    if (isAuthenticated && user?.id) {
-      const localCart = localStorage.getItem('apex_cart');
-      if (localCart) {
-        const parsedCart = JSON.parse(localCart);
-        if (parsedCart.length > 0) {
-          syncCartToDatabase(parsedCart);
+    const initializeCart = async () => {
+      if (isAuthenticated && user?.id) {
+        const localCart = localStorage.getItem('apex_cart');
+        if (localCart) {
+          const parsedCart = JSON.parse(localCart);
+          if (parsedCart.length > 0 && syncedUserIdRef.current !== user.id) {
+            syncedUserIdRef.current = user.id;
+            await syncCartToDatabase(parsedCart);
+          }
         }
       }
-    }
-  }, [isAuthenticated, user]);
+
+      await loadCart();
+    };
+
+    initializeCart();
+  }, [isAuthenticated, user?.id, loadCart]);
 
   // Escuchar cambios en la sesión de Supabase (logout)
   useEffect(() => {
@@ -145,7 +150,9 @@ export function CartProvider({ children }) {
       return;
     }
 
-    // Actualizar estado local inmediatamente
+    // Actualizar estado local inmediatamente.
+    // React puede reejecutar el actualizador de estado en desarrollo.
+    let shouldPersist = true;
     setCart(prev => {
       const exists = prev.find(item => item.id === product.id);
       let newCart;
@@ -164,7 +171,8 @@ export function CartProvider({ children }) {
       localStorage.setItem('apex_cart', JSON.stringify(newCart));
 
       // Si está autenticado, guardar en la base de datos
-      if (isAuthenticated && user?.id) {
+      if (isAuthenticated && user?.id && shouldPersist) {
+        shouldPersist = false;
         productService.addToCart(user.id, product.id, quantity)
           .then(result => {
             if (!result.success) {

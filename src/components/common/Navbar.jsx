@@ -4,13 +4,15 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
-import { ChevronDown, User, LogOut, Settings } from 'lucide-react';
+import { useWishlist } from '@/context/WishlistContext';
+import { ChevronDown, User, LogOut, Settings, Heart } from 'lucide-react';
 import Button from '@/components/ui/Button';
 
 const Navbar = () => {
   const router = useRouter();
   const { user, isAuthenticated, logout, role } = useAuth();
   const { itemsCount } = useCart();
+  const { wishlist } = useWishlist();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -108,6 +110,17 @@ const Navbar = () => {
 
         {/* Iconos y Acciones */}
         <div className="hidden md:flex items-center gap-6">
+          {/* Favoritos */}
+          <Link href="/favorito" className="relative group p-2 bg-white/10 hover:bg-white/20 rounded-xl border border-white/10 transition-all shadow-sm">
+            <Heart className="w-5 h-5 text-white" strokeWidth={2} />
+            {wishlist.length > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-md animate-pulse">
+                {wishlist.length}
+              </span>
+            )}
+          </Link>
+
+          {/* Carrito */}
           <Link href="/carrito" className="relative group p-2 bg-white/10 hover:bg-white/20 rounded-xl border border-white/10 transition-all shadow-sm">
             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -215,6 +228,12 @@ const Navbar = () => {
                 <Link href="/perfil" onClick={() => setIsMobileMenuOpen(false)} className="py-2 hover:text-[#e0a96d]">Mi Perfil</Link>
               </>
             )}
+            <Link href="/favorito" onClick={() => setIsMobileMenuOpen(false)} className="py-2 hover:text-[#e0a96d] flex items-center justify-between">
+              <span>Favoritos</span>
+              {wishlist.length > 0 && (
+                <span className="bg-rose-500 text-white px-2 py-0.5 rounded-full text-[10px] font-black">{wishlist.length}</span>
+              )}
+            </Link>
             <Link href="/carrito" onClick={() => setIsMobileMenuOpen(false)} className="py-2 hover:text-[#e0a96d] flex items-center justify-between">
               <span>Carrito</span>
               <span className="bg-[#e0a96d] text-[#010f20] px-2 py-0.5 rounded-full text-[10px] font-black">{itemsCount}</span>

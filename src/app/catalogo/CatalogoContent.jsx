@@ -5,12 +5,14 @@ import { productService } from '@/services/productService';
 import ProductCard from '@/components/ui/ProductCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { ShoppingBag } from 'lucide-react';
+import Card from '@/components/ui/Card';
 
 export default function CatalogoContent() {
   const searchParams = useSearchParams();
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingCategories, setLoadingCategories] = useState(true);
   const [categories, setCategories] = useState([]);
 
   const [filters, setFilters] = useState({
@@ -21,41 +23,81 @@ export default function CatalogoContent() {
     sortBy: 'recent'
   });
 
+  // Cargar categorías al inicio
   useEffect(() => {
     loadCategories();
   }, []);
 
+  // Cargar productos cuando cambian los parámetros de URL
   useEffect(() => {
     const searchParam = searchParams.get('search') || '';
     const categoryParam = searchParams.get('categoria') || searchParams.get('category') || 'all';
 
-    setFilters(prev => ({ ...prev, search: searchParam, category: categoryParam }));
-    loadProducts(searchParam, categoryParam, filters.minPrice, filters.maxPrice, filters.sortBy);
+    setFilters(prev => ({ 
+      ...prev, 
+      search: searchParam, 
+      category: categoryParam 
+    }));
+    
+    // Cargar productos después de un pequeño delay para evitar múltiples llamadas
+    const timer = setTimeout(() => {
+      loadProducts(searchParam, categoryParam, filters.minPrice, filters.maxPrice, filters.sortBy);
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [searchParams]);
 
   const loadCategories = async () => {
+    setLoadingCategories(true);
     try {
       const result = await productService.getCategoriesWithCount();
-      if (result.success) setCategories(result.categories);
+      if (result.success) {
+        setCategories(result.categories);
+      }
     } catch (error) {
       console.error('Error al cargar categorías:', error);
+    } finally {
+      setLoadingCategories(false);
     }
   };
 
   const loadProducts = async (searchVal, catVal, minP, maxP, sortVal) => {
     setLoading(true);
     try {
-      const result = await productService.getPublicProducts({
+      // Construir objeto de filtros
+      const filterParams = {
         search: searchVal || undefined,
-        category: catVal !== 'all' ? catVal : undefined,
-        minPrice: minP ? parseFloat(minP) : undefined,
-        maxPrice: maxP ? parseFloat(maxP) : undefined,
-        sortBy: sortVal
-      });
+        sortBy: sortVal || 'recent'
+      };
 
-      if (result.success) setProducts(result.products || []);
+      // Solo agregar categoría si no es 'all'
+      if (catVal && catVal !== 'all') {
+        filterParams.category = catVal;
+      }
+
+      // Solo agregar precios si tienen valor
+      if (minP && parseFloat(minP) >= 0) {
+        filterParams.minPrice = parseFloat(minP);
+      }
+
+      if (maxP && parseFloat(maxP) >= 0) {
+        filterParams.maxPrice = parseFloat(maxP);
+      }
+
+      console.log('🔍 Cargando productos con filtros:', filterParams);
+
+      const result = await productService.getPublicProducts(filterParams);
+
+      if (result.success) {
+        setProducts(result.products || []);
+        console.log('✅ Productos cargados:', result.products?.length || 0);
+      } else {
+        console.error('Error al cargar productos:', result.error);
+        setProducts([]);
+      }
     } catch (error) {
-      console.error('Error al cargar productos');
+      console.error('Error al cargar productos:', error);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -95,58 +137,76 @@ export default function CatalogoContent() {
     );
   }
 
+  // Calcular total de productos
+  const totalProducts = categories.reduce((acc, cat) => acc + cat.count, 0);
+
   return (
     <div className="min-h-screen bg-white pt-32 pb-20 px-4 sm:px-6 lg:px-12 max-w-[1440px] mx-auto text-slate-900">
 
       {/* CONTENIDO PRINCIPAL EN 2 COLUMNAS (FILTROS IZQUIERDA / GRILLA DERECHA) */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-10 items-start">
 
-        {/* PANEL DE FILTROS LATERAL (ESTILO REFERENCIA: LIMPIO, CATEGORÍAS Y PRECIO) */}
+        {/* PANEL DE FILTROS LATERAL */}
         <aside className="space-y-8 lg:sticky lg:top-28">
 
           <div className="flex items-center justify-between pb-3 border-b border-gray-100">
             <h3 className="text-sm font-extrabold uppercase tracking-widest text-slate-900" style={{ fontFamily: "'Montserrat', sans-serif" }}>
               Categoría
             </h3>
-            {(filters.category !== 'all' || filters.minPrice || filters.maxPrice) && (
-              <button onClick={resetFilters} className="text-xs font-bold text-amber-700 hover:underline">
+            {(filters.category !== 'all' || filters.minPrice || filters.maxPrice || filters.search) && (
+              <button 
+                onClick={resetFilters} 
+                className="text-xs font-bold text-amber-700 hover:underline transition-colors"
+              >
                 Limpiar
               </button>
             )}
           </div>
 
           {/* Lista de Categorías */}
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
             <button
               onClick={() => handleCategorySelect('all')}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all text-left ${filters.category === 'all'
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all text-left ${
+                filters.category === 'all'
                   ? 'bg-slate-900 text-white shadow-sm'
                   : 'text-slate-600 hover:bg-gray-100'
-                }`}
+              }`}
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
               <span>Todos los productos</span>
-              <span className={`text-[10px] px-2 py-0.5 rounded-md ${filters.category === 'all' ? 'bg-white/20 text-white' : 'bg-gray-100 text-slate-500'}`}>
-                {categories.reduce((acc, cat) => acc + cat.count, 0)}
+              <span className={`text-[10px] px-2 py-0.5 rounded-md ${
+                filters.category === 'all' ? 'bg-white/20 text-white' : 'bg-gray-100 text-slate-500'
+              }`}>
+                {totalProducts}
               </span>
             </button>
 
-            {categories.map((cat) => (
-              <button
-                key={cat.name}
-                onClick={() => handleCategorySelect(cat.name)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all capitalize text-left ${filters.category === cat.name
-                    ? 'bg-slate-900 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-gray-100'
+            {loadingCategories ? (
+              <div className="text-center py-4">
+                <LoadingSpinner size="sm" />
+              </div>
+            ) : (
+              categories.map((cat) => (
+                <button
+                  key={cat.name}
+                  onClick={() => handleCategorySelect(cat.name)}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all capitalize text-left ${
+                    filters.category === cat.name
+                      ? 'bg-slate-900 text-white shadow-sm'
+                      : 'text-slate-600 hover:bg-gray-100'
                   }`}
-                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-              >
-                <span className="truncate">{cat.name.toLowerCase()}</span>
-                <span className={`text-[10px] px-2 py-0.5 rounded-md ${filters.category === cat.name ? 'bg-white/20 text-white' : 'bg-gray-100 text-slate-500'}`}>
-                  {cat.count}
-                </span>
-              </button>
-            ))}
+                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                >
+                  <span className="truncate">{cat.name}</span>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-md ${
+                    filters.category === cat.name ? 'bg-white/20 text-white' : 'bg-gray-100 text-slate-500'
+                  }`}>
+                    {cat.count}
+                  </span>
+                </button>
+              ))
+            )}
           </div>
 
           {/* Rango de Precios */}
@@ -163,6 +223,7 @@ export default function CatalogoContent() {
                 onChange={handleFilterChange}
                 className="w-1/2 p-2.5 text-xs bg-gray-50 border border-gray-200 rounded-xl text-slate-900 focus:outline-none focus:border-slate-900"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                min="0"
               />
               <input
                 name="maxPrice"
@@ -172,6 +233,7 @@ export default function CatalogoContent() {
                 onChange={handleFilterChange}
                 className="w-1/2 p-2.5 text-xs bg-gray-50 border border-gray-200 rounded-xl text-slate-900 focus:outline-none focus:border-slate-900"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                min="0"
               />
             </div>
           </div>
@@ -191,6 +253,7 @@ export default function CatalogoContent() {
               <option value="recent">Más recientes</option>
               <option value="price-asc">Menor precio</option>
               <option value="price-desc">Mayor precio</option>
+              <option value="name">Alfabético A-Z</option>
             </select>
           </div>
 
@@ -203,7 +266,7 @@ export default function CatalogoContent() {
               <LoadingSpinner size="md" />
             </div>
           ) : products.length === 0 ? (
-            <Card className="bg-gray-50 border-gray-200 p-16 text-center shadow-none">
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-16 text-center shadow-sm">
               <ShoppingBag className="w-12 h-12 text-slate-400 mx-auto mb-4" />
               <h3 className="text-base font-bold text-slate-900 mb-1" style={{ fontFamily: "'Montserrat', sans-serif" }}>
                 No se encontraron productos
@@ -217,13 +280,20 @@ export default function CatalogoContent() {
               >
                 Ver todos los productos
               </button>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
             </div>
+          ) : (
+            <>
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-xs text-slate-500" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                  Mostrando <span className="font-bold text-slate-900">{products.length}</span> productos
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                {products.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            </>
           )}
         </main>
 

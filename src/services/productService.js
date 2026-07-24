@@ -358,6 +358,12 @@ export const productService = {
         query = query.eq('category_id', filters.category_id)
       }
 
+      // El catálogo selecciona las categorías disponibles por su nombre.
+      // Mantener este filtro junto al de ID permite usar ambas formas.
+      if (filters.category) {
+        query = query.eq('categories.name', filters.category)
+      }
+
       if (filters.search) {
         query = query.or(`name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`)
       }
@@ -377,9 +383,11 @@ export const productService = {
       if (filters.sortBy) {
         switch (filters.sortBy) {
           case 'price_asc':
+          case 'price-asc':
             query = query.order('price', { ascending: true })
             break
           case 'price_desc':
+          case 'price-desc':
             query = query.order('price', { ascending: false })
             break
           case 'name':
@@ -920,153 +928,153 @@ async addToCart(userId, productId, quantity = 1) {
   },
 
   // ============================================
-  // MÉTODOS PARA FAVORITOS (WISHLIST)
-  // ============================================
+// MÉTODOS PARA FAVORITOS (WISHLIST)
+// ============================================
 
-  async getWishlist(userId) {
-    try {
-      if (!isSupabaseConfigured()) {
-        throw new Error('Supabase no está configurado')
-      }
+async getWishlist(userId) {
+  try {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase no está configurado')
+    }
 
-      const { data, error } = await supabase
-        .from('wishlist')
-        .select(`
+    const { data, error } = await supabase
+      .from('wishlist')
+      .select(`
+        id,
+        product_id,
+        products (
           id,
-          product_id,
-          products (
+          name,
+          price,
+          description,
+          images,
+          stock,
+          categories (
             id,
-            name,
-            price,
-            description,
-            images,
-            stock,
-            categories (
-              id,
-              name
-            )
+            name
           )
-        `)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
+        )
+      `)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
 
-      if (error) throw error
+    if (error) throw error
 
-      const wishlistItems = data?.map(item => ({
-        id: item.product_id,
-        wishlist_id: item.id,
-        ...item.products
-      })) || []
+    const wishlistItems = data?.map(item => ({
+      id: item.product_id,
+      wishlist_id: item.id,
+      ...item.products
+    })) || []
 
-      return {
-        success: true,
-        wishlist: wishlistItems
-      }
-    } catch (error) {
-      console.error('Error al obtener favoritos:', error)
-      return {
-        success: false,
-        error: error.message
-      }
+    return {
+      success: true,
+      wishlist: wishlistItems
     }
-  },
-
-  async addToWishlist(userId, productId) {
-    try {
-      if (!isSupabaseConfigured()) {
-        throw new Error('Supabase no está configurado')
-      }
-
-      // Verificar si ya existe
-      const { data: existing } = await supabase
-        .from('wishlist')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('product_id', productId)
-        .maybeSingle()
-
-      if (existing) {
-        return {
-          success: true,
-          message: 'Producto ya está en favoritos'
-        }
-      }
-
-      const { data, error } = await supabase
-        .from('wishlist')
-        .insert({
-          user_id: userId,
-          product_id: productId
-        })
-        .select()
-        .single()
-
-      if (error) throw error
-
-      return {
-        success: true,
-        wishlistItem: data
-      }
-    } catch (error) {
-      console.error('Error al agregar a favoritos:', error)
-      return {
-        success: false,
-        error: error.message
-      }
-    }
-  },
-
-  async removeFromWishlist(userId, productId) {
-    try {
-      if (!isSupabaseConfigured()) {
-        throw new Error('Supabase no está configurado')
-      }
-
-      const { error } = await supabase
-        .from('wishlist')
-        .delete()
-        .eq('user_id', userId)
-        .eq('product_id', productId)
-
-      if (error) throw error
-
-      return {
-        success: true
-      }
-    } catch (error) {
-      console.error('Error al eliminar de favoritos:', error)
-      return {
-        success: false,
-        error: error.message
-      }
-    }
-  },
-
-  async isInWishlist(userId, productId) {
-    try {
-      if (!isSupabaseConfigured()) {
-        return { success: true, isInWishlist: false }
-      }
-
-      const { data, error } = await supabase
-        .from('wishlist')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('product_id', productId)
-        .maybeSingle()
-
-      if (error) throw error
-
-      return {
-        success: true,
-        isInWishlist: !!data
-      }
-    } catch (error) {
-      console.error('Error al verificar favorito:', error)
-      return {
-        success: false,
-        error: error.message
-      }
+  } catch (error) {
+    console.error('Error al obtener favoritos:', error)
+    return {
+      success: false,
+      error: error.message
     }
   }
+},
+
+async addToWishlist(userId, productId) {
+  try {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase no está configurado')
+    }
+
+    // Verificar si ya existe
+    const { data: existing } = await supabase
+      .from('wishlist')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('product_id', productId)
+      .maybeSingle()
+
+    if (existing) {
+      return {
+        success: true,
+        message: 'Producto ya está en favoritos'
+      }
+    }
+
+    const { data, error } = await supabase
+      .from('wishlist')
+      .insert({
+        user_id: userId,
+        product_id: productId
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+
+    return {
+      success: true,
+      wishlistItem: data
+    }
+  } catch (error) {
+    console.error('Error al agregar a favoritos:', error)
+    return {
+      success: false,
+      error: error.message
+    }
+  }
+},
+
+async removeFromWishlist(userId, productId) {
+  try {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase no está configurado')
+    }
+
+    const { error } = await supabase
+      .from('wishlist')
+      .delete()
+      .eq('user_id', userId)
+      .eq('product_id', productId)
+
+    if (error) throw error
+
+    return {
+      success: true
+    }
+  } catch (error) {
+    console.error('Error al eliminar de favoritos:', error)
+    return {
+      success: false,
+      error: error.message
+    }
+  }
+},
+
+async isInWishlist(userId, productId) {
+  try {
+    if (!isSupabaseConfigured()) {
+      return { success: true, isInWishlist: false }
+    }
+
+    const { data, error } = await supabase
+      .from('wishlist')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('product_id', productId)
+      .maybeSingle()
+
+    if (error) throw error
+
+    return {
+      success: true,
+      isInWishlist: !!data
+    }
+  } catch (error) {
+    console.error('Error al verificar favorito:', error)
+    return {
+      success: false,
+      error: error.message
+    }
+  }
+}
 }
