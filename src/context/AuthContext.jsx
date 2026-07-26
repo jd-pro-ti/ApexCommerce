@@ -129,21 +129,39 @@ export function AuthProvider({ children }) {
   };
 
   // Función de actualizar perfil
-  const updateProfile = async (updates) => {
-    if (!user) {
-      return { success: false, error: 'No autenticado' };
-    }
-    try {
-      const result = await authService.updateProfile(user.id, updates);
-      if (result.success) {
-        setUser({ ...user, ...result.profile });
-        setRole(result.profile.role || role);
-      }
-      return result;
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  };
+const updateProfile = async (updates) => {
+  if (!user) {
+    return { success: false, error: 'No autenticado' };
+  }
+  try {
+    // Actualizar en la base de datos
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({
+        ...updates,
+        updated_at: new Date()
+      })
+      .eq('id', user.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Actualizar estado local
+    setUser(prev => ({ 
+      ...prev, 
+      ...data,
+      avatar_url: data.avatar_url || prev.avatar_url || null,
+      name: data.name || prev.name
+    }));
+
+    return { success: true, profile: data };
+  } catch (error) {
+    console.error('Error al actualizar perfil:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 
   const value = {
     user,
