@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { 
@@ -15,7 +14,8 @@ import {
   Trophy, 
   BarChart3, 
   Settings, 
-  ArrowRight 
+  Sparkles,
+  ArrowRight
 } from 'lucide-react';
 
 export default function SellerDashboard() {
@@ -26,7 +26,6 @@ export default function SellerDashboard() {
   const [topProducts, setTopProducts] = useState([]);
 
   useEffect(() => {
-    // Simular carga de datos
     setTimeout(() => {
       setStats({
         totalSales: 15420.75,
@@ -51,259 +50,285 @@ export default function SellerDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center bg-[#f8f9fa]">
+      <div className="min-h-[60vh] flex items-center justify-center bg-[#f1f3f6]">
         <LoadingSpinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="bg-[#f8f9fa] min-h-screen pt-28 md:pt-32 pb-16">
+    <div className="min-h-screen bg-[#f1f3f6] py-28 font-sans" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Cabecera del Panel */}
-        <div className="bg-white rounded-2xl border border-[#efedef] p-6 sm:p-8 shadow-sm mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <span 
-              className="text-[10px] font-bold tracking-widest text-[#dd9448] uppercase block mb-1"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-            >
-              PANEL DE CONTROL
-            </span>
-            <h1 
-              className="text-2xl sm:text-3xl font-bold text-[#010f20] tracking-tight flex items-center gap-2"
-              style={{ fontFamily: "'Montserrat', sans-serif" }}
-            >
-              <span>Panel de Vendedor</span>
-              <Store className="w-7 h-7 text-[#dd9448]" />
+        <div className="mb-8 bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-[#efedef] relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="absolute -top-12 -right-12 w-48 h-48 bg-[#dd9448]/10 rounded-full blur-2xl pointer-events-none"></div>
+          
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="px-3 py-1 bg-[#010f20]/5 text-[#010f20] rounded-full text-[10px] uppercase tracking-widest font-extrabold flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3 text-[#dd9448]" /> Panel de Control
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#010f20] tracking-tight" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+              Panel de Vendedor
             </h1>
-            <p 
-              className="text-xs sm:text-sm text-[#44474c]/70 mt-1"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-            >
-              Bienvenido de nuevo, <span className="font-semibold text-slate-900">{user?.name || 'Vendedor'}</span>. Aquí tienes el resumen de tu tienda hoy.
+            <p className="text-xs sm:text-sm text-[#44474c] mt-1">
+              Bienvenido de nuevo, <span className="font-bold text-[#010f20]">{user?.name || 'Vendedor'}</span>. Aquí tienes el resumen de tu tienda hoy.
             </p>
           </div>
           
-          <Link href="/dashboard/vendedor/productos/nuevo">
-            <Button 
-              className="!bg-[#0b1523] hover:!bg-slate-800 !text-white text-xs font-bold py-3 px-5 rounded-md transition-all tracking-wide uppercase shadow-sm focus:ring-0 flex items-center gap-2"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-            >
-              <Plus className="w-4 h-4" /> Agregar Producto
-            </Button>
-          </Link>
+          <div className="relative z-10 flex items-center gap-3 w-full md:w-auto">
+            <Link href="/dashboard/vendedor/productos/nuevo" className="w-full md:w-auto">
+              <Button className="w-full md:w-auto bg-[#010f20] text-white hover:bg-[#010f20]/90 text-xs font-bold uppercase tracking-widest py-3 px-6 rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2">
+                <Plus className="w-4 h-4" /> Agregar Producto
+              </Button>
+            </Link>
+          </div>
         </div>
 
-        {/* Stats Grid Mejorada */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-2xl border border-[#efedef] p-6 shadow-sm hover:border-slate-300 transition-all">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+          
+          {/* Ventas totales */}
+          <div className="bg-white rounded-3xl p-6 shadow-xl border border-[#efedef] relative overflow-hidden group hover:border-[#010f20] transition-all">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full pointer-events-none"></div>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-[#44474c]/70 font-medium uppercase tracking-wider" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Ventas totales</p>
-                <p className="text-2xl sm:text-3xl font-bold text-[#010f20] mt-1.5" style={{ fontFamily: "'Montserrat', sans-serif" }}>${stats.totalSales?.toFixed(2)}</p>
+                <p className="text-[11px] font-bold text-[#44474c] uppercase tracking-wider">Ventas totales</p>
+                <p className="text-3xl font-extrabold text-[#010f20] mt-1" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                  ${stats.totalSales?.toFixed(2)}
+                </p>
               </div>
-              <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shadow-inner">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm">
                 <DollarSign className="w-6 h-6" />
               </div>
             </div>
+            <div className="mt-4 pt-3 border-t border-[#efedef] flex items-center text-[11px] text-[#44474c]">
+              <span className="text-blue-600 font-bold mr-1">Rendimiento</span> general actual
+            </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-[#efedef] p-6 shadow-sm hover:border-slate-300 transition-all">
+          {/* Pedidos Totales */}
+          <div className="bg-white rounded-3xl p-6 shadow-xl border border-[#efedef] relative overflow-hidden group hover:border-[#010f20] transition-all">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full pointer-events-none"></div>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-[#44474c]/70 font-medium uppercase tracking-wider" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Pedidos Totales</p>
-                <p className="text-2xl sm:text-3xl font-bold text-[#010f20] mt-1.5" style={{ fontFamily: "'Montserrat', sans-serif" }}>{stats.orders}</p>
+                <p className="text-[11px] font-bold text-[#44474c] uppercase tracking-wider">Pedidos Totales</p>
+                <p className="text-3xl font-extrabold text-[#010f20] mt-1" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                  {stats.orders}
+                </p>
               </div>
-              <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shadow-inner">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-sm">
                 <Package className="w-6 h-6" />
               </div>
             </div>
+            <div className="mt-4 pt-3 border-t border-[#efedef] flex items-center text-[11px] text-[#44474c]">
+              <span className="text-emerald-600 font-bold mr-1">{stats.pendingOrders} pendientes</span> de entrega
+            </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-[#efedef] p-6 shadow-sm hover:border-slate-300 transition-all">
+          {/* Productos activos */}
+          <div className="bg-white rounded-3xl p-6 shadow-xl border border-[#efedef] relative overflow-hidden group hover:border-[#010f20] transition-all">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 rounded-bl-full pointer-events-none"></div>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-[#44474c]/70 font-medium uppercase tracking-wider" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Productos activos</p>
-                <p className="text-2xl sm:text-3xl font-bold text-[#010f20] mt-1.5" style={{ fontFamily: "'Montserrat', sans-serif" }}>{stats.products}</p>
+                <p className="text-[11px] font-bold text-[#44474c] uppercase tracking-wider">Productos activos</p>
+                <p className="text-3xl font-extrabold text-[#010f20] mt-1" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                  {stats.products}
+                </p>
               </div>
-              <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center shadow-inner">
+              <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-600 shadow-sm">
                 <ShoppingBag className="w-6 h-6" />
               </div>
             </div>
+            <div className="mt-4 pt-3 border-t border-[#efedef] flex items-center text-[11px] text-[#44474c]">
+              <span className="text-purple-600 font-bold mr-1">Publicados</span> en la tienda
+            </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-[#efedef] p-6 shadow-sm hover:border-slate-300 transition-all">
+          {/* Calificación */}
+          <div className="bg-white rounded-3xl p-6 shadow-xl border border-[#efedef] relative overflow-hidden group hover:border-[#010f20] transition-all">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full pointer-events-none"></div>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-[#44474c]/70 font-medium uppercase tracking-wider" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Calificación</p>
-                <p className="text-2xl sm:text-3xl font-bold text-[#010f20] mt-1.5 flex items-center gap-1.5" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-                  <Star className="w-6 h-6 text-amber-500 fill-amber-500" /> {stats.rating}
+                <p className="text-[11px] font-bold text-[#44474c] uppercase tracking-wider">Calificación</p>
+                <p className="text-3xl font-extrabold text-[#010f20] mt-1 flex items-center gap-1.5" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                  <Star className="w-5 h-5 text-amber-500 fill-amber-500" /> {stats.rating}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-orange-50 text-orange-500 rounded-xl flex items-center justify-center shadow-inner">
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600 shadow-sm">
                 <Trophy className="w-6 h-6" />
               </div>
             </div>
+            <div className="mt-4 pt-3 border-t border-[#efedef] flex items-center text-[11px] text-[#44474c]">
+              <span className="text-amber-600 font-bold mr-1">Excelente</span> reputación
+            </div>
           </div>
+
         </div>
 
         {/* Grid Principal: Pedidos Recientes y Top Productos */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           
           {/* Pedidos recientes */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl border border-[#efedef] p-6 sm:p-8 shadow-sm h-full flex flex-col justify-between">
-              <div>
-                <div className="flex justify-between items-center mb-6 pb-4 border-b border-[#efedef]">
-                  <h2 
-                    className="text-lg font-bold text-[#010f20] tracking-tight"
-                    style={{ fontFamily: "'Montserrat', sans-serif" }}
-                  >
+          <div className="lg:col-span-2 bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-[#efedef] flex flex-col justify-between">
+            <div>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-lg font-extrabold text-[#010f20]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
                     Pedidos Recientes
                   </h2>
-                  <Link href="/dashboard/vendedor/pedidos">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="border border-gray-200 text-slate-700 text-xs font-semibold py-2 px-3 rounded-md transition-all shadow-sm focus:ring-0"
-                      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                    >
-                      Ver todos
-                    </Button>
-                  </Link>
+                  <p className="text-xs text-[#44474c] mt-0.5">
+                    Últimas compras realizadas en tu tienda
+                  </p>
                 </div>
+                <Link href="/dashboard/vendedor/pedidos">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="border border-[#efedef] hover:border-[#010f20] text-[#010f20] text-xs font-semibold py-2 px-4 rounded-xl transition-all cursor-pointer"
+                  >
+                    Ver todos
+                  </Button>
+                </Link>
+              </div>
 
-                <div className="space-y-4">
-                  {recentOrders.map((order) => (
-                    <div 
-                      key={order.id} 
-                      className="bg-[#fafbfc] rounded-xl border border-[#efedef] p-4 flex items-center justify-between gap-4 transition-all hover:bg-white"
-                    >
-                      <div>
-                        <p className="font-bold text-sm text-[#010f20]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{order.id}</p>
-                        <p className="text-xs text-[#44474c]/80 mt-0.5" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{order.customer}</p>
-                        <p className="text-[10px] text-slate-400 mt-1" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{order.date}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-sm text-[#010f20]" style={{ fontFamily: "'Montserrat', sans-serif" }}>${order.total.toFixed(2)}</p>
-                        <span className={`inline-block mt-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${
-                          order.status === 'Entregado' ? 'bg-emerald-50 text-emerald-600' :
-                          order.status === 'Enviado' ? 'bg-blue-50 text-blue-600' :
-                          'bg-amber-50 text-amber-600'
-                        }`} style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                          {order.status}
-                        </span>
-                      </div>
+              <div className="space-y-3">
+                {recentOrders.map((order) => (
+                  <div key={order.id} className="flex items-center justify-between p-4 bg-[#fdfdfd] hover:bg-[#f1f3f6]/50 rounded-2xl border border-[#efedef] transition-colors">
+                    <div>
+                      <p className="font-extrabold text-sm text-[#010f20]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{order.id}</p>
+                      <p className="text-xs text-[#44474c] mt-0.5">{order.customer}</p>
+                      <p className="text-[10px] text-[#44474c] mt-1">{order.date}</p>
                     </div>
-                  ))}
-                </div>
+                    
+                    <div className="text-right">
+                      <p className="font-extrabold text-sm text-[#010f20]" style={{ fontFamily: "'Montserrat', sans-serif" }}>${order.total.toFixed(2)}</p>
+                      <span className={`inline-block mt-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider border ${
+                        order.status === 'Entregado' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                        order.status === 'Enviado' ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                        'bg-amber-50 text-amber-600 border-amber-200'
+                      }`}>
+                        {order.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
 
           {/* Productos Top */}
-          <div>
-            <div className="bg-white rounded-2xl border border-[#efedef] p-6 sm:p-8 shadow-sm h-full flex flex-col justify-between">
-              <div>
-                <div className="flex justify-between items-center mb-6 pb-4 border-b border-[#efedef]">
-                  <h2 
-                    className="text-lg font-bold text-[#010f20] tracking-tight"
-                    style={{ fontFamily: "'Montserrat', sans-serif" }}
-                  >
+          <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-[#efedef] flex flex-col justify-between">
+            <div>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-lg font-extrabold text-[#010f20]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
                     Top Productos
                   </h2>
-                  <Link href="/dashboard/vendedor/productos">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="border border-gray-200 text-slate-700 text-xs font-semibold py-2 px-3 rounded-md transition-all shadow-sm focus:ring-0"
-                      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                    >
-                      Gestionar
-                    </Button>
-                  </Link>
+                  <p className="text-xs text-[#44474c] mt-0.5">
+                    Artículos más vendidos
+                  </p>
                 </div>
-
-                <div className="space-y-4">
-                  {topProducts.map((product, index) => (
-                    <div key={index} className="bg-[#fafbfc] rounded-xl border border-[#efedef] p-4">
-                      <div className="flex items-center justify-between gap-2">
-                        <div>
-                          <p className="font-bold text-xs sm:text-sm text-[#010f20]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{product.name}</p>
-                          <p className="text-xs text-[#44474c]/70 mt-0.5" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{product.sales} ventas</p>
-                        </div>
-                        <p className="font-bold text-xs sm:text-sm text-[#dd9448]" style={{ fontFamily: "'Montserrat', sans-serif" }}>${product.revenue.toFixed(2)}</p>
-                      </div>
-                      <div className="mt-3 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-[#0b1523] rounded-full"
-                          style={{ width: `${(product.sales / 62) * 100}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <Link href="/dashboard/vendedor/productos">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="border border-[#efedef] hover:border-[#010f20] text-[#010f20] text-xs font-semibold py-2 px-4 rounded-xl transition-all cursor-pointer"
+                  >
+                    Gestionar
+                  </Button>
+                </Link>
               </div>
+
+              <div className="space-y-3">
+                {topProducts.map((product, index) => (
+                  <div key={index} className="p-4 bg-[#fdfdfd] rounded-2xl border border-[#efedef]">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <p className="font-extrabold text-xs sm:text-sm text-[#010f20]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{product.name}</p>
+                        <p className="text-xs text-[#44474c] mt-0.5">{product.sales} ventas</p>
+                      </div>
+                      <p className="font-extrabold text-xs sm:text-sm text-[#010f20]" style={{ fontFamily: "'Montserrat', sans-serif" }}>${product.revenue.toFixed(2)}</p>
+                    </div>
+                    <div className="mt-3 h-2 bg-[#f1f3f6] rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-[#010f20] rounded-full"
+                        style={{ width: `${(product.sales / 62) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-[#efedef]">
+              <Link href="/dashboard/vendedor/analiticas">
+                <Button 
+                  variant="outline" 
+                  className="w-full border border-[#efedef] hover:border-[#010f20] text-[#010f20] text-xs font-semibold py-2.5 rounded-xl transition-all cursor-pointer"
+                >
+                  Ver analíticas completas
+                </Button>
+              </Link>
             </div>
           </div>
 
         </div>
 
-        {/* Acciones Rápidas Unificadas */}
-        <div className="bg-white rounded-2xl border border-[#efedef] p-6 sm:p-8 shadow-sm">
-          <h3 
-            className="text-sm font-bold text-[#010f20] uppercase tracking-wider mb-4"
-            style={{ fontFamily: "'Montserrat', sans-serif" }}
-          >
-            Acceso Rápido
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <Link href="/dashboard/vendedor/productos/nuevo" className="w-full">
-              <Button 
-                variant="outline"
-                className="w-full border border-gray-200 hover:border-slate-800 text-slate-700 text-xs font-semibold py-3 rounded-xl transition-all shadow-sm focus:ring-0 flex items-center justify-center gap-2"
-                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-              >
-                <Plus className="w-4 h-4" /> Agregar producto
-              </Button>
+        {/* Acciones Rápidas */}
+        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-[#efedef]">
+          <h2 className="text-lg font-extrabold text-[#010f20] mb-4" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+            Accesos Rápidos
+          </h2>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            
+            <Link href="/dashboard/vendedor/productos/nuevo">
+              <div className="p-4 bg-[#fdfdfd] hover:bg-[#010f20] hover:text-white rounded-2xl border border-[#efedef] transition-all group cursor-pointer flex flex-col items-center text-center shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-[#010f20]/5 group-hover:bg-white/10 flex items-center justify-center text-[#010f20] group-hover:text-white mb-2 transition-colors">
+                  <Plus className="w-5 h-5" />
+                </div>
+                <span className="text-xs font-bold text-[#010f20] group-hover:text-white transition-colors">
+                  Agregar producto
+                </span>
+              </div>
             </Link>
-            <Link href="/dashboard/vendedor/pedidos" className="w-full">
-              <Button 
-                variant="outline"
-                className="w-full border border-gray-200 hover:border-slate-800 text-slate-700 text-xs font-semibold py-3 rounded-xl transition-all shadow-sm focus:ring-0 flex items-center justify-center gap-2"
-                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-              >
-                <Package className="w-4 h-4" /> Gestionar pedidos
-              </Button>
+
+            <Link href="/dashboard/vendedor/pedidos">
+              <div className="p-4 bg-[#fdfdfd] hover:bg-[#010f20] hover:text-white rounded-2xl border border-[#efedef] transition-all group cursor-pointer flex flex-col items-center text-center shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-[#010f20]/5 group-hover:bg-white/10 flex items-center justify-center text-[#010f20] group-hover:text-white mb-2 transition-colors">
+                  <Package className="w-5 h-5" />
+                </div>
+                <span className="text-xs font-bold text-[#010f20] group-hover:text-white transition-colors">
+                  Gestionar pedidos
+                </span>
+              </div>
             </Link>
-            <Link href="/dashboard/vendedor/analiticas" className="w-full">
-              <Button 
-                variant="outline"
-                className="w-full border border-gray-200 hover:border-slate-800 text-slate-700 text-xs font-semibold py-3 rounded-xl transition-all shadow-sm focus:ring-0 flex items-center justify-center gap-2"
-                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-              >
-                <BarChart3 className="w-4 h-4" /> Ver analíticas
-              </Button>
+
+            <Link href="/dashboard/vendedor/analiticas">
+              <div className="p-4 bg-[#fdfdfd] hover:bg-[#010f20] hover:text-white rounded-2xl border border-[#efedef] transition-all group cursor-pointer flex flex-col items-center text-center shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-[#010f20]/5 group-hover:bg-white/10 flex items-center justify-center text-[#010f20] group-hover:text-white mb-2 transition-colors">
+                  <BarChart3 className="w-5 h-5" />
+                </div>
+                <span className="text-xs font-bold text-[#010f20] group-hover:text-white transition-colors">
+                  Ver analíticas
+                </span>
+              </div>
             </Link>
-            <Link href="/dashboard/vendedor/configuracion" className="w-full">
-              <Button 
-                variant="outline"
-                className="w-full border border-gray-200 hover:border-slate-800 text-slate-700 text-xs font-semibold py-3 rounded-xl transition-all shadow-sm focus:ring-0 flex items-center justify-center gap-2"
-                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-              >
-                <Settings className="w-4 h-4" /> Configurar tienda
-              </Button>
+
+            <Link href="/dashboard/vendedor/configuracion">
+              <div className="p-4 bg-[#fdfdfd] hover:bg-[#010f20] hover:text-white rounded-2xl border border-[#efedef] transition-all group cursor-pointer flex flex-col items-center text-center shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-[#010f20]/5 group-hover:bg-white/10 flex items-center justify-center text-[#010f20] group-hover:text-white mb-2 transition-colors">
+                  <Settings className="w-5 h-5" />
+                </div>
+                <span className="text-xs font-bold text-[#010f20] group-hover:text-white transition-colors">
+                  Configurar tienda
+                </span>
+              </div>
             </Link>
-            <Link href="/dashboard/vendedor/productos" className="w-full col-span-2 md:col-span-1">
-              <Button 
-                variant="outline"
-                className="w-full border border-gray-200 hover:border-slate-800 text-slate-700 text-xs font-semibold py-3 rounded-xl transition-all shadow-sm focus:ring-0 flex items-center justify-center gap-2"
-                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-              >
-                <ShoppingBag className="w-4 h-4" /> Mis Productos
-              </Button>
-            </Link>
+
           </div>
         </div>
 

@@ -2,6 +2,7 @@
 import { usePathname } from 'next/navigation';
 import Navbar from '@/components/common/Navbar';
 import Footer from '@/components/common/Footer';
+import ChatBot from '@/components/chatbot/ChatBot';
 
 export default function AppWrapper({ children }) {
   const pathname = usePathname();
@@ -18,6 +19,8 @@ export default function AppWrapper({ children }) {
       <main className="min-h-screen">
         {children}
       </main>
+      {!isExcluded && <ChatBot />}
+
       {!isExcluded && <Footer />}
     </>
   );

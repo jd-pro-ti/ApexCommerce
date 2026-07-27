@@ -1,0 +1,270 @@
+// src/app/components/ChatBot/ChatBot.jsx
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { FaStore, FaPaperPlane, FaTimes, FaShoppingCart, FaEye, FaCheckCircle } from 'react-icons/fa';
+import toast, { Toaster } from 'react-hot-toast'; // Importación de librería de toasts
+import styles from './ChatBot.module.css';
+import { useCart } from '@/context/CartContext'; // Asegúrate de que la ruta coincida con la ubicación de tu contexto
+
+// --- Estilos en línea para el Toast (para mantenerlo autocontenido) ---
+const toastStyle = {
+  background: '#010f20',
+  color: '#fff',
+  borderRadius: '10px',
+  fontSize: '12px',
+  fontWeight: 'bold',
+  padding: '8px 12px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+};
+
+const ChatBot = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const messagesEndRef = useRef(null);
+  const { addToCart } = useCart();
+  
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const getUserRoleContext = () => {
+    if (pathname?.includes('/admin')) return "ADMINISTRADOR";
+    if (pathname?.includes('/vendedor')) return "VENDEDOR";
+    return "CLIENTE";
+  };
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const toggleChat = () => setIsOpen(!isOpen);
+
+  const handleSend = async (text) => {
+    const messageText = text || input;
+    if (!messageText.trim()) return;
+
+    const userMessage = { role: 'user', content: messageText };
+    setMessages((prev) => [...prev, userMessage]);
+    if (!text) setInput('');
+    setLoading(true);
+
+    try {
+      const currentRole = getUserRoleContext();
+      const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          history: messages.concat(userMessage),
+          userRole: currentRole 
+        }),
+      });
+
+      const data = await response.json();
+      if (data.error) {
+        setMessages((prev) => [...prev, { role: 'assistant', content: `❌ ${data.error}` }]);
+      } else {
+        setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
+      }
+    } catch (error) {
+      setMessages((prev) => [...prev, { role: 'assistant', content: '❌ Error de conexión' }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  // --- LÓGICA CARRITO (Ajusta esto según tu implementación real) ---
+const handleAddToCartReal = (productData) => {
+    // Llamamos a la función real del carrito pasando la estructura esperada
+    // (Aseguramos un stock por defecto si la tarjeta no lo trae, para evitar que falle la validación)
+    addToCart({
+      id: productData.id,
+      name: productData.name,
+      price: productData.price,
+      images: [productData.image],
+      stock: productData.stock || 10 // Stock provisional si el bot no lo inyectó en el JSON
+    });
+
+    // Notificación visual de éxito
+    toast((t) => (
+      <div style={toastStyle}>
+        <FaCheckCircle size={16} style={{ color: '#22c55e' }} />
+        <span>
+          ¡Agregado al carrito! <strong style={{ color: '#38bdf8' }}>{productData.name}</strong>
+        </span>
+      </div>
+    ), {
+      duration: 3000,
+      position: 'bottom-center',
+    });
+  };
+
+  // Función para procesar el texto del bot y separar tarjetas de productos
+  const renderMessageContent = (content) => {
+    const productRegex = /\[PRODUCTO:(.*?)\]/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = productRegex.exec(content)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(<span key={lastIndex}>{content.substring(lastIndex, match.index)}</span>);
+      }
+
+      try {
+        const productData = JSON.parse(match[1]);
+        parts.push(
+          <div key={match.index} className="my-2 p-2.5 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center gap-3">
+            <img 
+              src={productData.image && productData.image !== 'sin-imagen' ? productData.image : '/placeholder.png'} 
+              alt={productData.name} 
+              className="w-14 h-14 object-cover rounded-lg border border-gray-100 flex-shrink-0"
+            />
+            <div className="flex-1 min-w-0">
+              <p className="font-extrabold text-xs text-[#010f20] truncate">{productData.name}</p>
+              <p className="text-[11px] font-bold text-emerald-600">${productData.price}</p>
+              
+              <div className="flex items-center gap-2 mt-1.5">
+                <button 
+                  onClick={() => {
+                    // RUTA CORREGIDA A SINGULAR: '/producto/'
+                    router.push(`/producto/${productData.id}`);
+                  }}
+                  className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-[#010f20] rounded-md text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                >
+                  <FaEye size={10} /> Ver
+                </button>
+                <button 
+                  onClick={() => {
+                    // LLAMADA A LA FUNCIÓN DE CARRITO MEJORADA
+                    handleAddToCartReal(productData);
+                  }}
+                  className="px-2 py-1 bg-[#010f20] hover:bg-[#010f20]/90 text-white rounded-md text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                >
+                  <FaShoppingCart size={10} /> Comprar
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      } catch (e) {
+        console.error("Error parseando producto del bot", e);
+      }
+
+      lastIndex = productRegex.lastIndex;
+    }
+
+    if (lastIndex < content.length) {
+      parts.push(<span key={lastIndex}>{content.substring(lastIndex)}</span>);
+    }
+
+    return parts.length > 0 ? parts : content;
+  };
+
+  const quickOptions = [
+    { label: 'Ver productos destacados', value: 'Muéstrame los productos más populares de la tienda' },
+    { label: 'Consultar envíos y devoluciones', value: '¿Cómo funcionan los envíos y las devoluciones?' },
+  ];
+
+  return (
+    <>
+      {/* Contenedor de Toasts necesario para que funcionen las alertas */}
+      <Toaster />
+
+      <div className={styles.chatbotContainer}>
+        <button className={styles.chatButton} onClick={toggleChat}>
+          {isOpen ? <FaTimes size={24} /> : <FaStore size={24} />}
+        </button>
+
+        {isOpen && (
+          <div className={styles.chatWindow}>
+            <div className={styles.chatHeader}>
+              <FaStore size={24} />
+              <span>Apex-ito</span>
+              <button onClick={toggleChat} className={styles.closeButton}>
+                <FaTimes />
+              </button>
+            </div>
+
+            <div className={styles.messagesContainer}>
+              {messages.length === 0 ? (
+                <div className={styles.welcomeWrapper}>
+                  <div className={styles.welcomeMessage}>
+                    ¡Hola! Me alegra que estés aquí.<br />
+                    Hoy podemos explorar cosas nuevas y divertirnos. ¿Qué te gustaría hacer?
+                  </div>
+                  <div className={styles.quickOptions}>
+                    {quickOptions.map((opt) => (
+                      <button
+                        key={opt.label}
+                        className={styles.quickOption}
+                        onClick={() => handleSend(opt.value)}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {messages.map((msg, index) => (
+                    <div
+                      key={index}
+                      className={`${styles.message} ${
+                        msg.role === 'user' ? styles.userMessage : styles.botMessage
+                      }`}
+                    >
+                      {renderMessageContent(msg.content)}
+                    </div>
+                  ))}
+                  {loading && (
+                    <div className={`${styles.message} ${styles.botMessage}`}>
+                      <span className={styles.typing}>Escribiendo</span>
+                    </div>
+                  )}
+                </>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <div className={styles.inputContainer}>
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Escribe tu mensaje aquí"
+                rows={1}
+                className={styles.inputField}
+              />
+              <button
+                onClick={() => handleSend()}
+                disabled={loading || !input.trim()}
+                className={styles.sendButton}
+              >
+                <FaPaperPlane />
+              </button>
+            </div>
+
+            <div className={styles.chatFooter}>
+              Desarrollado por <span>Optima Cart</span>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+};
+
+export default ChatBot;

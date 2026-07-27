@@ -4,8 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import { ShoppingBag, Package, Gift, Tag, Lock, Mail, Eye, EyeOff } from 'lucide-react';
+import { ShoppingBag, Package, Gift, Tag, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -91,7 +90,7 @@ export default function LoginPage() {
             </span>
           </div>
 
-          {/* Bienvenida */}
+          {/* Bienvenido */}
           <div className="mb-4">
             <h1 className="text-2xl font-extrabold text-[#010f20] tracking-tight" style={{ fontFamily: "'Montserrat', sans-serif" }}>
               Bienvenido de nuevo
@@ -155,7 +154,7 @@ export default function LoginPage() {
               <label className="block text-[11px] font-bold text-[#010f20] mb-1 uppercase tracking-wider" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                 Correo Electrónico
               </label>
-              <Input 
+              <input 
                 type="email" 
                 name="email"
                 placeholder="nombre@ejemplo.com"
@@ -173,7 +172,7 @@ export default function LoginPage() {
                 Contraseña
               </label>
               <div className="relative">
-                <Input 
+                <input 
                   type={showPassword ? "text" : "password"} 
                   name="password"
                   placeholder="••••••••"

@@ -29,6 +29,7 @@ import {
   Zap,
   Star
 } from 'lucide-react';
+import ChatBot from '../components/chatbot/ChatBot';
 
 // Datos para los slides del Carrusel Hero con paleta armónica de alta gama
 const heroSlides = [
@@ -143,179 +144,166 @@ export default function Home() {
   }
 
   return (
-    <div className="bg-[#f1f3f6] text-[#010f20] min-h-screen transition-colors duration-300 pt-28 font-sans overflow-x-hidden">
+    <div className="bg-[#f1f3f6] text-[#010f20] min-h-screen transition-colors duration-300 pt-20 font-sans overflow-x-hidden">
 
-      {/* ================= HERO SECTION ESTILO UMINEX CON MENÚ DE CATEGORÍAS ================= */}
-      <section className="w-full mb-12 relative">
-        <div className="w-full px-2 sm:px-4 lg:px-6">
+{/* ================= HERO SECTION (PEGADA A NAVBAR, SIN ESPACIADO SUPERIOR) ================= */}
+      <section className="w-full bg-[#f8f7fa] pt-0 pb-6 px-3 sm:px-5 flex justify-center overflow-hidden">
+        
+        {/* Contenedor principal expandido a ancho completo */}
+        <div className="w-full max-w-[1780px] bg-white rounded-b-[32px] sm:rounded-[32px] shadow-[0_25px_70px_rgba(1,15,32,0.04)] border-x border-b sm:border border-gray-100 px-6 sm:px-12 py-8 sm:py-12 relative overflow-hidden">
+          
+          {/* Degradado rosado/cálido de fondo */}
+          <div className="absolute right-[-5%] bottom-[-25%] w-[850px] h-[850px] bg-gradient-to-tr from-[#ff3366]/20 via-[#dd9448]/15 to-transparent rounded-full blur-[120px] pointer-events-none"></div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center relative z-10">
+            
+            {/* ================= COLUMNA IZQUIERDA (TEXTO DE ALTA CONVERSIÓN Y LLAMADO A LA ACCIÓN) ================= */}
+            <div className="lg:col-span-6 flex flex-col justify-center">
+              
+              {/* Badge superior */}
+              <div className="inline-block bg-[#010f20] text-white text-[11px] font-extrabold uppercase tracking-widest px-4 py-2 rounded-xl w-max mb-4 shadow-sm" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                ¡ENVÍO GRATIS EN TU PRIMERA COMPRA HOY!
+              </div>
 
-            {/* ================= 1. BANNER PRINCIPAL / CARRUSEL (8 COLUMNAS) ================= */}
-            <div className="lg:col-span-8 relative rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-r from-[#8b2317] via-[#a33324] to-[#c44533] min-h-[460px] sm:min-h-[500px] flex items-center">
+              {/* Título Principal orientada a comprar */}
+              <h1 className="text-3xl sm:text-5xl font-black text-[#010f20] tracking-tight leading-[1.1] mb-4" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                Renueva tu Estilo con las Mejores Tendencias de Temporada
+              </h1>
 
-              {/* Elementos decorativos de fondo */}
-              <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none"></div>
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-black/10 blur-3xl rounded-full pointer-events-none"></div>
+              {/* Descripción persuasiva para incentivar la compra */}
+              <p className="text-base sm:text-lg text-gray-500 font-medium leading-relaxed mb-6 max-w-xl" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                Descubre colecciones exclusivas diseñadas para destacar. Aprovecha descuentos únicos por tiempo limitado, pagos seguros y recibe tus productos favoritos en la puerta de tu casa.
+              </p>
 
-              {/* BOTÓN DESPLEGABLE DE CATEGORÍAS (Menú flotante superior izquierdo dentro del banner) */}
-              <div className="absolute top-6 left-6 z-30" ref={categoryRef}>
-                <button
-                  onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                  className="bg-[#010f20]/90 hover:bg-[#010f20] text-white px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2.5 backdrop-blur-md border border-white/20 transition-all cursor-pointer group"
+              {/* Botón de Ver Catálogo */}
+              <div className="mb-6">
+                <a
+                  href="/catalogo"
+                  className="inline-flex items-center gap-2.5 px-8 py-4 bg-[#010f20] text-white text-sm font-bold uppercase tracking-wider rounded-2xl shadow-[0_15px_30px_rgba(1,15,32,0.2)] hover:bg-[#ff3366] transition-all duration-300 transform hover:-translate-y-0.5"
                   style={{ fontFamily: "'Montserrat', sans-serif" }}
                 >
-                  <Menu className="w-4 h-4 text-[#e0a96d] group-hover:rotate-90 transition-transform duration-300" />
-                  <span className="text-[11px] font-extrabold tracking-wider uppercase">Explorar Categorías</span>
-                  <ChevronDown className={`w-3.5 h-3.5 text-white/70 transition-transform duration-300 ${isCategoryOpen ? 'rotate-180' : ''}`} />
-                </button>
-
-                {/* Menú Desplegable */}
-                {isCategoryOpen && (
-                  <div className="absolute left-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 z-40 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <nav className="space-y-1">
-                      {[
-                        { name: 'Tecnología de Trabajo', icon: Laptop, query: 'tech' },
-                        { name: 'Hogar Moderno', icon: Armchair, query: 'living' },
-                        { name: 'Estilo de Vida Élite', icon: Compass, query: 'lifestyle' },
-                        { name: 'Accesorios y Moda', icon: Watch, query: 'moda' },
-                        { name: 'Papelería Premium', icon: BookOpen, query: 'papeleria' },
-                        { name: 'Ofertas Especiales', icon: Tag, query: 'ofertas' },
-                      ].map((cat, idx) => {
-                        const IconComponent = cat.icon;
-                        return (
-                          <Link
-                            key={idx}
-                            href={`/catalogo?categoria=${cat.query}`}
-                            onClick={() => setIsCategoryOpen(false)}
-                            className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-100 hover:text-black transition-colors group"
-                            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                          >
-                            <div className="flex items-center gap-2.5">
-                              <IconComponent className="w-4 h-4 text-gray-500 group-hover:text-[#8b2317] transition-colors" />
-                              <span>{cat.name}</span>
-                            </div>
-                            <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transform -translate-x-1 group-hover:translate-x-0 transition-all text-[#8b2317]" />
-                          </Link>
-                        );
-                      })}
-                    </nav>
-                  </div>
-                )}
+                  <span>Ver Catálogo</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                  </svg>
+                </a>
               </div>
 
-              {/* Contenedor deslizante */}
-              <div className="absolute inset-0 w-full h-full flex transition-transform duration-700 ease-in-out pt-16 sm:pt-0" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
-                {heroSlides.map((slide) => (
-                  <div key={slide.id} className="w-full h-full flex-shrink-0 px-8 sm:px-14 py-12 flex flex-col sm:flex-row items-center justify-between gap-8 relative">
-
-                    {/* Textos Izquierda */}
-                    <div className="relative z-10 w-full sm:w-[52%] flex flex-col justify-center mt-6 sm:mt-0">
-                      <span className="text-[11px] uppercase tracking-widest font-black text-amber-200 mb-2 drop-shadow-sm" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-                        {slide.tag || "NUEVA COLECCIÓN 2026"}
-                      </span>
-
-                      <h2
-                        className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-[1.05] mb-3 drop-shadow-md"
-                        style={{ fontFamily: "'Montserrat', sans-serif" }}
-                      >
-                        {slide.title1} <br />
-                        <span className="text-amber-100">{slide.title2}</span>
-                      </h2>
-
-                      <p
-                        className="text-xs sm:text-sm text-white/90 mb-6 font-medium leading-relaxed"
-                        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                      >
-                        {slide.description}
-                      </p>
-
-                      <Link
-                        href={slide.ctaLink}
-                        className="px-7 py-3.5 bg-white text-[#8b2317] rounded-xl text-xs font-black uppercase tracking-wider hover:bg-amber-100 transition-all shadow-xl flex items-center gap-2 w-max cursor-pointer transform hover:-translate-y-0.5"
-                        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                      >
-                        {slide.ctaText} <ArrowRight className="w-4 h-4" />
-                      </Link>
-                    </div>
-
-                    {/* Imagen central flotante derecha */}
-                    <div className="relative z-10 w-full sm:w-[48%] flex justify-center items-center">
-                      <div className="relative w-full max-w-[320px] h-[220px] sm:h-[300px] flex items-center justify-center p-4">
-                        <div className="absolute inset-0 bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 shadow-2xl"></div>
-                        <img
-                          src={slide.image}
-                          alt={slide.imageAlt}
-                          className="relative z-10 w-full h-full object-contain drop-shadow-[0_25px_25px_rgba(0,0,0,0.4)] transform hover:scale-105 transition-transform duration-500"
-                          onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?q=80&w=600&auto=format&fit=crop'; }}
-                        />
-                      </div>
-                    </div>
-
-                  </div>
-                ))}
-              </div>
-
-              {/* Controles de paginación del banner principal */}
-              <div className="absolute bottom-4 left-8 z-20 flex items-center gap-2">
-                {heroSlides.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => goToSlide(index)}
-                    className={`h-2 rounded-full transition-all cursor-pointer ${currentSlide === index ? 'bg-white w-6' : 'bg-white/40 hover:bg-white w-2'
-                      }`}
-                    aria-label={`Ir a slide ${index + 1}`}
-                  />
-                ))}
+              {/* Reseñas y Marcas Aliadas */}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-1 text-amber-400 text-base">
+                  ★★★★★
+                </div>
+                <p className="text-xs sm:text-sm text-gray-600 font-medium" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                  <strong className="text-[#010f20]">1,240 pedidos</strong> entregados con éxito y un <strong className="text-[#010f20]">94.8%</strong> de clientes totalmente satisfechos
+                </p>
               </div>
 
             </div>
 
-            {/* ================= 2. BLOQUES LATERALES DE OFERTAS (4 COLUMNAS) ================= */}
-            <div className="lg:col-span-4 flex flex-col gap-4 justify-between">
+            {/* ================= COLUMNA DERECHA (TARJETAS DECORATIVAS CON TEXTO EN ESPAÑOL) ================= */}
+            <div className="lg:col-span-6 relative h-[560px] sm:h-[620px] flex items-center justify-end">
 
-              {/* Tarjeta Superior Derecha: Top Offer */}
-              <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-purple-900 via-indigo-900 to-indigo-950 p-6 border border-white/15 shadow-2xl flex items-center justify-between group flex-1">
-                <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-purple-500/20 rounded-full blur-2xl pointer-events-none"></div>
+              {/* Contenedor relativo de tarjetas */}
+              <div className="relative w-full max-w-[680px] h-full">
 
-                <div className="relative z-10 max-w-[170px]">
-                  <span className="text-[10px] uppercase font-black tracking-widest text-purple-300 block mb-1">Top Offer</span>
-                  <h3 className="text-sm sm:text-base font-extrabold text-white leading-snug mb-1">iPad Pro 128GB</h3>
-                  <p className="text-[11px] text-purple-200/80 mb-3 font-medium">Discount 20% On Product</p>
-                  <Link href="/catalogo?filter=ipad" className="text-[11px] font-bold text-white flex items-center gap-1 hover:underline bg-white/10 px-3 py-1.5 rounded-lg w-max backdrop-blur-sm">
-                    Comprar <ArrowRight className="w-3 h-3" />
-                  </Link>
+                {/* 1. Botón superior izquierdo: Bolsa / Carrito Rosa con inclinación */}
+                <div className="absolute top-2 right-80 sm:right-92 w-18 h-18 bg-[#ff3366] rounded-[26px] shadow-[0_25px_50px_rgba(255,51,102,0.4)] flex items-center justify-center text-white z-30 transform -rotate-12">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
                 </div>
 
-                <div className="relative z-10 w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden shadow-xl border border-white/20 flex-shrink-0 bg-black/40">
-                  <img
-                    src="https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?q=80&w=400&auto=format&fit=crop"
-                    alt="Top Offer iPad"
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                </div>
-              </div>
-
-              {/* Tarjeta Inferior Derecha: Gamepad / Edición Especial */}
-              <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-red-950 via-rose-900 to-rose-950 p-6 border border-white/15 shadow-2xl flex items-center justify-between group flex-1">
-                <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-red-500/20 rounded-full blur-2xl pointer-events-none"></div>
-
-                <div className="relative z-10 max-w-[170px]">
-                  <span className="text-[10px] uppercase font-black tracking-widest text-rose-300 block mb-1">Gamepad Edition</span>
-                  <h3 className="text-sm sm:text-base font-extrabold text-white leading-snug mb-1">Sport Edition XPS</h3>
-                  <p className="text-[11px] text-rose-200/80 mb-3 font-medium">Best Choice Of The Year</p>
-                  <Link href="/catalogo?filter=gamepad" className="text-[11px] font-bold text-white flex items-center gap-1 hover:underline bg-white/10 px-3 py-1.5 rounded-lg w-max backdrop-blur-sm">
-                    Ver más <ArrowRight className="w-3 h-3" />
-                  </Link>
+                {/* 2. Botón superior derecho: Calendario Oscuro con inclinación */}
+                <div className="absolute top-[-4px] right-48 sm:right-56 w-18 h-18 bg-[#010f20] rounded-[26px] shadow-[0_25px_50px_rgba(1,15,32,0.3)] flex items-center justify-center text-[#ff3366] z-30 transform rotate-12">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                 </div>
 
-                <div className="relative z-10 w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden shadow-xl border border-white/20 flex-shrink-0 bg-black/40">
-                  <img
-                    src="https://images.unsplash.com/photo-1600080972464-8e5f35f63d08?q=80&w=400&auto=format&fit=crop"
-                    alt="Gamepad Edition"
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
+                {/* 3. Tarjeta central de categorías y productos (Traducido al español) */}
+                <div className="absolute top-16 right-36 sm:right-44 w-[450px] sm:w-[490px] bg-white/95 backdrop-blur-md rounded-[36px] p-6 shadow-[0_40px_90px_rgba(1,15,32,0.16)] border border-gray-100 z-20 transform -rotate-6">
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <span className="bg-[#010f20] text-white text-[11px] font-bold px-4 py-2 rounded-full shadow-sm flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-[#ff3366]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                      Ropa
+                    </span>
+                    <span className="bg-gray-100 text-gray-600 text-[11px] font-bold px-4 py-2 rounded-full">Calzado</span>
+                    <span className="ml-auto text-gray-300 text-sm font-bold cursor-pointer hover:text-gray-500">✕</span>
+                  </div>
+                  <h4 className="text-xs sm:text-sm font-black text-[#010f20] mb-4 tracking-wide flex items-center justify-between border-b border-gray-100 pb-3" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                    <span>¡GRAN VENTA 25% DE DESCUENTO!</span>
+                    <span className="w-2 h-4 bg-[#ff3366] rounded-full inline-block animate-pulse"></span>
+                  </h4>
+                  <div className="grid grid-cols-4 gap-3">
+                    <div className="bg-gray-50 p-2 rounded-2xl border border-gray-100 h-20 flex items-center justify-center overflow-hidden shadow-inner">
+                      <img src="https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=200&auto=format&fit=crop" alt="prod" className="w-full h-full object-cover rounded-xl" />
+                    </div>
+                    <div className="bg-gray-50 p-2 rounded-2xl border border-gray-100 h-20 flex items-center justify-center overflow-hidden shadow-inner">
+                      <img src="https://images.unsplash.com/photo-1591047139829-d91aecb6caea?q=80&w=200&auto=format&fit=crop" alt="prod" className="w-full h-full object-cover rounded-xl" />
+                    </div>
+                    <div className="bg-gray-50 p-2 rounded-2xl border border-gray-100 h-20 flex items-center justify-center overflow-hidden shadow-inner">
+                      <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=200&auto=format&fit=crop" alt="prod" className="w-full h-full object-cover rounded-xl" />
+                    </div>
+                    <div className="bg-rose-50/80 border border-rose-100 rounded-2xl h-20 flex items-center justify-center text-[#ff3366] font-bold text-xl shadow-sm cursor-pointer hover:bg-rose-100 transition-colors">
+                      +
+                    </div>
+                  </div>
                 </div>
+
+                {/* 4. Tarjeta de Colores Disponibles (Traducido al español) */}
+                <div className="absolute top-[265px] right-36 sm:right-44 w-[450px] sm:w-[490px] bg-white/95 backdrop-blur-md rounded-[32px] p-5 shadow-[0_35px_70px_rgba(1,15,32,0.12)] border border-gray-100 z-25 transform -rotate-3">
+                  <p className="text-[11px] font-extrabold text-gray-400 uppercase tracking-wider mb-3.5">COLORES DISPONIBLES</p>
+                  <div className="flex items-center justify-between px-3">
+                    <div className="w-7 h-7 rounded-full bg-gray-200 border-2 border-white shadow-md cursor-pointer"></div>
+                    <div className="w-7 h-7 rounded-full bg-[#ff3366] border-2 border-white shadow-md ring-2 ring-[#ff3366]/40 cursor-pointer"></div>
+                    <div className="w-7 h-7 rounded-full bg-teal-400 border-2 border-white shadow-md cursor-pointer"></div>
+                    <div className="w-7 h-7 rounded-full bg-cyan-400 border-2 border-white shadow-md cursor-pointer"></div>
+                    <div className="w-7 h-7 rounded-full bg-orange-500 border-2 border-white shadow-md cursor-pointer"></div>
+                    <div className="w-7 h-7 rounded-full bg-indigo-600 border-2 border-white shadow-md cursor-pointer"></div>
+                  </div>
+                </div>
+
+                {/* 5. Tarjeta inferior extendida / Tu Bolsa (Traducido al español) */}
+                <div className="absolute top-[415px] right-36 sm:right-44 w-[450px] sm:w-[490px] bg-white/95 backdrop-blur-md rounded-[32px] p-5 shadow-[0_40px_80px_rgba(1,15,32,0.15)] border border-gray-100 z-28 transform -rotate-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-extrabold text-gray-400 uppercase tracking-wider">TU BOLSA DE COMPRAS</span>
+                    <span className="text-gray-300 text-sm font-bold cursor-pointer hover:text-gray-500">✕</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-[#010f20]">
+                    <span className="truncate pr-2 font-semibold">Tenis casuales de algodón...</span>
+                    <span className="text-[#010f20] font-black text-base">$257</span>
+                  </div>
+                </div>
+
+                {/* 6. Tarjeta derecha principal de producto (Balenciaga Sneaker con textos en español) */}
+                <div className="absolute top-6 right-0 sm:right-4 w-[350px] sm:w-[390px] bg-white rounded-[40px] p-6 shadow-[0_45px_100px_rgba(1,15,32,0.25)] border border-gray-100 z-40 transform rotate-6 hover:rotate-0 transition-transform duration-500">
+                  <div className="absolute top-5 left-6 w-9 h-9 bg-gray-50 border border-gray-100 rounded-full flex items-center justify-center shadow-sm text-gray-500">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+                  </div>
+                  <div className="w-full h-48 bg-gradient-to-br from-gray-50 to-gray-100/80 rounded-2xl overflow-hidden mb-4 border border-gray-100 relative shadow-inner flex items-center justify-center">
+                    <img 
+                      src="https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?q=80&w=400&auto=format&fit=crop" 
+                      alt="Triple S Balenciaga" 
+                      className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-md text-gray-600 cursor-pointer">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </div>
+                  </div>
+                  <h5 className="text-sm font-black text-[#010f20] truncate mb-1" style={{ fontFamily: "'Montserrat', sans-serif" }}>Tenis Triple S Edición Especial</h5>
+                  <p className="text-[11px] font-extrabold text-[#ff3366] uppercase tracking-wider mb-3">BALENCIAGA</p>
+                  
+                  <p className="text-xs text-gray-400 mb-4 leading-relaxed line-clamp-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                    Tenis deportivos en tonos azul pastel con diseño moderno y máximo confort para ti...
+                  </p>
+
+                  <div className="flex items-center justify-between border-t border-gray-100 pt-3.5 text-xs font-bold text-gray-500">
+                    <span className="flex items-center gap-2">Cantidad: <span className="bg-gray-100 px-3 py-1.5 rounded-xl text-[#010f20] font-bold shadow-inner">- 2 +</span></span>
+                    <span className="text-[#010f20] text-lg font-black">$757</span>
+                  </div>
+
+                  <div className="mt-3.5 pt-2.5 border-t border-gray-50 text-[10px] text-gray-400 text-center font-medium">
+                    Altura del modelo: 189 cm / 6&apos; 2&quot;
+                  </div>
+                </div>
+
               </div>
 
             </div>
@@ -494,7 +482,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-
+      <ChatBot />
     </div>
   );
 }
