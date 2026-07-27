@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
 import { Package, Gift, Tag, UserPlus } from 'lucide-react';
 
 export default function RegistroPage() {
@@ -194,7 +193,7 @@ export default function RegistroPage() {
           <form onSubmit={handleSubmit} className="space-y-3">
             <div>
               <label className="block text-[11px] font-bold text-[#010f20] mb-1 uppercase tracking-wider" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Nombre Completo</label>
-              <Input 
+              <input 
                 type="text" 
                 placeholder="Juan Pérez" 
                 value={formData.name} 
@@ -207,7 +206,7 @@ export default function RegistroPage() {
 
             <div>
               <label className="block text-[11px] font-bold text-[#010f20] mb-1 uppercase tracking-wider" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Correo Electrónico</label>
-              <Input 
+              <input 
                 type="email" 
                 placeholder="nombre@ejemplo.com" 
                 value={formData.email} 
@@ -221,7 +220,7 @@ export default function RegistroPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-bold text-[#010f20] mb-1 uppercase tracking-wider" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Contraseña</label>
-                <Input 
+                <input 
                   type="password" 
                   placeholder="Mínimo 6 carac." 
                   value={formData.password} 
@@ -233,7 +232,7 @@ export default function RegistroPage() {
               </div>
               <div>
                 <label className="block text-[11px] font-bold text-[#010f20] mb-1 uppercase tracking-wider" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Confirmar</label>
-                <Input 
+                <input 
                   type="password" 
                   placeholder="Repite contraseña" 
                   value={formData.confirmPassword} 
@@ -261,7 +260,7 @@ export default function RegistroPage() {
           <div className="text-center mt-4">
             <p className="text-xs text-[#44474c]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               ¿Ya tienes una cuenta?{' '}
-              <Link href="/login" className="font-bold text-[#010f20] hove: transition-colors">
+              <Link href="/login" className="font-bold text-[#010f20] hover:underline">
                 Inicia sesión aquí
               </Link>
             </p>

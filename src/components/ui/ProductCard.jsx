@@ -4,6 +4,22 @@ import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { useAuth } from '@/context/AuthContext';
+import toast from 'react-hot-toast';
+import { FaCheckCircle, FaHeart } from 'react-icons/fa';
+
+// Estilo unificado para los toasts
+const toastStyle = {
+  background: '#010f20',
+  color: '#fff',
+  borderRadius: '10px',
+  fontSize: '12px',
+  fontWeight: 'bold',
+  padding: '8px 12px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+};
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
@@ -13,13 +29,32 @@ const ProductCard = ({ product }) => {
   const [showAdded, setShowAdded] = useState(false);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
 
-  const handleAddToCart = (e) => {
+  const handleAddToCart = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isAuthenticated) return;
+    
+    if (!isAuthenticated) {
+      window.location.href = '/login';
+      return;
+    }
+
     setIsAdding(true);
-    addToCart(product);
+    await addToCart(product);
     setShowAdded(true);
+
+    // Alerta de éxito al agregar al carrito
+    toast((t) => (
+      <div style={toastStyle}>
+        <FaCheckCircle size={16} style={{ color: '#22c55e' }} />
+        <span>
+          ¡Agregado al carrito! <strong style={{ color: '#38bdf8' }}>{product.name}</strong>
+        </span>
+      </div>
+    ), {
+      duration: 3000,
+      position: 'bottom-center',
+    });
+
     setTimeout(() => {
       setIsAdding(false);
       setShowAdded(false);
@@ -31,14 +66,27 @@ const ProductCard = ({ product }) => {
     e.stopPropagation();
     
     if (!isAuthenticated) {
-      // Redirigir al login
       window.location.href = '/login';
       return;
     }
 
     setIsWishlistLoading(true);
+    const wasFavorite = isInWishlist(product.id);
     await toggleWishlist(product);
     setIsWishlistLoading(false);
+
+    // Alerta dinámica según si se agregó o se quitó de favoritos
+    toast((t) => (
+      <div style={toastStyle}>
+        <FaHeart size={16} style={{ color: wasFavorite ? '#9ca3af' : '#ef4444' }} />
+        <span>
+          {wasFavorite ? 'Eliminado de favoritos:' : 'Agregado a favoritos:'} <strong style={{ color: '#38bdf8' }}>{product.name}</strong>
+        </span>
+      </div>
+    ), {
+      duration: 3000,
+      position: 'bottom-center',
+    });
   };
 
   const isFavorite = isInWishlist(product.id);

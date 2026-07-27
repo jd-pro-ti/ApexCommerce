@@ -1,11 +1,31 @@
 'use client';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { authService } from '@/services/authService';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { 
+  Users, 
+  Search, 
+  RefreshCw, 
+  ShieldCheck, 
+  Store, 
+  ShoppingBag, 
+  Eye, 
+  Trash2, 
+  Sparkles,
+  AlertCircle,
+  CheckCircle2,
+  XCircle,
+  ArrowLeft,
+  Crown,
+  UserCheck,
+  UserX,
+  X
+} from 'lucide-react';
 
 export default function AdminUsuarios() {
   const { user: currentUser } = useAuth();
@@ -93,21 +113,21 @@ export default function AdminUsuarios() {
     }
   };
 
-  const getRoleBadgeColor = (role) => {
+  const getRoleBadgeStyle = (role) => {
     switch (role) {
       case 'admin':
-        return 'bg-red-100 text-red-700';
+        return 'bg-red-50 text-red-600 border border-red-200';
       case 'vendedor':
-        return 'bg-blue-100 text-blue-700';
+        return 'bg-blue-50 text-blue-600 border border-blue-200';
       default:
-        return 'bg-green-100 text-green-700';
+        return 'bg-emerald-50 text-emerald-600 border border-emerald-200';
     }
   };
 
-  const getStatusBadgeColor = (status) => {
+  const getStatusBadgeStyle = (status) => {
     return status === 'active' 
-      ? 'bg-green-100 text-green-700' 
-      : 'bg-gray-100 text-gray-700';
+      ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' 
+      : 'bg-gray-50 text-gray-600 border border-gray-200';
   };
 
   const filteredUsers = users.filter(user =>
@@ -117,201 +137,233 @@ export default function AdminUsuarios() {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="min-h-[60vh] flex items-center justify-center bg-[#f1f3f6]">
         <LoadingSpinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gestión de Usuarios</h1>
-          <p className="text-gray-600 mt-1">Administra los usuarios de la plataforma</p>
-        </div>
-        <Button onClick={loadUsers} variant="outline" size="sm">
-          🔄 Refrescar
-        </Button>
-      </div>
+    <div className="min-h-screen bg-[#f1f3f6] py-28 font-sans" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Cabecera de la sección */}
+        <div className="mb-8 bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-[#efedef] relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="absolute -top-12 -right-12 w-48 h-48 bg-[#dd9448]/10 rounded-full blur-2xl pointer-events-none"></div>
+          
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-2">
+              <Link href="/dashboard/admin" className="text-xs font-bold text-[#44474c] hover:text-[#010f20] transition-colors flex items-center gap-1">
+                <ArrowLeft className="w-3.5 h-3.5" /> Volver al panel
+              </Link>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#010f20] tracking-tight" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+              Gestión de Usuarios
+            </h1>
+            <p className="text-xs sm:text-sm text-[#44474c] mt-1">
+              Administra los permisos, estados y accesos de los usuarios en la plataforma.
+            </p>
+          </div>
 
-      {/* Mensajes de éxito/error */}
-      {success && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
-          {success}
+          <div className="relative z-10 flex items-center gap-3 w-full md:w-auto">
+            <Button 
+              onClick={loadUsers} 
+              variant="outline" 
+              className="w-full md:w-auto border border-[#efedef] hover:border-[#010f20] text-[#010f20] text-xs font-bold uppercase tracking-widest py-3 px-6 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              <RefreshCw className="w-4 h-4" /> Refrescar
+            </Button>
+          </div>
         </div>
-      )}
-      {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-          {error}
+
+        {/* Mensajes de éxito / error */}
+        {success && (
+          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-700 text-xs font-bold flex items-center gap-2 shadow-sm">
+            <CheckCircle2 className="w-4 h-4 shrink-0" /> {success}
+          </div>
+        )}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs font-bold flex items-center gap-2 shadow-sm">
+            <AlertCircle className="w-4 h-4 shrink-0" /> {error}
+          </div>
+        )}
+
+        {/* Barra de Búsqueda */}
+        <div className="mb-6 bg-white rounded-3xl p-4 sm:p-6 shadow-xl border border-[#efedef]">
+          <div className="relative max-w-md">
+            <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#44474c]">
+              <Search className="w-4 h-4" />
+            </span>
+            <input
+              type="text"
+              placeholder="Buscar por nombre o email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-11 pr-4 py-3 bg-[#fdfdfd] border border-[#efedef] rounded-2xl text-xs font-semibold text-[#010f20] focus:outline-none focus:border-[#010f20] transition-colors shadow-sm"
+            />
+          </div>
         </div>
-      )}
 
-      {/* Búsqueda */}
-      <div className="mb-6">
-        <Input
-          placeholder="Buscar por nombre o email..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          icon="🔍"
-          className="max-w-md"
-        />
-      </div>
-
-      {/* Tabla de usuarios */}
-      <Card>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Usuario</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Email</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Rol</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Estado</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.length === 0 ? (
-                <tr>
-                  <td colSpan="5" className="text-center py-8 text-gray-500">
-                    No se encontraron usuarios
-                  </td>
+        {/* Tabla de Usuarios */}
+        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-[#efedef] mb-8">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-[#efedef]">
+                  <th className="py-4 px-4 text-[11px] font-extrabold text-[#44474c] uppercase tracking-wider">Usuario</th>
+                  <th className="py-4 px-4 text-[11px] font-extrabold text-[#44474c] uppercase tracking-wider">Email</th>
+                  <th className="py-4 px-4 text-[11px] font-extrabold text-[#44474c] uppercase tracking-wider">Rol</th>
+                  <th className="py-4 px-4 text-[11px] font-extrabold text-[#44474c] uppercase tracking-wider">Estado</th>
+                  <th className="py-4 px-4 text-[11px] font-extrabold text-[#44474c] uppercase tracking-wider">Acciones</th>
                 </tr>
-              ) : (
-                filteredUsers.map((user) => (
-                  <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
-                          {user.name?.charAt(0) || 'U'}
-                        </div>
-                        <span className="font-medium text-gray-900">{user.name}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-gray-600">{user.email}</td>
-                    <td className="py-3 px-4">
-                      <select
-                        value={user.role}
-                        onChange={(e) => handleUpdateRole(user.id, e.target.value)}
-                        className={`px-3 py-1 rounded-full text-sm font-medium border-0 focus:ring-2 focus:ring-blue-500 ${getRoleBadgeColor(user.role)}`}
-                        disabled={user.id === currentUser?.id}
-                      >
-                        <option value="admin">Admin</option>
-                        <option value="vendedor">Vendedor</option>
-                        <option value="cliente">Cliente</option>
-                      </select>
-                      {user.id === currentUser?.id && (
-                        <span className="text-xs text-gray-400 ml-1">(tú)</span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4">
-                      <select
-                        value={user.status || 'active'}
-                        onChange={(e) => handleUpdateStatus(user.id, e.target.value)}
-                        className={`px-3 py-1 rounded-full text-sm font-medium border-0 focus:ring-2 focus:ring-blue-500 ${getStatusBadgeColor(user.status || 'active')}`}
-                        disabled={user.id === currentUser?.id}
-                      >
-                        <option value="active">Activo</option>
-                        <option value="suspended">Suspendido</option>
-                      </select>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setShowModal(true);
-                          }}
-                        >
-                          👁️ Ver
-                        </Button>
-                        {user.id !== currentUser?.id && (
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            onClick={() => handleDeleteUser(user.id)}
-                          >
-                            🗑️
-                          </Button>
-                        )}
-                      </div>
+              </thead>
+              <tbody className="divide-y divide-[#efedef]">
+                {filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="text-center py-12 text-xs text-[#44474c] font-semibold">
+                      No se encontraron usuarios registrados
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  filteredUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-[#fdfdfd] transition-colors">
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 font-extrabold text-xs shadow-sm">
+                            {user.name?.charAt(0) || 'U'}
+                          </div>
+                          <span className="font-extrabold text-sm text-[#010f20]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                            {user.name}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 text-xs font-medium text-[#44474c]">{user.email}</td>
+                      <td className="py-4 px-4">
+                        <select
+                          value={user.role}
+                          onChange={(e) => handleUpdateRole(user.id, e.target.value)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold border border-[#efedef] focus:outline-none focus:border-[#010f20] transition-colors cursor-pointer ${getRoleBadgeStyle(user.role)}`}
+                          disabled={user.id === currentUser?.id}
+                        >
+                          <option value="admin">Admin</option>
+                          <option value="vendedor">Vendedor</option>
+                          <option value="cliente">Cliente</option>
+                        </select>
+                        {user.id === currentUser?.id && (
+                          <span className="text-[10px] text-[#44474c] ml-1 font-semibold">(tú)</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-4">
+                        <select
+                          value={user.status || 'active'}
+                          onChange={(e) => handleUpdateStatus(user.id, e.target.value)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold border border-[#efedef] focus:outline-none focus:border-[#010f20] transition-colors cursor-pointer ${getStatusBadgeStyle(user.status || 'active')}`}
+                          disabled={user.id === currentUser?.id}
+                        >
+                          <option value="active">Activo</option>
+                          <option value="suspended">Suspendido</option>
+                        </select>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowModal(true);
+                            }}
+                            className="p-2 bg-[#f1f3f6] hover:bg-[#010f20] hover:text-white rounded-xl text-[#010f20] text-xs font-bold transition-all cursor-pointer shadow-sm flex items-center gap-1.5"
+                            title="Ver detalles"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          {user.id !== currentUser?.id && (
+                            <button
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="p-2 bg-red-50 hover:bg-red-600 hover:text-white rounded-xl text-red-600 text-xs font-bold transition-all cursor-pointer shadow-sm flex items-center gap-1.5 border border-red-200"
+                              title="Eliminar usuario"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Resumen inferior */}
+          <div className="mt-6 pt-4 border-t border-[#efedef] flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-[#44474c] font-semibold">
+            <span>Total: <strong className="text-[#010f20]">{filteredUsers.length}</strong> usuarios</span>
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-1"><Crown className="w-3.5 h-3.5 text-red-500" /> {users.filter(u => u.role === 'admin').length} admins</span>
+              <span className="flex items-center gap-1"><Store className="w-3.5 h-3.5 text-blue-500" /> {users.filter(u => u.role === 'vendedor').length} vendedores</span>
+              <span className="flex items-center gap-1"><ShoppingBag className="w-3.5 h-3.5 text-emerald-500" /> {users.filter(u => u.role === 'cliente').length} clientes</span>
+            </div>
+          </div>
         </div>
 
-        {/* Resumen */}
-        <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between text-sm text-gray-600">
-          <span>Total: {filteredUsers.length} usuarios</span>
-          <span>
-            👑 {users.filter(u => u.role === 'admin').length} admins | 
-            🏪 {users.filter(u => u.role === 'vendedor').length} vendedores | 
-            🛒 {users.filter(u => u.role === 'cliente').length} clientes
-          </span>
-        </div>
-      </Card>
-
-      {/* Modal de detalles del usuario */}
-      {showModal && selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-gray-900">Detalles del Usuario</h2>
+        {/* Modal de Detalles del Usuario */}
+        {showModal && selectedUser && (
+          <div className="fixed inset-0 bg-[#010f20]/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-[#efedef] p-6 sm:p-8 animate-in fade-in zoom-in-95 duration-200">
+              
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-extrabold text-[#010f20]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                  Detalles del Usuario
+                </h3>
                 <button
                   onClick={() => setShowModal(false)}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="w-8 h-8 rounded-full bg-[#f1f3f6] hover:bg-[#010f20] hover:text-white flex items-center justify-center text-[#010f20] text-xs font-bold transition-all cursor-pointer"
                 >
-                  ✕
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center text-3xl text-blue-600 font-bold">
+              <div className="space-y-6">
+                <div className="flex items-center gap-4 p-4 bg-[#fdfdfd] rounded-2xl border border-[#efedef]">
+                  <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center text-2xl text-blue-600 font-extrabold shadow-sm">
                     {selectedUser.name?.charAt(0) || 'U'}
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold">{selectedUser.name}</h3>
-                    <p className="text-gray-600">{selectedUser.email}</p>
+                    <h4 className="text-base font-extrabold text-[#010f20]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                      {selectedUser.name}
+                    </h4>
+                    <p className="text-xs text-[#44474c] mt-0.5">{selectedUser.email}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm text-gray-500">Rol</label>
-                    <p className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getRoleBadgeColor(selectedUser.role)}`}>
+                  <div className="p-4 bg-[#fdfdfd] rounded-2xl border border-[#efedef]">
+                    <span className="text-[10px] font-bold text-[#44474c] uppercase tracking-wider block mb-1">Rol actual</span>
+                    <span className={`inline-block px-3 py-1 rounded-xl text-xs font-bold ${getRoleBadgeStyle(selectedUser.role)}`}>
                       {selectedUser.role}
-                    </p>
+                    </span>
                   </div>
-                  <div>
-                    <label className="text-sm text-gray-500">Estado</label>
-                    <p className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusBadgeColor(selectedUser.status || 'active')}`}>
+                  <div className="p-4 bg-[#fdfdfd] rounded-2xl border border-[#efedef]">
+                    <span className="text-[10px] font-bold text-[#44474c] uppercase tracking-wider block mb-1">Estado</span>
+                    <span className={`inline-block px-3 py-1 rounded-xl text-xs font-bold ${getStatusBadgeStyle(selectedUser.status || 'active')}`}>
                       {selectedUser.status || 'active'}
+                    </span>
+                  </div>
+                  <div className="p-4 bg-[#fdfdfd] rounded-2xl border border-[#efedef]">
+                    <span className="text-[10px] font-bold text-[#44474c] uppercase tracking-wider block mb-1">Creado</span>
+                    <p className="text-xs font-bold text-[#010f20]">
+                      {selectedUser.created_at ? new Date(selectedUser.created_at).toLocaleDateString() : 'N/A'}
                     </p>
                   </div>
-                  <div>
-                    <label className="text-sm text-gray-500">Creado</label>
-                    <p className="text-gray-900">
-                      {new Date(selectedUser.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-500">Última actualización</label>
-                    <p className="text-gray-900">
-                      {new Date(selectedUser.updated_at).toLocaleDateString()}
+                  <div className="p-4 bg-[#fdfdfd] rounded-2xl border border-[#efedef]">
+                    <span className="text-[10px] font-bold text-[#44474c] uppercase tracking-wider block mb-1">Actualizado</span>
+                    <p className="text-xs font-bold text-[#010f20]">
+                      {selectedUser.updated_at ? new Date(selectedUser.updated_at).toLocaleDateString() : 'N/A'}
                     </p>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-gray-200">
-                  <h4 className="font-semibold mb-2">Acciones rápidas</h4>
+                <div className="pt-4 border-t border-[#efedef]">
+                  <h4 className="text-xs font-extrabold text-[#010f20] uppercase tracking-wider mb-3">Acciones rápidas</h4>
                   <div className="flex flex-wrap gap-2">
                     <Button
                       size="sm"
@@ -321,8 +373,9 @@ export default function AdminUsuarios() {
                         setShowModal(false);
                       }}
                       disabled={selectedUser.status === 'active' || selectedUser.id === currentUser?.id}
+                      className="border border-[#efedef] hover:border-emerald-600 text-emerald-600 text-xs font-bold py-2 px-4 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
                     >
-                      ✅ Activar
+                      <UserCheck className="w-3.5 h-3.5" /> Activar
                     </Button>
                     <Button
                       size="sm"
@@ -332,8 +385,9 @@ export default function AdminUsuarios() {
                         setShowModal(false);
                       }}
                       disabled={selectedUser.status === 'suspended' || selectedUser.id === currentUser?.id}
+                      className="bg-amber-50 hover:bg-amber-600 text-amber-700 hover:text-white border border-amber-200 text-xs font-bold py-2 px-4 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
                     >
-                      ⛔ Suspender
+                      <UserX className="w-3.5 h-3.5" /> Suspender
                     </Button>
                     {selectedUser.id !== currentUser?.id && (
                       <Button
@@ -345,17 +399,20 @@ export default function AdminUsuarios() {
                             setShowModal(false);
                           }
                         }}
+                        className="bg-red-50 hover:bg-red-600 text-red-600 hover:text-white border border-red-200 text-xs font-bold py-2 px-4 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
                       >
-                        🗑️ Eliminar
+                        <Trash2 className="w-3.5 h-3.5" /> Eliminar
                       </Button>
                     )}
                   </div>
                 </div>
               </div>
+
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+      </div>
     </div>
   );
 }
