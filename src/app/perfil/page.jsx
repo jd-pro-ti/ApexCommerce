@@ -3,9 +3,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { profileService } from '@/services/profileService';
+import { useWishlist } from '@/context/WishlistContext';
+import { useOrders } from '@/context/OrderContext';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import Alert from '@/components/ui/Alert';
 import { 
   User, 
   Mail, 
@@ -26,6 +29,8 @@ import {
 export default function PerfilPage() {
   const router = useRouter();
   const { user, isAuthenticated, updateProfile: updateAuthProfile } = useAuth();
+  const { wishlist } = useWishlist();
+  const { orders } = useOrders();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -72,7 +77,7 @@ export default function PerfilPage() {
     loadProfile();
   }, [isAuthenticated, router]);
 
-  const loadProfile = async () => {
+  async function loadProfile() {
     setLoading(true);
     setError('');
     try {
@@ -88,7 +93,7 @@ export default function PerfilPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -242,15 +247,11 @@ export default function PerfilPage() {
 
       {/* Mensajes */}
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-medium">
-          {error}
-        </div>
+        <Alert className="mb-6" variant="error" onClose={() => setError('')}>{error}</Alert>
       )}
 
       {success && (
-        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm font-medium">
-          {success}
-        </div>
+        <Alert className="mb-6" variant="success" onClose={() => setSuccess('')} autoHide={5000}>{success}</Alert>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -331,16 +332,16 @@ export default function PerfilPage() {
 
           {/* Estadísticas rápidas */}
           <div className="mt-4 grid grid-cols-2 gap-3">
-            <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
+            <button onClick={() => router.push('/favorito')} className="bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-rose-300 transition-colors">
               <Heart className="w-5 h-5 text-rose-500 mx-auto mb-1" />
-              <p className="text-sm font-bold text-slate-900">0</p>
+              <p className="text-sm font-bold text-slate-900">{wishlist.length}</p>
               <p className="text-[10px] text-slate-500">Favoritos</p>
-            </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
+            </button>
+            <button onClick={() => router.push(formData.role === 'vendedor' ? '/dashboard/vendedor/pedidos' : '/dashboard/cliente/pedidos')} className="bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-slate-500 transition-colors">
               <ShoppingBag className="w-5 h-5 text-slate-700 mx-auto mb-1" />
-              <p className="text-sm font-bold text-slate-900">0</p>
+              <p className="text-sm font-bold text-slate-900">{orders.length}</p>
               <p className="text-[10px] text-slate-500">Pedidos</p>
-            </div>
+            </button>
           </div>
         </div>
 
