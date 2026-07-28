@@ -80,7 +80,7 @@ export default function Home() {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [error, setError] = useState('');
 
-  // Estados para el carrusel y menú desplegable
+  // Estados para el carrusel y menú desplegabl
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const categoryRef = useRef(null);
