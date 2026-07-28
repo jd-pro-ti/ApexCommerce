@@ -11,7 +11,6 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <CartProvider>
             <WishlistProvider>
-            {/* El AppWrapper se encarga de mostrar u ocultar la UI según la ruta */}
             <AppWrapper>
               {children}
             </AppWrapper>
