@@ -6,30 +6,60 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import Button from '@/components/ui/Button';
 import toast from 'react-hot-toast';
+import { useOrders } from '@/context/OrderContext';
+import Alert from '@/components/ui/Alert';
 
 export default function CartPage() {
   const router = useRouter();
   const { cart, total, itemsCount, updateQuantity, removeFromCart, clearCart } = useCart();
   const { isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [showCheckout, setShowCheckout] = useState(false);
+  const { createOrder, loading: orderLoading } = useOrders();
+
 
   const subtotal = total;
   const shipping = subtotal > 150 ? 0 : 19.99;
   const tax = 0.00;
   const grandTotal = subtotal + shipping + tax;
 
-  const handleCheckout = () => {
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
-    }
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+  const handleCheckout = async () => {
+  if (!isAuthenticated) {
+    router.push('/login');
+    return;
+  }
+
+  setLoading(true);
+  try {
+    // Preparar datos del carrito
+    const cartItems = cart.map(item => ({
+      id: item.id,
+      quantity: item.quantity
+    }));
+
+    const result = await createOrder({
+      cart_items: cartItems,
+      notes: ''
+    });
+
+    if (result.success) {
       setShowCheckout(true);
-    }, 1500);
-  };
+    } else {
+      if (result.missingFields) {
+        // Redirigir al perfil para completar datos
+        router.push('/perfil?return=checkout');
+      } else {
+        setError(result.error || 'Error al crear el pedido');
+      }
+    }
+  } catch (error) {
+    console.error('Error en checkout:', error);
+    setError('Error al procesar el pedido');
+  } finally {
+    setLoading(false);
+  }
+};
 
 const handleRemoveItem = (id, name) => {
     removeFromCart(id);
@@ -135,6 +165,8 @@ const handleRemoveItem = (id, name) => {
   return (
     <div className="bg-[#f8f9fa] min-h-screen pt-28 md:pt-32 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {error && <Alert className="mb-5" variant="error" onClose={() => setError('')}>{error}</Alert>}
+        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
           <div className="lg:col-span-2 space-y-4">

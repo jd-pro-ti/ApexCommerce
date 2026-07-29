@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { profileService } from '@/services/profileService';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import Alert from '@/components/ui/Alert';
 import { 
   User, ShoppingBag, Heart, MapPin, CreditCard, LogOut, 
   Camera, Edit3, Save 
@@ -79,7 +80,7 @@ export default function PerfilPage() {
     loadProfile();
   }, [isAuthenticated, router]);
 
-  const loadProfile = async () => {
+  async function loadProfile() {
     setLoading(true);
     try {
       const result = await profileService.getProfile(user.id);
@@ -94,7 +95,7 @@ export default function PerfilPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;

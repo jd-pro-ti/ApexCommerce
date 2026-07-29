@@ -2,6 +2,7 @@ import './globals.css';
 import { CartProvider } from '@/context/CartContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { WishlistProvider } from '@/context/WishlistContext'; // Importa el WishlistProvider
+import { OrderProvider } from '@/context/OrderContext';
 import AppWrapper from '@/components/common/AppWrapper'; // Importa el envoltorio
 
 export default function RootLayout({ children }) {
@@ -10,11 +11,14 @@ export default function RootLayout({ children }) {
       <body className="bg-[#f8f9fa] antialiased">
         <AuthProvider>
           <CartProvider>
-            <WishlistProvider>
-            <AppWrapper>
-              {children}
-            </AppWrapper>
-            </WishlistProvider>
+            <OrderProvider>
+              <WishlistProvider>
+                {/* El AppWrapper se encarga de mostrar u ocultar la UI según la ruta */}
+                <AppWrapper>
+                  {children}
+                </AppWrapper>
+              </WishlistProvider>
+            </OrderProvider>
           </CartProvider>
         </AuthProvider>
       </body>

@@ -8,6 +8,7 @@ import ProductCard from '@/components/ui/ProductCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { Heart, ShoppingBag, ArrowLeft } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import Alert from '@/components/ui/Alert';
 
 export default function FavoritosPage() {
   const router = useRouter();
@@ -83,9 +84,7 @@ export default function FavoritosPage() {
 
       {/* Contenido */}
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-medium">
-          {error}
-        </div>
+        <Alert className="mb-6" variant="error">{error}</Alert>
       )}
 
       {wishlist.length === 0 ? (
