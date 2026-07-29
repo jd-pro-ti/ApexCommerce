@@ -1,21 +1,60 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { emailService } from './emailService'
 
 export const orderService = {
-  async notifyOrder(event, { orderId, itemId, status }) {
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.access_token) return { sent: false }
-      const response = await fetch('/api/orders/notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ event, orderId, itemId, status })
-      })
-      return await response.json()
-    } catch (error) {
-      console.error('No se pudo enviar la notificación por correo:', error)
+  // Enviar notificaciones por correo
+// En orderService.js, reemplazar el método notifyOrder completo:
+
+async notifyOrder(event, { orderId, itemId, status, notes = '' }) {
+  try {
+    console.log(`📧 Enviando notificación para evento: ${event}, Pedido: ${orderId}`)
+    
+    const orderResult = await this.getOrderById(orderId)
+    if (!orderResult.success) {
+      console.error('❌ No se pudo obtener el pedido para notificar')
       return { sent: false }
     }
-  },
+
+    const order = orderResult.order
+    
+    // Para eventos de item individual (cambio de estado por vendedor)
+    if (itemId && status) {
+      const item = order.order_items?.find(i => i.id === itemId)
+      if (item) {
+        // NOTIFICAR AL CLIENTE sobre el cambio de estado del item
+        await emailService.sendItemStatusToClient(order, item, status, notes)
+        return { sent: true }
+      }
+    }
+
+    // Para eventos de pedido completo
+    switch (event) {
+      case 'created':
+        // Notificar al cliente
+        await emailService.sendNewOrderToClient(order)
+        // Notificar a los vendedores (con la estructura correcta)
+        await emailService.notifySellersAboutNewOrder(order)
+        break
+
+      case 'processing':
+      case 'shipped':
+      case 'delivered':
+      case 'cancelled':
+        await emailService.sendOrderStatusUpdate(order, event, notes)
+        break
+
+      default:
+        console.log(`ℹ️ Evento no manejado para notificaciones: ${event}`)
+        break
+    }
+
+    return { sent: true }
+  } catch (error) {
+    console.error('❌ Error al enviar notificaciones:', error)
+    return { sent: false }
+  }
+},
+
   // Verificar si el perfil está completo para hacer un pedido
   async checkProfileComplete(userId) {
     try {
@@ -355,15 +394,32 @@ export const orderService = {
   async updateOrderItemStatus(itemId, sellerId, status) {
     try {
       if (!isSupabaseConfigured()) throw new Error('Supabase no está configurado')
-      if (!['processing', 'shipped'].includes(status)) throw new Error('Estado no permitido')
+      if (!['processing', 'shipped', 'delivered', 'cancelled'].includes(status)) {
+        throw new Error('Estado no permitido')
+      }
 
+      // Primero obtener el item para saber el order_id
+      const { data: item, error: itemError } = await supabase
+        .from('order_items')
+        .select('order_id, order_id')
+        .eq('id', itemId)
+        .single()
+
+      if (itemError) throw itemError
+
+      // Actualizar el estado del item
       const { data, error } = await supabase.rpc('update_order_item_status', {
         p_item_id: itemId,
         p_status: status
       })
 
       if (error) throw error
-      return { success: true, orderId: data }
+      
+      return { 
+        success: true, 
+        orderId: item.order_id,
+        itemId: itemId
+      }
     } catch (error) {
       console.error('Error al actualizar artículo del pedido:', error)
       return { success: false, error: error.message }

@@ -99,8 +99,12 @@ export function OrderProvider({ children }) {
 
       if (result.success) {
         setCurrentOrder(result.order);
-        // El pedido no depende del correo: si el proveedor falla, la compra sigue registrada.
-        orderService.notifyOrder('created', { orderId: result.orderId });
+        
+        // Enviar notificaciones por correo (no bloquear)
+        orderService.notifyOrder('created', { orderId: result.orderId })
+          .then(() => console.log('✅ Notificaciones de pedido enviadas'))
+          .catch(err => console.error('❌ Error en notificaciones:', err));
+        
         // Limpiar el carrito después de crear el pedido
         await clearCart();
         // Recargar pedidos
@@ -119,7 +123,7 @@ export function OrderProvider({ children }) {
     }
   };
 
-  // Actualizar estado del pedido
+  // Actualizar estado del pedido (para admin y cambios globales)
   const updateOrderStatus = async (orderId, status, notes = '') => {
     setLoading(true);
     setError(null);
@@ -128,7 +132,11 @@ export function OrderProvider({ children }) {
       const result = await orderService.updateOrderStatus(orderId, status, notes);
       
       if (result.success) {
-        // Recargar pedidos
+        // Enviar notificación por correo
+        orderService.notifyOrder(status, { orderId, notes })
+          .then(() => console.log(`✅ Notificación de estado ${status} enviada`))
+          .catch(err => console.error('❌ Error en notificación:', err));
+        
         await loadOrders();
         return { success: true, order: result.order };
       } else {
@@ -144,19 +152,34 @@ export function OrderProvider({ children }) {
     }
   };
 
+  // Actualizar estado de un item específico (para vendedores)
   const updateOrderItemStatus = async (itemId, status) => {
     if (!user?.id) return { success: false, error: 'Sesión no válida' };
+    
     setLoading(true);
     setError(null);
+    
     try {
       const result = await orderService.updateOrderItemStatus(itemId, user.id, status);
+      
       if (result.success) {
-        orderService.notifyOrder('item-status', { orderId: result.orderId, itemId, status });
+        // Enviar notificación por correo
+        orderService.notifyOrder('item-status', { 
+          orderId: result.orderId, 
+          itemId, 
+          status,
+          notes: `Estado del producto actualizado a: ${status}`
+        }).then(() => console.log(`✅ Notificación de item ${status} enviada`))
+          .catch(err => console.error('❌ Error en notificación:', err));
+        
         await loadOrders();
+        return { success: true, orderId: result.orderId };
+      } else {
+        setError(result.error || 'Error al actualizar el estado');
+        return result;
       }
-      else setError(result.error || 'Error al actualizar el estado');
-      return result;
     } catch (error) {
+      console.error('Error al actualizar estado del item:', error);
       setError('Error al actualizar el estado');
       return { success: false, error: error.message };
     } finally {
