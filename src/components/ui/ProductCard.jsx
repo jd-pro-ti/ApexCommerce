@@ -7,20 +7,6 @@ import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
 import { FaCheckCircle, FaHeart } from 'react-icons/fa';
 
-// Estilo unificado para los toasts
-const toastStyle = {
-  background: '#010f20',
-  color: '#fff',
-  borderRadius: '10px',
-  fontSize: '12px',
-  fontWeight: 'bold',
-  padding: '8px 12px',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-};
-
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
@@ -44,16 +30,29 @@ const ProductCard = ({ product }) => {
 
     // Alerta de éxito al agregar al carrito
     toast((t) => (
-      <div style={toastStyle}>
-        <FaCheckCircle size={16} style={{ color: '#22c55e' }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <FaCheckCircle size={16} style={{ color: '#22c55e', flexShrink: 0 }} />
         <span>
-          ¡Agregado al carrito! <strong style={{ color: '#38bdf8' }}>{product.name}</strong>
+          Agregado al carrito: <strong style={{ color: '#38bdf8' }}>{product.name}</strong>
         </span>
       </div>
     ), {
-      duration: 3000,
-      position: 'bottom-center',
-    });
+        duration: 3000,
+        position: 'bottom-center',
+        style: {
+          background: '#010f20',
+          color: '#ffffff',
+          borderRadius: '9999px',
+          padding: '12px 10px',
+          fontFamily: "'Montserrat', sans-serif",
+          fontSize: '13px',
+          fontWeight: '700',
+        },
+        iconTheme: {
+          primary: '#10b981',
+          secondary: '#ffffff',
+        },
+      });
 
     setTimeout(() => {
       setIsAdding(false);
@@ -77,15 +76,28 @@ const ProductCard = ({ product }) => {
 
     // Alerta dinámica según si se agregó o se quitó de favoritos
     toast((t) => (
-      <div style={toastStyle}>
-        <FaHeart size={16} style={{ color: wasFavorite ? '#9ca3af' : '#ef4444' }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <FaHeart size={16} style={{ color: wasFavorite ? '#10b981' : '#ef4444' }} />
         <span>
           {wasFavorite ? 'Eliminado de favoritos:' : 'Agregado a favoritos:'} <strong style={{ color: '#38bdf8' }}>{product.name}</strong>
         </span>
       </div>
     ), {
       duration: 3000,
-      position: 'bottom-center',
+        position: 'bottom-center',
+        style: {
+          background: '#010f20',
+          color: '#ffffff',
+          borderRadius: '9999px',
+          padding: '12px 10px',
+          fontFamily: "'Montserrat', sans-serif",
+          fontSize: '13px',
+          fontWeight: '700',
+        },
+        iconTheme: {
+          primary: '#10b981',
+          secondary: '#ffffff',
+        },
     });
   };
 

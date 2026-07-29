@@ -55,7 +55,7 @@ export default function FavoritosPage() {
             className="flex items-center gap-1.5 text-xs font-semibold text-[#44474c]/70 hover:text-[#010f20] transition-colors"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
-            <ArrowLeft className="w-4 h-4" /> Volver al catálog
+            <ArrowLeft className="w-4 h-4" /> Volver al catálogo
           </Link>
         </div>
         <div className="flex items-center gap-4">

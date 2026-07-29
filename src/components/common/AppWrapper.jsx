@@ -3,24 +3,26 @@ import { usePathname } from 'next/navigation';
 import Navbar from '@/components/common/Navbar';
 import Footer from '@/components/common/Footer';
 import ChatBot from '@/components/chatbot/ChatBot';
+import { Toaster } from 'react-hot-toast';
 
 export default function AppWrapper({ children }) {
   const pathname = usePathname();
   
-  // Define las rutas donde NO quieres que aparezca el Navbar y Footer
   const noLayoutRoutes = ['/login', '/registro'];
-  
-  // Verificamos si la ruta actual está en la lista de exclusión
   const isExcluded = noLayoutRoutes.includes(pathname);
 
   return (
     <>
+      {/* Única instancia global del Toaster para toda la aplicación */}
+      <Toaster position="bottom-center" reverseOrder={false} />
+
       {!isExcluded && <Navbar />}
+      
       <main className="min-h-screen">
         {children}
       </main>
-      {!isExcluded && <ChatBot />}
 
+      {!isExcluded && <ChatBot />}
       {!isExcluded && <Footer />}
     </>
   );
