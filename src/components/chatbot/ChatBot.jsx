@@ -29,7 +29,7 @@ const ChatBot = () => {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const { addToCart } = useCart();
-  
+
   const pathname = usePathname();
   const router = useRouter();
 
@@ -59,20 +59,20 @@ const ChatBot = () => {
       const response = await fetch('/api/gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           history: messages.concat(userMessage),
-          userRole: currentRole 
+          userRole: currentRole
         }),
       });
 
       const data = await response.json();
       if (data.error) {
-        setMessages((prev) => [...prev, { role: 'assistant', content: `❌ ${data.error}` }]);
+        setMessages((prev) => [...prev, { role: 'assistant', content: `Error: ${data.error}` }]);
       } else {
         setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
       }
     } catch (error) {
-      setMessages((prev) => [...prev, { role: 'assistant', content: '❌ Error de conexión' }]);
+      setMessages((prev) => [...prev, { role: 'assistant', content: 'Error de conexión' }]);
     } finally {
       setLoading(false);
     }
@@ -85,30 +85,41 @@ const ChatBot = () => {
     }
   };
 
-  // --- LÓGICA CARRITO (Ajusta esto según tu implementación real) ---
-const handleAddToCartReal = (productData) => {
-    // Llamamos a la función real del carrito pasando la estructura esperada
-    // (Aseguramos un stock por defecto si la tarjeta no lo trae, para evitar que falle la validación)
+  // --- LÓGICA CARRITO (Alineada a la derecha y sin emojis) ---
+  const handleAddToCartReal = (productData) => {
     addToCart({
       id: productData.id,
       name: productData.name,
       price: productData.price,
       images: [productData.image],
-      stock: productData.stock || 10 // Stock provisional si el bot no lo inyectó en el JSON
+      stock: productData.stock || 10
     });
 
-    // Notificación visual de éxito
-    toast((t) => (
-      <div style={toastStyle}>
-        <FaCheckCircle size={16} style={{ color: '#22c55e' }} />
+    toast(
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <FaCheckCircle size={16} style={{ color: '#22c55e', flexShrink: 0 }} />
         <span>
-          ¡Agregado al carrito! <strong style={{ color: '#38bdf8' }}>{productData.name}</strong>
+          Agregado al carrito: <strong style={{ color: '#38bdf8' }}>{productData.name}</strong>
         </span>
-      </div>
-    ), {
-      duration: 3000,
-      position: 'bottom-center',
-    });
+      </div>,
+      {
+        duration: 3000,
+        position: 'bottom-center',
+        style: {
+          background: '#010f20',
+          color: '#ffffff',
+          borderRadius: '9999px',
+          padding: '12px 20px',
+          fontFamily: "'Montserrat', sans-serif",
+          fontSize: '13px',
+          fontWeight: '700',
+        },
+        iconTheme: {
+          primary: '#10b981',
+          secondary: '#ffffff',
+        },
+      }
+    );
   };
 
   // Función para procesar el texto del bot y separar tarjetas de productos
@@ -127,28 +138,26 @@ const handleAddToCartReal = (productData) => {
         const productData = JSON.parse(match[1]);
         parts.push(
           <div key={match.index} className="my-2 p-2.5 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center gap-3">
-            <img 
-              src={productData.image && productData.image !== 'sin-imagen' ? productData.image : '/placeholder.png'} 
-              alt={productData.name} 
+            <img
+              src={productData.image && productData.image !== 'sin-imagen' ? productData.image : '/placeholder.png'}
+              alt={productData.name}
               className="w-14 h-14 object-cover rounded-lg border border-gray-100 flex-shrink-0"
             />
             <div className="flex-1 min-w-0">
               <p className="font-extrabold text-xs text-[#010f20] truncate">{productData.name}</p>
               <p className="text-[11px] font-bold text-emerald-600">${productData.price}</p>
-              
+
               <div className="flex items-center gap-2 mt-1.5">
-                <button 
+                <button
                   onClick={() => {
-                    // RUTA CORREGIDA A SINGULAR: '/producto/'
                     router.push(`/producto/${productData.id}`);
                   }}
                   className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-[#010f20] rounded-md text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
                 >
                   <FaEye size={10} /> Ver
                 </button>
-                <button 
+                <button
                   onClick={() => {
-                    // LLAMADA A LA FUNCIÓN DE CARRITO MEJORADA
                     handleAddToCartReal(productData);
                   }}
                   className="px-2 py-1 bg-[#010f20] hover:bg-[#010f20]/90 text-white rounded-md text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
@@ -180,9 +189,6 @@ const handleAddToCartReal = (productData) => {
 
   return (
     <>
-      {/* Contenedor de Toasts necesario para que funcionen las alertas */}
-      <Toaster />
-
       <div className={styles.chatbotContainer}>
         <button className={styles.chatButton} onClick={toggleChat}>
           {isOpen ? <FaTimes size={24} /> : <FaStore size={24} />}
@@ -222,9 +228,8 @@ const handleAddToCartReal = (productData) => {
                   {messages.map((msg, index) => (
                     <div
                       key={index}
-                      className={`${styles.message} ${
-                        msg.role === 'user' ? styles.userMessage : styles.botMessage
-                      }`}
+                      className={`${styles.message} ${msg.role === 'user' ? styles.userMessage : styles.botMessage
+                        }`}
                     >
                       {renderMessageContent(msg.content)}
                     </div>

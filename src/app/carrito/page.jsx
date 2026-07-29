@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import Button from '@/components/ui/Button';
+import toast from 'react-hot-toast';
 
 export default function CartPage() {
   const router = useRouter();
@@ -30,7 +31,50 @@ export default function CartPage() {
     }, 1500);
   };
 
-  // 🛒 ESTADO: CARRITO VACÍO
+const handleRemoveItem = (id, name) => {
+    removeFromCart(id);
+    toast.error(
+      <span>
+        &quot;<span style={{ color: '#38bdf8' }}>{name || 'El artículo'}</span>&quot; ha sido eliminado
+      </span>, 
+      {
+        style: {
+          background: '#010f20',
+          color: '#ffffff',
+          borderRadius: '9999px',
+          padding: '12px 20px',
+          fontFamily: "'Montserrat', sans-serif",
+          fontSize: '13px',
+          fontWeight: '700',
+        },
+        iconTheme: {
+          primary: 'red',
+          secondary: '#ffffff',
+        },
+      }
+    );
+  };
+
+  const handleClearCart = () => {
+    if (cart.length === 0) return;
+    clearCart();
+    toast.error('Has vaciado todo el carrito', {
+      style: {
+        background: '#010f20',
+        color: '#ffffff',
+        borderRadius: '9999px',
+        padding: '12px 20px',
+        fontFamily: "'Montserrat', sans-serif",
+        fontSize: '13px',
+        fontWeight: '700',
+      },
+      iconTheme: {
+        primary: 'red',
+        secondary: '#ffffff',
+      },
+    });
+  };
+
   if (cart.length === 0) {
     return (
       <div className="min-h-screen bg-[#f8f9fa] pt-28 md:pt-36 pb-12 px-4 flex flex-col items-center justify-center">
@@ -56,7 +100,6 @@ export default function CartPage() {
     );
   }
 
-  // ✅ ESTADO: COMPRA CONFIRMADA
   if (showCheckout) {
     return (
       <div className="min-h-screen bg-[#f8f9fa] pt-28 md:pt-36 pb-12 px-4 flex flex-col items-center justify-center">
@@ -67,7 +110,7 @@ export default function CartPage() {
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-[#010f20] mb-2" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-            ¡Pedido Confirmado!
+            Pedido Confirmado
           </h2>
           <p className="text-xs text-[#44474c]/70 mb-6 leading-relaxed" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
             Tu pedido curado ha sido procesado correctamente. Recibirás un correo electrónico de confirmación con los detalles y el rastreo de inmediato.
@@ -89,16 +132,12 @@ export default function CartPage() {
     );
   }
 
-  // 💼 VISTA PRINCIPAL DEL CARRITO
   return (
     <div className="bg-[#f8f9fa] min-h-screen pt-28 md:pt-32 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          
-          {/* Contenedor Izquierdo */}
+
           <div className="lg:col-span-2 space-y-4">
-            
             <div className="bg-white rounded-2xl border border-[#efedef] p-4 sm:p-8 shadow-sm">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 border-b border-[#efedef]">
                 <div>
@@ -109,9 +148,9 @@ export default function CartPage() {
                     {itemsCount} {itemsCount === 1 ? 'artículo seleccionado' : 'artículos seleccionados'}
                   </p>
                 </div>
-                
+
                 <button
-                  onClick={clearCart}
+                  onClick={handleClearCart}
                   className="self-start sm:self-auto text-xs text-red-500 hover:text-red-700 font-bold uppercase tracking-wider bg-red-50 hover:bg-red-100/60 px-3.5 py-2 rounded-lg transition-colors flex items-center gap-1.5 focus:outline-none focus:ring-0"
                   style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                 >
@@ -122,17 +161,15 @@ export default function CartPage() {
                 </button>
               </div>
 
-              {/* Lista con scroll vertical */}
-              <div className="max-h-[700px] overflow-y-auto pr-1 sm:pr-3 space-y-4 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+              <div className="max-h-[700px] overflow-y-auto pr-1 sm:pr-3 space-y-4">
                 {cart.map((item) => {
                   const itemImage = item.image || (item.images && item.images.length > 0 ? item.images[0] : null) || item.thumbnail;
 
                   return (
-                    <div 
-                      key={item.id} 
+                    <div
+                      key={item.id}
                       className="bg-[#fafbfc] rounded-2xl border border-[#efedef] p-4 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all hover:bg-white relative overflow-hidden"
                     >
-                      {/* Bloque Izquierdo: Imagen y Detalles */}
                       <div className="flex items-start sm:items-center gap-4 w-full md:w-auto flex-1 min-w-0">
                         <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white rounded-xl flex items-center justify-center flex-shrink-0 border border-[#efedef] overflow-hidden shadow-xs">
                           {itemImage ? (
@@ -145,7 +182,7 @@ export default function CartPage() {
                             </div>
                           )}
                         </div>
-                        
+
                         <div className="space-y-1 min-w-0 flex-1">
                           <span className="text-[10px] font-bold tracking-widest text-[#dd9448] uppercase block truncate" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                             {item.category || 'ACCESORIOS'}
@@ -156,8 +193,7 @@ export default function CartPage() {
                           <p className="text-xs text-[#44474c]/70 truncate" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                             Color: {item.color || 'Espresso'} / Material: {item.material || 'Piel'}
                           </p>
-                          
-                          {/* Controles de cantidad y botón eliminar en móvil/desktop */}
+
                           <div className="flex flex-wrap items-center gap-3 pt-2">
                             <div className="flex items-center bg-white border border-gray-200 rounded-full px-2 py-0.5 shadow-sm">
                               <button
@@ -178,7 +214,7 @@ export default function CartPage() {
                             </div>
 
                             <button
-                              onClick={() => removeFromCart(item.id)}
+                              onClick={() => handleRemoveItem(item.id, item.name)}
                               className="text-[11px] uppercase font-bold text-red-500 hover:text-red-700 tracking-wider flex items-center gap-1 transition-colors focus:outline-none"
                               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                             >
@@ -191,7 +227,6 @@ export default function CartPage() {
                         </div>
                       </div>
 
-                      {/* Precio Derecho */}
                       <div className="flex md:flex-col items-center md:items-end justify-between w-full md:w-auto border-t md:border-t-0 border-slate-100 pt-3 md:pt-0">
                         <span className="text-xs text-slate-400 md:hidden font-medium">Subtotal:</span>
                         <span className="text-base sm:text-lg font-bold text-[#010f20]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
@@ -203,40 +238,32 @@ export default function CartPage() {
                 })}
               </div>
             </div>
-
-            {/* Acciones de pie */}
-            <div className="flex justify-start items-center pt-2 px-1">
-              <Link href="/catalogo" className="text-xs text-[#44474c]/80 hover:text-[#0b1523] font-semibold flex items-center gap-1.5 transition-colors group" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                <span className="group-hover:-translate-x-0.5 transition-transform">←</span> Continuar Comprando
-              </Link>
-            </div>
           </div>
 
-          {/* Resumen de Pedido Derecha */}
           <div className="space-y-4">
             <div className="bg-white rounded-2xl border border-[#efedef] p-6 shadow-sm">
               <h2 className="text-base font-bold text-[#010f20] mb-6 tracking-tight" style={{ fontFamily: "'Montserrat', sans-serif" }}>
                 Resumen del Pedido
               </h2>
-              
+
               <div className="space-y-4 text-xs" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                 <div className="flex justify-between text-[#44474c]/70">
                   <span>Subtotal</span>
                   <span className="font-semibold text-slate-900">${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                 </div>
-                
+
                 <div className="flex justify-between text-[#44474c]/70">
                   <span>Envío</span>
                   <span className={`font-semibold ${shipping === 0 ? 'text-[#dd9448]' : 'text-slate-900'}`}>
                     {shipping === 0 ? 'Cortesía' : `$${shipping.toFixed(2)}`}
                   </span>
                 </div>
-                
+
                 <div className="flex justify-between text-[#44474c]/70">
                   <span>Estimación de Impuestos</span>
                   <span className="font-semibold text-slate-900">${tax.toFixed(2)}</span>
                 </div>
-                
+
                 <div className="border-t border-[#efedef] my-4 pt-4">
                   <div className="flex justify-between items-baseline">
                     <span className="text-sm font-bold text-[#010f20]" style={{ fontFamily: "'Montserrat', sans-serif" }}>Total</span>
@@ -266,6 +293,7 @@ export default function CartPage() {
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </div>

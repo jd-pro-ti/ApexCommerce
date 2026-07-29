@@ -217,9 +217,6 @@ export default function PerfilPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/60 pt-28 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-slate-900">
-      
-      {/* Contenedor de notificaciones flotantes estilo carrito */}
-      <Toaster position="bottom-right" reverseOrder={false} />
 
       {/* Grid Principal de la Interfaz */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
