@@ -22,6 +22,14 @@ export default function FavoritosPage() {
       router.push('/login?redirect=/favoritos');
       return;
     }
+    if (user.role === 'admin'){
+      router.push('/dashboard/admin');
+      return;
+    }
+    if (user.role === 'vendedor'){
+      router.push('/dashboard/vendedor');
+      return;
+    }
 
     const loadData = async () => {
       setIsLoading(true);

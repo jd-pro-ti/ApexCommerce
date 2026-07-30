@@ -1,15 +1,18 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { productService } from '@/services/productService';
 import ProductCard from '@/components/ui/ProductCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import {useAuth} from '@/context/AuthContext';
 import { ShoppingBag } from 'lucide-react';
 import Card from '@/components/ui/Card';
 
 export default function CatalogoContent() {
   const searchParams = useSearchParams();
-
+  const router = useRouter();
+  const { isAuthenticated, user } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingCategories, setLoadingCategories] = useState(true);
@@ -23,6 +26,21 @@ export default function CatalogoContent() {
     sortBy: 'recent'
   });
 
+  useEffect(() => {
+    // Verificar autenticación
+    if (isAuthenticated) {
+      if (user.role === 'admin'){
+      router.push('/dashboard/admin?redirect=/catalogo');
+      return;
+    }
+    if (user.role === 'vendedor'){
+      router.push('/dashboard/vendedor?redirect=/catalogo');
+      return;
+    }
+    return;0
+    }
+
+  }, [isAuthenticated, router]);
   // Cargar categorías al inicio
   useEffect(() => {
     loadCategories();

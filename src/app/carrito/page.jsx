@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState , useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
@@ -12,7 +12,7 @@ import Alert from '@/components/ui/Alert';
 export default function CartPage() {
   const router = useRouter();
   const { cart, total, itemsCount, updateQuantity, removeFromCart, clearCart } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showCheckout, setShowCheckout] = useState(false);
@@ -23,6 +23,25 @@ export default function CartPage() {
   const shipping = subtotal > 150 ? 0 : 19.99;
   const tax = 0.00;
   const grandTotal = subtotal + shipping + tax;
+
+  useEffect(() => {
+    // Verificar autenticación
+    if (!isAuthenticated) {
+      router.push('/login?redirect=/carrito');
+      return;
+    }
+    if (user.role === 'admin'){
+      router.push('/dashboard/admin?redirect=/carrito');
+      return;
+    }
+    if (user.role === 'vendedor'){
+      router.push('/dashboard/vendedor?redirect=/carrito');
+      return;
+    }
+
+
+    loadData();
+  }, [isAuthenticated, router]);
 
   const handleCheckout = async () => {
   if (!isAuthenticated) {

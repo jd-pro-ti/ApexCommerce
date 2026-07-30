@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import Button from '@/components/ui/Button';
@@ -18,11 +19,29 @@ import {
 } from 'lucide-react';
 
 export default function ClientDashboard() {
-  const { user } = useAuth();
+  const router = useRouter();
+  const { isAuthenticated, user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({});
   const [recentOrders, setRecentOrders] = useState([]);
   const [wishlist, setWishlist] = useState([]);
+
+  useEffect(() => {
+    // Verificar autenticación
+    if (!isAuthenticated) {
+      router.push('/login?redirect=/dashboard/cliente');
+      return;
+    }
+    if (user.role === 'admin'){
+      router.push('/dashboard/admin?redirect=/dashboard/cliente');
+      return;
+    }
+    if (user.role === 'vendedor'){
+      router.push('/dashboard/vendedor?redirect=/dashboard/cliente');
+      return;
+    }
+    loadData();
+  }, [isAuthenticated, router]);
 
   useEffect(() => {
     // Simular carga de datos estáticos
