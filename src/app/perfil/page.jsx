@@ -1,27 +1,60 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { profileService } from '@/services/profileService';
+import { useOrders } from '@/context/OrderContext';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Alert from '@/components/ui/Alert';
 import { 
   User, ShoppingBag, Heart, MapPin, CreditCard, LogOut, 
-  Camera, Edit3, Save 
+  Camera, Edit3, Save, Eye, Package, ArrowRight, Clock, 
+  CheckCircle2, Truck, XCircle, AlertCircle, ChevronRight, ArrowUpRight, Search
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
-// 🍞 Función auxiliar para replicar el estilo exacto de alerta tipo carrito
+const labels = { 
+  pending: 'Pendiente', 
+  processing: 'En proceso', 
+  shipped: 'Enviado', 
+  delivered: 'Entregado', 
+  cancelled: 'Cancelado' 
+};
+
+const statusConfig = {
+  pending: {
+    bg: 'bg-amber-50/80 text-amber-800 border-amber-200/80 font-semibold',
+    icon: Clock,
+  },
+  processing: {
+    bg: 'bg-sky-50/80 text-sky-800 border-sky-200/80 font-semibold',
+    icon: AlertCircle,
+  },
+  shipped: {
+    bg: 'bg-violet-50/80 text-violet-800 border-violet-200/80 font-semibold',
+    icon: Truck,
+  },
+  delivered: {
+    bg: 'bg-emerald-50/80 text-emerald-800 border-emerald-200/80 font-semibold',
+    icon: CheckCircle2,
+  },
+  cancelled: {
+    bg: 'bg-rose-50/80 text-rose-800 border-rose-200/80 font-semibold',
+    icon: XCircle,
+  }
+};
+
 const showCustomToast = (message) => {
   toast.success(message, {
     style: {
-      background: '#010f20',
+      background: '#0f172a',
       color: '#ffffff',
-      borderRadius: '9999px',
-      padding: '12px 20px',
-      fontFamily: "'Montserrat', sans-serif",
-      fontSize: '13px',
-      fontWeight: '700',
+      borderRadius: '12px',
+      padding: '14px 22px',
+      fontFamily: "Inter, system-ui, -apple-system, sans-serif",
+      fontSize: '14px',
+      fontWeight: '500',
     },
     iconTheme: {
       primary: '#10b981',
@@ -32,7 +65,9 @@ const showCustomToast = (message) => {
 
 export default function PerfilPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, isAuthenticated, updateProfile: updateAuthProfile, logout } = useAuth();
+  const { orders, loading: ordersLoading, error: ordersError, loadOrders } = useOrders();
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -40,6 +75,9 @@ export default function PerfilPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const fileInputRef = useRef(null);
+
+  const [orderSearchTerm, setOrderSearchTerm] = useState('');
+  const [orderStatusFilter, setOrderStatusFilter] = useState('all');
 
   const [profile, setProfile] = useState({
     id: '',
@@ -78,7 +116,19 @@ export default function PerfilPage() {
       return;
     }
     loadProfile();
-  }, [isAuthenticated, router]);
+    loadOrders();
+  }, [isAuthenticated, router, loadOrders]);
+
+  useEffect(() => {
+    const requestedTab = searchParams?.get('tab');
+    if (!requestedTab) return;
+
+    if (requestedTab === 'orders' || requestedTab === 'historial' || requestedTab === 'pedidos') {
+      setActiveTab('orders');
+    } else if (['profile', 'wishlist', 'addresses', 'payments'].includes(requestedTab)) {
+      setActiveTab(requestedTab);
+    }
+  }, [searchParams]);
 
   async function loadProfile() {
     setLoading(true);
@@ -208,6 +258,12 @@ export default function PerfilPage() {
     }
   };
 
+  const filteredOrders = orders.filter(order => {
+    const matchesSearch = order.order_number?.toLowerCase().includes(orderSearchTerm.toLowerCase());
+    const matchesStatus = orderStatusFilter === 'all' || order.status === orderStatusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50/50 pt-32 flex items-center justify-center">
@@ -217,20 +273,20 @@ export default function PerfilPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/60 pt-28 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-slate-900">
+    <div className="min-h-screen bg-slate-50/60 pt-28 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-slate-800" style={{ fontFamily: "Inter, system-ui, -apple-system, sans-serif" }}>
+      <Toaster position="top-center" />
 
-      {/* Grid Principal de la Interfaz */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        {/* Columna Izquierda: Menú de Navegación y Perfil resumido */}
-        <div className="lg:col-span-3 bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-6">
+        {/* Columna Izquierda: Menú y Perfil */}
+        <div className="lg:col-span-3 bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-6">
           <div className="text-center pb-6 border-b border-slate-100">
             <div className="relative inline-block mx-auto mb-4">
-              <div className="w-24 h-24 rounded-full border-2 border-slate-200 overflow-hidden bg-slate-100 shadow-md mx-auto">
+              <div className="w-24 h-24 rounded-full border-2 border-slate-200 overflow-hidden bg-slate-100 shadow-xs mx-auto">
                 {formData.avatar_url ? (
                   <img src={formData.avatar_url} alt={formData.name} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-xl bg-slate-200 text-slate-700 font-bold">
+                  <div className="w-full h-full flex items-center justify-center text-xl bg-slate-100 text-slate-700 font-bold">
                     {formData.name?.charAt(0) || 'U'}
                   </div>
                 )}
@@ -238,7 +294,7 @@ export default function PerfilPage() {
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingAvatar}
-                className="absolute bottom-0 right-0 p-2 bg-[#010f20] text-white rounded-full hover:bg-slate-800 transition-colors border-2 border-white cursor-pointer shadow-md"
+                className="absolute bottom-0 right-0 p-2.5 bg-slate-900 text-white rounded-full hover:bg-slate-800 transition-colors border-2 border-white cursor-pointer shadow-sm"
                 title="Cambiar foto"
               >
                 {uploadingAvatar ? (
@@ -256,93 +312,79 @@ export default function PerfilPage() {
               />
             </div>
 
-            <h2 className="text-lg font-bold text-[#010f20]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+            <h2 className="text-base font-bold text-slate-900 tracking-tight">
               {formData.name || 'Usuario'}
             </h2>
-            <div className="mt-2 inline-block bg-amber-50 text-amber-800 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider border border-amber-200/50">
-              Miembro desde 2024
+            <div className="mt-2 inline-block bg-slate-100 text-slate-700 text-xs font-semibold px-3 py-1 rounded-full">
+              Cliente
             </div>
           </div>
 
-          <nav className="space-y-2">
-            <button
-              onClick={() => setActiveTab('profile')}
-              className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
-                activeTab === 'profile' ? 'bg-[#010f20] text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <User className="w-5 h-5" /> Información del Perfil
-            </button>
-            <button
-              onClick={() => setActiveTab('orders')}
-              className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
-                activeTab === 'orders' ? 'bg-[#010f20] text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <ShoppingBag className="w-5 h-5" /> Historial de Pedidos
-            </button>
-            <button
-              onClick={() => setActiveTab('wishlist')}
-              className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
-                activeTab === 'wishlist' ? 'bg-[#010f20] text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <Heart className="w-5 h-5" /> Lista de Deseos
-            </button>
-            <button
-              onClick={() => setActiveTab('addresses')}
-              className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
-                activeTab === 'addresses' ? 'bg-[#010f20] text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <MapPin className="w-5 h-5" /> Direcciones Guardadas
-            </button>
-            <button
-              onClick={() => setActiveTab('payments')}
-              className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
-                activeTab === 'payments' ? 'bg-[#010f20] text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <CreditCard className="w-5 h-5" /> Métodos de Pago
-            </button>
+          <nav className="space-y-1.5">
+            {[
+              { id: 'profile', label: 'Información del Perfil', icon: User },
+              { id: 'orders', label: 'Historial de Pedidos', icon: ShoppingBag },
+              { id: 'wishlist', label: 'Lista de Deseos', icon: Heart },
+              { id: 'addresses', label: 'Direcciones Guardadas', icon: MapPin },
+              { id: 'payments', label: 'Métodos de Pago', icon: CreditCard }
+            ].map(tab => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+                    isActive 
+                      ? 'bg-slate-900 text-white shadow-xs' 
+                      : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900'
+                  }`}
+                >
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} /> 
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
           </nav>
 
           <div className="pt-4 border-t border-slate-100">
             <button
               onClick={() => logout && logout()}
-              className="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
             >
-              <LogOut className="w-5 h-5" /> Cerrar Sesión
+              <LogOut className="w-4 h-4 text-rose-500" /> 
+              <span>Cerrar Sesión</span>
             </button>
           </div>
         </div>
 
-        {/* Columna Derecha: Contenido según la Pestaña Activa */}
+        {/* Columna Derecha: Contenido */}
         <div className="lg:col-span-9 space-y-6">
           
           {activeTab === 'profile' && (
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
               
-              {/* Tarjeta Principal: Información Personal */}
-              <div className="md:col-span-7 bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm">
+              {/* Información Personal */}
+              <div className="md:col-span-7 bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs">
                 <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
-                  <h3 className="text-base font-bold text-[#010f20]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                  <h3 className="text-base font-bold text-slate-900 tracking-tight">
                     Información Personal
                   </h3>
                   {!isEditing && (
                     <button
                       type="button"
                       onClick={() => setIsEditing(true)}
-                      className="text-xs font-bold text-amber-600 hover:text-amber-700 transition-colors cursor-pointer flex items-center gap-1.5"
+                      className="text-xs font-semibold text-slate-700 hover:text-slate-900 transition-colors cursor-pointer flex items-center gap-1.5 bg-slate-100 px-3.5 py-2 rounded-lg"
                     >
-                      <Edit3 className="w-4 h-4" /> Editar Detalles
+                      <Edit3 className="w-4 h-4" /> 
+                      <span>Editar</span>
                     </button>
                   )}
                 </div>
 
-                <form id="profile-form" onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit} className="space-y-4.5">
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">
                       Nombre Completo
                     </label>
                     <input
@@ -351,28 +393,28 @@ export default function PerfilPage() {
                       disabled={!isEditing}
                       value={formData.name || ''}
                       onChange={handleChange}
-                      className={`w-full px-4 py-3 border rounded-xl text-sm font-medium transition-all ${
+                      className={`w-full px-4 py-3 border rounded-xl text-sm transition-all ${
                         isEditing 
-                          ? 'bg-slate-50 border-slate-200 text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#010f20] focus:outline-none' 
-                          : 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
+                          ? 'bg-white border-slate-300 text-slate-900 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500' 
+                          : 'bg-slate-50/50 border-slate-200 text-slate-700 cursor-not-allowed'
                       }`}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">
                       Correo Electrónico
                     </label>
                     <input
                       type="email"
                       value={formData.email || ''}
                       disabled
-                      className="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-xl text-sm font-medium text-slate-500 cursor-not-allowed"
+                      className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-500 cursor-not-allowed"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">
                       Número de Teléfono
                     </label>
                     <input
@@ -382,14 +424,14 @@ export default function PerfilPage() {
                       placeholder="+52 (55) 0000-0000"
                       value={formData.details?.phone || ''}
                       onChange={handleDetailsChange}
-                      className={`w-full px-4 py-3 border rounded-xl text-sm font-medium transition-all ${
-                        isEditing ? 'bg-slate-50 border-slate-200 text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#010f20]' : 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
+                      className={`w-full px-4 py-3 border rounded-xl text-sm transition-all ${
+                        isEditing ? 'bg-white border-slate-300 text-slate-900 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500' : 'bg-slate-50/50 border-slate-200 text-slate-500 cursor-not-allowed'
                       }`}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">
                       Dirección de Envío
                     </label>
                     <input
@@ -399,14 +441,14 @@ export default function PerfilPage() {
                       placeholder="Calle, número..."
                       value={formData.details?.address || ''}
                       onChange={handleDetailsChange}
-                      className={`w-full px-4 py-3 border rounded-xl text-sm font-medium transition-all ${
-                        isEditing ? 'bg-slate-50 border-slate-200 text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#010f20]' : 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
+                      className={`w-full px-4 py-3 border rounded-xl text-sm transition-all ${
+                        isEditing ? 'bg-white border-slate-300 text-slate-900 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500' : 'bg-slate-50/50 border-slate-200 text-slate-500 cursor-not-allowed'
                       }`}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">
                       Colonia / Barrio
                     </label>
                     <input
@@ -416,43 +458,57 @@ export default function PerfilPage() {
                       placeholder="Colonia..."
                       value={formData.details?.neighborhood || ''}
                       onChange={handleDetailsChange}
-                      className={`w-full px-4 py-3 border rounded-xl text-sm font-medium transition-all ${
-                        isEditing ? 'bg-slate-50 border-slate-200 text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#010f20]' : 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
+                      className={`w-full px-4 py-3 border rounded-xl text-sm transition-all ${
+                        isEditing ? 'bg-white border-slate-300 text-slate-900 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500' : 'bg-slate-50/50 border-slate-200 text-slate-500 cursor-not-allowed'
                       }`}
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Ciudad</label>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1.5">Ciudad</label>
                       <input
                         type="text"
                         name="city"
                         disabled={!isEditing}
                         value={formData.details?.city || ''}
                         onChange={handleDetailsChange}
-                        className={`w-full px-4 py-3 border rounded-xl text-sm font-medium transition-all ${
-                          isEditing ? 'bg-slate-50 border-slate-200 text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#010f20]' : 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
+                        className={`w-full px-3 py-3 border rounded-xl text-sm transition-all ${
+                          isEditing ? 'bg-white border-slate-300 text-slate-900 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500' : 'bg-slate-50/50 border-slate-200 text-slate-500 cursor-not-allowed'
                         }`}
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Estado</label>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1.5">Estado</label>
                       <input
                         type="text"
                         name="state"
                         disabled={!isEditing}
                         value={formData.details?.state || ''}
                         onChange={handleDetailsChange}
-                        className={`w-full px-4 py-3 border rounded-xl text-sm font-medium transition-all ${
-                          isEditing ? 'bg-slate-50 border-slate-200 text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#010f20]' : 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
+                        className={`w-full px-3 py-3 border rounded-xl text-sm transition-all ${
+                          isEditing ? 'bg-white border-slate-300 text-slate-900 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500' : 'bg-slate-50/50 border-slate-200 text-slate-500 cursor-not-allowed'
+                        }`}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1.5">C.P.</label>
+                      <input
+                        type="text"
+                        name="postal_code"
+                        disabled={!isEditing}
+                        placeholder="CP"
+                        value={formData.details?.postal_code || ''}
+                        onChange={handleDetailsChange}
+                        className={`w-full px-3 py-3 border rounded-xl text-sm transition-all ${
+                          isEditing ? 'bg-white border-slate-300 text-slate-900 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500' : 'bg-slate-50/50 border-slate-200 text-slate-500 cursor-not-allowed'
                         }`}
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Biografía</label>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">Biografía</label>
                     <textarea
                       name="bio"
                       rows="3"
@@ -460,35 +516,35 @@ export default function PerfilPage() {
                       placeholder="Cuéntanos un poco sobre ti..."
                       value={formData.details?.bio || ''}
                       onChange={handleDetailsChange}
-                      className={`w-full px-4 py-3 border rounded-xl text-sm font-medium transition-all resize-none ${
-                        isEditing ? 'bg-slate-50 border-slate-200 text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#010f20]' : 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
+                      className={`w-full px-4 py-3 border rounded-xl text-sm transition-all resize-none ${
+                        isEditing ? 'bg-white border-slate-300 text-slate-900 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500' : 'bg-slate-50/50 border-slate-200 text-slate-500 cursor-not-allowed'
                       }`}
                     />
                   </div>
 
-                  {/* Botones de Guardar y Cancelar que solo aparecen cuando isEditing es true */}
                   {isEditing && (
-                    <div className="pt-3 flex gap-3 animate-fadeIn">
+                    <div className="pt-3 flex gap-3">
                       <button
                         type="button"
                         onClick={() => {
                           setFormData(profile);
                           setIsEditing(false);
                         }}
-                        className="w-1/3 py-3.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm font-semibold rounded-xl transition-colors cursor-pointer"
+                        className="w-1/3 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-colors cursor-pointer"
                       >
                         Cancelar
                       </button>
                       <button
                         type="submit"
                         disabled={saving}
-                        className="w-2/3 py-3.5 bg-[#010f20] hover:bg-slate-800 text-white text-sm font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                        className="w-2/3 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
                       >
                         {saving ? (
                           <div className="w-4 h-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                         ) : (
                           <>
-                            <Save className="w-4 h-4" /> Guardar Cambios
+                            <Save className="w-4 h-4" /> 
+                            <span>Guardar Cambios</span>
                           </>
                         )}
                       </button>
@@ -497,45 +553,45 @@ export default function PerfilPage() {
                 </form>
               </div>
 
-              {/* Tarjeta Derecha: Preferencias y Seguridad */}
+              {/* Preferencias */}
               <div className="md:col-span-5 space-y-6">
-                <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm">
-                  <h3 className="text-base font-bold text-[#010f20] mb-6 pb-4 border-b border-slate-100" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-                    Preferencias y Seguridad
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs">
+                  <h3 className="text-base font-bold text-slate-900 mb-6 pb-4 border-b border-slate-100 tracking-tight">
+                    Preferencias
                   </h3>
 
-                  <div className="space-y-5">
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-slate-50/60 rounded-xl border border-slate-100">
                       <div>
-                        <p className="text-sm font-bold text-slate-800">Notificaciones por Correo</p>
+                        <p className="text-sm font-semibold text-slate-900">Notificaciones por Correo</p>
                         <p className="text-xs text-slate-500 mt-0.5">Promociones y actualizaciones</p>
                       </div>
                       <button
                         type="button"
                         onClick={() => handleToggleChange('email_notifications')}
                         className={`w-12 h-7 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-                          formData.details?.preferences?.email_notifications ? 'bg-[#010f20]' : 'bg-slate-300'
+                          formData.details?.preferences?.email_notifications ? 'bg-slate-900' : 'bg-slate-300'
                         }`}
                       >
-                        <div className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform ${
+                        <div className={`bg-white w-5 h-5 rounded-full shadow-xs transform transition-transform ${
                           formData.details?.preferences?.email_notifications ? 'translate-x-5' : 'translate-x-0'
                         }`} />
                       </button>
                     </div>
 
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="flex items-center justify-between p-4 bg-slate-50/60 rounded-xl border border-slate-100">
                       <div>
-                        <p className="text-sm font-bold text-slate-800">Alertas por SMS</p>
+                        <p className="text-sm font-semibold text-slate-900">Alertas por SMS</p>
                         <p className="text-xs text-slate-500 mt-0.5">Actualizaciones de envío</p>
                       </div>
                       <button
                         type="button"
                         onClick={() => handleToggleChange('sms_alerts')}
                         className={`w-12 h-7 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-                          formData.details?.preferences?.sms_alerts ? 'bg-[#010f20]' : 'bg-slate-300'
+                          formData.details?.preferences?.sms_alerts ? 'bg-slate-900' : 'bg-slate-300'
                         }`}
                       >
-                        <div className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform ${
+                        <div className={`bg-white w-5 h-5 rounded-full shadow-xs transform transition-transform ${
                           formData.details?.preferences?.sms_alerts ? 'translate-x-5' : 'translate-x-0'
                         }`} />
                       </button>
@@ -548,9 +604,200 @@ export default function PerfilPage() {
           )}
 
           {activeTab === 'orders' && (
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm">
-              <h3 className="text-base font-bold text-[#010f20] mb-4">Historial de Pedidos</h3>
-              <p className="text-sm text-slate-500">Aquí puedes ver tus compras recientes.</p>
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+                    Historial de pedidos
+                  </h1>
+                  <p className="text-sm text-slate-500 mt-1">
+                    Consulta el estatus, los productos y el detalle de tus compras recientes.
+                  </p>
+                </div>
+              </div>
+
+              {/* Filtros y Buscador */}
+              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="relative w-full sm:w-80">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input 
+                    type="text"
+                    placeholder="Buscar por número de orden..."
+                    value={orderSearchTerm}
+                    onChange={(e) => setOrderSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500 transition-all text-slate-900"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-none">
+                  {[
+                    { id: 'all', label: 'Todos' },
+                    { id: 'pending', label: 'Pendientes' },
+                    { id: 'processing', label: 'En proceso' },
+                    { id: 'shipped', label: 'Enviados' },
+                    { id: 'delivered', label: 'Entregados' }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setOrderStatusFilter(tab.id)}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                        orderStatusFilter === tab.id 
+                          ? 'bg-slate-900 text-white shadow-xs' 
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {ordersError && <Alert className="mb-6 rounded-2xl" variant="error">{ordersError}</Alert>}
+
+              {ordersLoading && orders.length === 0 ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map(n => (
+                    <div key={n} className="bg-white rounded-2xl border border-slate-200 p-6 animate-pulse">
+                      <div className="h-5 bg-slate-100 rounded w-1/4 mb-4"></div>
+                      <div className="h-7 bg-slate-100 rounded w-1/2 mb-2"></div>
+                      <div className="h-4 bg-slate-100 rounded w-1/3"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : filteredOrders.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-slate-200/80 p-16 text-center">
+                  <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+                    <ShoppingBag className="w-7 h-7 stroke-[1.5]" />
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900 mb-1">No se encontraron pedidos</h3>
+                  <p className="text-sm text-slate-500 mb-6">Parece que no tienes compras que coincidan con este filtro o aún no has realizado ninguna.</p>
+                  <Link 
+                    href="/catalogo" 
+                    className="inline-flex items-center gap-2 bg-slate-900 text-white px-5 py-3 rounded-xl text-sm font-semibold hover:bg-slate-800 transition-all shadow-xs"
+                  >
+                    <span>Explorar catálogo</span>
+                    <ArrowUpRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredOrders.map(order => {
+                    const currentStatus = order.status || 'pending';
+                    const statusInfo = statusConfig[currentStatus] || statusConfig.pending;
+                    const StatusIcon = statusInfo.icon;
+                    
+                    const formattedDate = new Date(order.created_at).toLocaleDateString('es-MX', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric'
+                    });
+
+                    return (
+                      <div 
+                        key={order.id}
+                        className="bg-white rounded-2xl border border-slate-200/80 shadow-xs hover:border-slate-300 transition-all overflow-hidden"
+                      >
+                        <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/40">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200/80 flex items-center justify-center text-slate-700 flex-shrink-0">
+                              <Package className="w-6 h-6 stroke-[1.8]" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2.5">
+                                <span className="text-sm font-bold text-slate-900">Orden #{order.order_number}</span>
+                                <span className="text-slate-300">•</span>
+                                <span className="text-xs text-slate-500 font-medium">{formattedDate}</span>
+                              </div>
+                              <p className="text-xs text-slate-500 mt-0.5">
+                                {order.order_items?.length || 0} {order.order_items?.length === 1 ? 'producto' : 'productos'}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-xs uppercase tracking-wider ${statusInfo.bg}`}>
+                            <StatusIcon className="w-4 h-4 stroke-[2]" />
+                            <span>{labels[currentStatus] || currentStatus}</span>
+                          </div>
+                        </div>
+
+                        <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="flex items-center gap-3 overflow-x-auto pb-1 sm:pb-0">
+                            {order.order_items?.slice(0, 3).map((item, idx) => {
+                              const img = item.product_image || item.image_url || item.image || item.product?.image_url;
+                              return (
+                                <div key={idx} className="relative w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex-shrink-0">
+                                  {img ? (
+                                    <img src={img} alt={item.product_name} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-xs">📦</div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                            {order.order_items?.length > 3 && (
+                              <div className="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 flex-shrink-0">
+                                +{order.order_items.length - 3}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex items-center justify-between sm:justify-end gap-6 border-t sm:border-t-0 pt-4 sm:pt-0 border-slate-100">
+                            <div className="text-left sm:text-right">
+                              <span className="text-xs text-slate-400 block">Total pagado</span>
+                              <span className="text-sm font-bold text-slate-900">${order.total?.toFixed(2)}</span>
+                            </div>
+
+                            <Link 
+                              href={`/dashboard/cliente/pedidos/${order.id}`}
+                              className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-900 hover:text-white text-slate-700 px-4.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
+                            >
+                              <span>Ver detalle</span>
+                              <ChevronRight className="w-4 h-4" />
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'wishlist' && (
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center py-20">
+              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+                <Heart className="w-7 h-7 stroke-[1.5]" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900 mb-1">Tu lista de deseos está vacía</h3>
+              <p className="text-sm text-slate-500 mb-6">Guarda tus productos favoritos para comprarlos más tarde.</p>
+              <Link 
+                href="/catalogo" 
+                className="inline-flex items-center gap-2 bg-slate-900 text-white px-5 py-3 rounded-xl text-sm font-semibold hover:bg-slate-800 transition-all shadow-xs"
+              >
+                <span>Explorar catálogo</span>
+                <ArrowUpRight className="w-4 h-4" />
+              </Link>
+            </div>
+          )}
+
+          {activeTab === 'addresses' && (
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center py-20">
+              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+                <MapPin className="w-7 h-7 stroke-[1.5]" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900 mb-1">No tienes direcciones guardadas</h3>
+              <p className="text-sm text-slate-500 mb-6">Agrega una dirección para agilizar tus próximas compras.</p>
+            </div>
+          )}
+
+          {activeTab === 'payments' && (
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center py-20">
+              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+                <CreditCard className="w-7 h-7 stroke-[1.5]" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900 mb-1">No tienes métodos de pago guardados</h3>
+              <p className="text-sm text-slate-500 mb-6">Tus métodos de pago aparecerán aquí cuando realices una compra segura.</p>
             </div>
           )}
 

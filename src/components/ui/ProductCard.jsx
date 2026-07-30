@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
@@ -8,10 +9,12 @@ import toast from 'react-hot-toast';
 import { FaCheckCircle, FaHeart } from 'react-icons/fa';
 
 const ProductCard = ({ product }) => {
+  const router = useRouter();
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { isAuthenticated } = useAuth();
   const [isAdding, setIsAdding] = useState(false);
+  const [isBuyingNow, setIsBuyingNow] = useState(false);
   const [showAdded, setShowAdded] = useState(false);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
 
@@ -28,7 +31,6 @@ const ProductCard = ({ product }) => {
     await addToCart(product);
     setShowAdded(true);
 
-    // Alerta de éxito al agregar al carrito
     toast((t) => (
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <FaCheckCircle size={16} style={{ color: '#22c55e', flexShrink: 0 }} />
@@ -60,6 +62,24 @@ const ProductCard = ({ product }) => {
     }, 2000);
   };
 
+  const handleBuyNow = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      window.location.href = '/login?redirect=/producto/' + product.id;
+      return;
+    }
+
+    setIsBuyingNow(true);
+    try {
+      await addToCart(product);
+    } catch (error) {
+      console.log("Redirigiendo al carrito...");
+    }
+    router.push('/carrito');
+  };
+
   const handleToggleWishlist = async (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -74,7 +94,6 @@ const ProductCard = ({ product }) => {
     await toggleWishlist(product);
     setIsWishlistLoading(false);
 
-    // Alerta dinámica según si se agregó o se quitó de favoritos
     toast((t) => (
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <FaHeart size={16} style={{ color: wasFavorite ? '#10b981' : '#ef4444' }} />
@@ -150,11 +169,12 @@ const ProductCard = ({ product }) => {
             )}
           </button>
 
-          {/* Botón Agregar al Carrito - Esquina inferior derecha */}
+          {/* Botón Agregar al Carrito (Icono flotante en la esquina inferior derecha) */}
           {product.stock > 0 && (
             <button 
               onClick={handleAddToCart}
               disabled={isAdding}
+              title="Agregar al carrito"
               className={`absolute bottom-2 right-2 p-2.5 rounded-full shadow-lg transition-all backdrop-blur-sm z-10
                 ${showAdded 
                   ? 'bg-emerald-600 text-white' 
@@ -199,7 +219,8 @@ const ProductCard = ({ product }) => {
           </h3>
         </Link>
         
-        <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-50">
+        {/* Precio y Estado de Stock */}
+        <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-50 mb-2">
           <span className="text-sm font-bold text-[#010f20]">
             ${product.price?.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
           </span>
@@ -207,6 +228,17 @@ const ProductCard = ({ product }) => {
             {product.stock > 0 ? 'En stock' : 'Agotado'}
           </span>
         </div>
+
+        {/* Botón de Comprar Ahora (Texto completo abajo) */}
+        {product.stock > 0 && (
+          <button
+            onClick={handleBuyNow}
+            disabled={isBuyingNow}
+            className="w-full bg-[#010f20] text-white text-xs font-bold py-2 px-3 rounded-md tracking-wider hover:bg-[#dd9448] transition-all flex items-center justify-center shadow-xs cursor-pointer disabled:opacity-50"
+          >
+            {isBuyingNow ? 'Procesando...' : 'Comprar ahora'}
+          </button>
+        )}
       </div>
     </div>
   );
