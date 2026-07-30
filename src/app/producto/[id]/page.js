@@ -8,13 +8,13 @@ import { useAuth } from '@/context/AuthContext';
 import Button from '@/components/ui/Button';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ProductCard from '@/components/ui/ProductCard';
-import { ArrowLeft, ShoppingBag, Zap, Check, ChevronDown, Package } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, Zap, Check, ChevronDown, Package, Star, UserRound, Send } from 'lucide-react';
 
 export default function ProductDetail() {
   const params = useParams();
   const router = useRouter();
   const { addToCart } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const productId = params.id;
 
   const [product, setProduct] = useState(null);
@@ -26,10 +26,11 @@ export default function ProductDetail() {
   const [addingToCart, setAddingToCart] = useState(false);
   const [showAddedToast, setShowAddedToast] = useState(false);
   const [openAccordion, setOpenAccordion] = useState(null);
-
-  useEffect(() => {
-    if (productId) loadProduct();
-  }, [productId]);
+  const [reviews, setReviews] = useState([]);
+  const [eligibleOrders, setEligibleOrders] = useState([]);
+  const [reviewForm, setReviewForm] = useState({ orderItemId: '', rating: 5, title: '', comment: '' });
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewMessage, setReviewMessage] = useState('');
 
   const loadProduct = async () => {
     setLoading(true);
@@ -39,6 +40,20 @@ export default function ProductDetail() {
       if (result.success && result.product) {
         setProduct(result.product);
         setSelectedImage(0);
+
+        const reviewsResult = await productService.getProductReviews(productId);
+        if (reviewsResult.success) setReviews(reviewsResult.reviews);
+
+        if (user?.id) {
+          const ordersResult = await productService.getEligibleProductOrders(productId, user.id);
+          if (ordersResult.success) {
+            setEligibleOrders(ordersResult.orders);
+            setReviewForm(prev => ({
+              ...prev,
+              orderItemId: prev.orderItemId || ordersResult.orders[0]?.id || ''
+            }));
+          }
+        }
         
         const relatedResult = await productService.getPublicProducts({
           category: result.product.category,
@@ -58,6 +73,58 @@ export default function ProductDetail() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // Data loading updates this component after the asynchronous request completes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (productId) loadProduct();
+    // loadProduct intentionally reloads when the authenticated user becomes available.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId, user?.id]);
+
+  const handleReviewSubmit = async (event) => {
+    event.preventDefault();
+    setReviewMessage('');
+
+    if (!isAuthenticated || !user?.id) {
+      router.push('/login?redirect=/producto/' + productId);
+      return;
+    }
+
+    const selectedOrder = eligibleOrders.find(order => order.id === reviewForm.orderItemId);
+    if (!selectedOrder) {
+      setReviewMessage('Necesitas tener un pedido entregado para calificar este producto.');
+      return;
+    }
+
+    setReviewLoading(true);
+    const result = await productService.createProductReview({
+      product_id: productId,
+      user_id: user.id,
+      order_id: selectedOrder.order_id,
+      order_item_id: selectedOrder.id,
+      rating: Number(reviewForm.rating),
+      title: reviewForm.title,
+      comment: reviewForm.comment
+    });
+
+    if (result.success) {
+      setReviews(prev => [{ ...result.review, profiles: { name: user.name || 'Tú' } }, ...prev]);
+      setReviewForm(prev => ({ ...prev, title: '', comment: '' }));
+      setReviewMessage('Tu reseña fue publicada correctamente.');
+    } else {
+      setReviewMessage(result.error || 'No se pudo publicar la reseña.');
+    }
+    setReviewLoading(false);
+  };
+
+  const renderStars = (value, size = 'w-4 h-4') => (
+    <span className="inline-flex items-center gap-0.5" aria-label={`${value} de 5 estrellas`}>
+      {[1, 2, 3, 4, 5].map(star => (
+        <Star key={star} className={`${size} ${star <= Math.round(Number(value) || 0) ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}`} />
+      ))}
+    </span>
+  );
 
   const handleAddToCart = () => {
     if (!isAuthenticated) return router.push('/login?redirect=/producto/' + productId);
@@ -235,15 +302,47 @@ export default function ProductDetail() {
                 </span>
               </div>
 
+              {product.seller_id && (
+                <Link
+                  href={`/vendedor/${product.seller_id}`}
+                  className="-mt-3 inline-flex w-fit items-center gap-2 text-sm font-semibold text-slate-600 transition-colors hover:text-amber-700"
+                >
+                  <UserRound className="h-4 w-4 text-amber-600" />
+                  <span>Vendido por: <span className="font-bold text-slate-900">{product.profiles?.name || 'Ver vendedor'}</span></span>
+                </Link>
+              )}
+
               <div className="space-y-3">
                 <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight leading-tight">
                   {product.name}
                 </h1>
-                <div className="flex items-center gap-2 pt-1">
+                <div className="hidden">
                   <div className="flex text-amber-400 text-sm">★★★★★</div>
                   <span className="text-xs text-slate-500 font-semibold">(4.9 Reseñas)</span>
                 </div>
               </div>
+
+              <div className="mt-4 flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                {renderStars(product.rating_avg)}
+                <span className="text-xs font-semibold text-slate-600">
+                  {Number(product.rating_avg || 0).toFixed(1)} ({product.rating_count || 0} reseñas)
+                </span>
+              </div>
+
+              {product.profiles?.id && (
+                <Link href={`/vendedor/${product.profiles.id}`} className="hidden">
+                  {product.profiles.avatar_url ? (
+                    <img src={product.profiles.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+                  ) : (
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-slate-500"><UserRound className="h-5 w-5" /></span>
+                  )}
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Vendido por</span>
+                    <span className="block truncate text-sm font-bold text-slate-900">{product.profiles.name || 'Vendedor'}</span>
+                  </span>
+                  <span className="text-xs font-bold text-amber-700">Ver vendedor →</span>
+                </Link>
+              )}
 
               <div className="pt-3 pb-2 border-t border-slate-100">
                 <div className="text-4xl font-extrabold text-slate-900 tracking-tight">
@@ -357,6 +456,58 @@ export default function ProductDetail() {
           ))}
         </div>
       </div>
+
+      {/* RESEÑAS DEL PRODUCTO */}
+      <section className="mt-20 border-t border-slate-200 pt-12">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">Opiniones de clientes</h2>
+            <p className="mt-1 text-sm text-slate-500">Experiencias de personas que compraron este producto.</p>
+          </div>
+          <div className="flex items-center gap-2">{renderStars(product.rating_avg, 'w-5 h-5')}<span className="font-bold text-slate-900">{Number(product.rating_avg || 0).toFixed(1)}</span></div>
+        </div>
+
+        {isAuthenticated && eligibleOrders.length > 0 && (
+          <form onSubmit={handleReviewSubmit} className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">Califica tu compra</h3>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <label className="text-sm font-semibold text-slate-700">Pedido
+                <select value={reviewForm.orderItemId} onChange={event => setReviewForm({ ...reviewForm, orderItemId: event.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 font-normal">
+                  {eligibleOrders.map(order => <option key={order.id} value={order.id}>{order.orders?.order_number || order.order_id}</option>)}
+                </select>
+              </label>
+              <label className="text-sm font-semibold text-slate-700">Calificación
+                <select value={reviewForm.rating} onChange={event => setReviewForm({ ...reviewForm, rating: event.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 font-normal">
+                  {[5, 4, 3, 2, 1].map(value => <option key={value} value={value}>{value} estrellas</option>)}
+                </select>
+              </label>
+            </div>
+            <input value={reviewForm.title} onChange={event => setReviewForm({ ...reviewForm, title: event.target.value })} placeholder="Título de tu opinión (opcional)" className="mt-4 w-full rounded-xl border border-slate-300 px-3 py-2.5" />
+            <textarea value={reviewForm.comment} onChange={event => setReviewForm({ ...reviewForm, comment: event.target.value })} placeholder="Cuéntanos qué te pareció..." rows="3" className="mt-3 w-full rounded-xl border border-slate-300 px-3 py-2.5" />
+            <div className="mt-4 flex items-center justify-between gap-4">
+              <p className="text-xs text-slate-500">Solo puedes calificar productos de pedidos entregados.</p>
+              <Button type="submit" loading={reviewLoading} className="shrink-0"><Send className="mr-2 h-4 w-4" />Publicar</Button>
+            </div>
+            {reviewMessage && <p className="mt-3 text-sm text-slate-600">{reviewMessage}</p>}
+          </form>
+        )}
+
+        {!isAuthenticated && <p className="mt-6 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">Inicia sesión después de comprar para dejar una opinión.</p>}
+        {isAuthenticated && eligibleOrders.length === 0 && <p className="mt-6 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">Podrás calificar este producto cuando tu pedido haya sido entregado.</p>}
+
+        <div className="mt-8 space-y-4">
+          {reviews.length === 0 ? <p className="text-sm italic text-slate-500">Todavía no hay opiniones para este producto.</p> : reviews.map(review => (
+            <article key={review.id} className="rounded-2xl border border-slate-200 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div><p className="font-bold text-slate-900">{review.profiles?.name || 'Cliente'}</p>{renderStars(review.rating)}</div>
+                <time className="text-xs text-slate-400">{new Date(review.created_at).toLocaleDateString('es-MX')}</time>
+              </div>
+              {review.title && <h3 className="mt-3 font-bold text-slate-900">{review.title}</h3>}
+              {review.comment && <p className="mt-1 text-sm leading-relaxed text-slate-600">{review.comment}</p>}
+            </article>
+          ))}
+        </div>
+      </section>
 
       {/* PRODUCTOS RELACIONADOS */}
       <div className="mt-20 border-t border-slate-200 pt-12">

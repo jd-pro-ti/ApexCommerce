@@ -347,7 +347,6 @@ export const productService = {
           profiles:seller_id (
             id,
             name,
-            email,
             avatar_url
           )
         `)
@@ -438,7 +437,6 @@ export const productService = {
           profiles:seller_id (
             id,
             name,
-            email,
             avatar_url
           )
         `)
@@ -467,6 +465,182 @@ export const productService = {
     }
   },
 
+  async getProductReviews(productId) {
+    try {
+      if (!isSupabaseConfigured()) throw new Error('Supabase no está configurado')
+
+      const { data, error } = await supabase
+        .from('product_reviews')
+        .select('id, rating, title, comment, created_at, user_id, profiles:user_id(name, avatar_url)')
+        .eq('product_id', productId)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      return { success: true, reviews: data || [] }
+    } catch (error) {
+      console.error('Error al obtener reseñas del producto:', error)
+      return { success: false, reviews: [], error: error.message }
+    }
+  },
+
+  async getEligibleProductOrders(productId, userId) {
+    try {
+      if (!isSupabaseConfigured()) throw new Error('Supabase no está configurado')
+      if (!userId) return { success: true, orders: [] }
+
+      const { data, error } = await supabase
+        .from('order_items')
+        .select('id, order_id, orders!inner(id, order_number, user_id)')
+        .eq('product_id', productId)
+        .eq('status', 'delivered')
+        .eq('orders.user_id', userId)
+
+      if (error) throw error
+
+      return { success: true, orders: data || [] }
+    } catch (error) {
+      console.error('Error al obtener pedidos calificables:', error)
+      return { success: false, orders: [], error: error.message }
+    }
+  },
+
+  async createProductReview(review) {
+    try {
+      if (!isSupabaseConfigured()) throw new Error('Supabase no está configurado')
+
+      const { data, error } = await supabase
+        .from('product_reviews')
+        .insert({
+          product_id: review.product_id,
+          user_id: review.user_id,
+          order_id: review.order_id,
+          order_item_id: review.order_item_id,
+          rating: review.rating,
+          title: review.title || null,
+          comment: review.comment || null,
+          status: 'approved'
+        })
+        .select('id, rating, title, comment, created_at')
+        .single()
+
+      if (error) throw error
+
+      return { success: true, review: data }
+    } catch (error) {
+      console.error('Error al crear reseña del producto:', error)
+      return { success: false, error: error.message }
+    }
+  },
+
+  async getPublicSellerProfile(sellerId) {
+    try {
+      if (!isSupabaseConfigured()) throw new Error('Supabase no está configurado')
+
+      const [profileResult, detailsResult, productsResult, ratingsResult] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('id, name, avatar_url, seller_rating_avg, seller_rating_count')
+          .eq('id', sellerId)
+          .maybeSingle(),
+        supabase
+          .from('profile_details')
+          .select('user_id, city, state, country, bio, website, social_media')
+          .eq('user_id', sellerId)
+          .maybeSingle(),
+        supabase
+          .from('products')
+          .select('id, name, price, images, stock, rating_avg, rating_count, categories(id, name)')
+          .eq('seller_id', sellerId)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('seller_ratings')
+          .select('id, rating, comment, created_at, user_id, profiles:user_id(name, avatar_url)')
+          .eq('seller_id', sellerId)
+          .eq('status', 'approved')
+          .order('created_at', { ascending: false })
+      ])
+
+      if (profileResult.error) throw profileResult.error
+      if (detailsResult.error) throw detailsResult.error
+      if (productsResult.error) throw productsResult.error
+      if (ratingsResult.error) throw ratingsResult.error
+
+      return {
+        success: true,
+        profile: profileResult.data || {
+          id: sellerId,
+          name: 'Vendedor',
+          avatar_url: null,
+          seller_rating_avg: 0,
+          seller_rating_count: 0
+        },
+        details: detailsResult.data || {},
+        products: productsResult.data?.map(product => ({
+          ...product,
+          category: product.categories?.name || 'General'
+        })) || [],
+        ratings: ratingsResult.data || []
+      }
+    } catch (error) {
+      console.error('Error al obtener perfil público del vendedor:', error)
+      return { success: false, error: error.message || 'Error al cargar el vendedor' }
+    }
+  },
+
+  async createSellerRating(ratingData) {
+    try {
+      if (!isSupabaseConfigured()) throw new Error('Supabase no está configurado')
+
+      const { data, error } = await supabase
+        .from('seller_ratings')
+        .insert({
+          seller_id: ratingData.seller_id,
+          user_id: ratingData.user_id,
+          order_id: ratingData.order_id || null,
+          rating: Number(ratingData.rating),
+          comment: ratingData.comment || null,
+          status: 'approved'
+        })
+        .select('id, rating, comment, created_at')
+        .single()
+
+      if (error) throw error
+      return { success: true, rating: data }
+    } catch (error) {
+      console.error('Error al crear calificación del vendedor:', error)
+      return { success: false, error: error.message }
+    }
+  },
+
+  async createSellerReport(reportData) {
+    try {
+      if (!isSupabaseConfigured()) throw new Error('Supabase no está configurado')
+
+      const { data, error } = await supabase
+        .from('seller_reports')
+        .insert({
+          seller_id: reportData.seller_id,
+          user_id: reportData.user_id,
+          reason: reportData.reason,
+          reason_details: reportData.reason_details || null,
+          description: reportData.description || null,
+          evidence_images: reportData.evidence_images || [],
+          status: 'pending'
+        })
+        .select('id, reason, status, created_at')
+        .single()
+
+      if (error) throw error
+      return { success: true, report: data }
+    } catch (error) {
+      console.error('Error al crear reporte del vendedor:', error)
+      return { success: false, error: error.message }
+    }
+  },
+
   async getFeaturedProducts(limit = 8) {
     try {
       if (!isSupabaseConfigured()) {
@@ -484,7 +658,6 @@ export const productService = {
           profiles:seller_id (
             id,
             name,
-            email,
             avatar_url
           )
         `)
