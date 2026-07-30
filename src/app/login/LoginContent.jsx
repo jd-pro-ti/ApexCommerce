@@ -237,6 +237,9 @@ export default function LoginPage() {
                 Regístrate aquí
               </Link>
             </p>
+            <Link href="/" className="font-bold text-[#010f20] hover:underline">
+                volver al inicio
+            </Link>
           </div>
 
         </div>
