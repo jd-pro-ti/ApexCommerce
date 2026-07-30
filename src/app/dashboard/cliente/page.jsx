@@ -20,7 +20,7 @@ import {
 
 export default function ClientDashboard() {
   const router = useRouter();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({});
   const [recentOrders, setRecentOrders] = useState([]);
@@ -28,8 +28,9 @@ export default function ClientDashboard() {
 
   useEffect(() => {
     // Verificar autenticación
+    if (authLoading) return;
     if (!isAuthenticated) {
-      router.push('/login?redirect=/dashboard/cliente');
+      
       return;
     }
     if (user.role === 'admin'){
@@ -40,8 +41,7 @@ export default function ClientDashboard() {
       router.push('/dashboard/vendedor?redirect=/dashboard/cliente');
       return;
     }
-    loadData();
-  }, [isAuthenticated, router]);
+  }, [authLoading, isAuthenticated, user?.role, router]);
 
   useEffect(() => {
     // Simular carga de datos estáticos

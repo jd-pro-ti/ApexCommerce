@@ -1,59 +1,28 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
-import { emailService } from './emailService'
 
 export const orderService = {
   // Enviar notificaciones por correo
-// En orderService.js, reemplazar el método notifyOrder completo:
+  async notifyOrder(event, { orderId, itemId, status, notes = '' }) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) return { sent: false, error: 'Sesión no válida' }
 
-async notifyOrder(event, { orderId, itemId, status, notes = '' }) {
-  try {
-    console.log(`📧 Enviando notificación para evento: ${event}, Pedido: ${orderId}`)
-    
-    const orderResult = await this.getOrderById(orderId)
-    if (!orderResult.success) {
-      console.error('❌ No se pudo obtener el pedido para notificar')
-      return { sent: false }
+      const response = await fetch('/api/orders/notify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ event, orderId, itemId, status, notes })
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'No se pudieron enviar las notificaciones')
+      return result
+    } catch (error) {
+      console.error('❌ Error al enviar notificaciones:', error)
+      return { sent: false, error: error.message }
     }
-
-    const order = orderResult.order
-    
-    // Para eventos de item individual (cambio de estado por vendedor)
-    if (itemId && status) {
-      const item = order.order_items?.find(i => i.id === itemId)
-      if (item) {
-        // NOTIFICAR AL CLIENTE sobre el cambio de estado del item
-        await emailService.sendItemStatusToClient(order, item, status, notes)
-        return { sent: true }
-      }
-    }
-
-    // Para eventos de pedido completo
-    switch (event) {
-      case 'created':
-        // Notificar al cliente
-        await emailService.sendNewOrderToClient(order)
-        // Notificar a los vendedores (con la estructura correcta)
-        await emailService.notifySellersAboutNewOrder(order)
-        break
-
-      case 'processing':
-      case 'shipped':
-      case 'delivered':
-      case 'cancelled':
-        await emailService.sendOrderStatusUpdate(order, event, notes)
-        break
-
-      default:
-        console.log(`ℹ️ Evento no manejado para notificaciones: ${event}`)
-        break
-    }
-
-    return { sent: true }
-  } catch (error) {
-    console.error('❌ Error al enviar notificaciones:', error)
-    return { sent: false }
-  }
-},
+  },
 
   // Verificar si el perfil está completo para hacer un pedido
   async checkProfileComplete(userId) {
@@ -62,7 +31,6 @@ async notifyOrder(event, { orderId, itemId, status, notes = '' }) {
         throw new Error('Supabase no está configurado')
       }
 
-      // Obtener perfil básico
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('name, email')
@@ -71,7 +39,6 @@ async notifyOrder(event, { orderId, itemId, status, notes = '' }) {
 
       if (profileError) throw profileError
 
-      // Obtener detalles del perfil (dirección, teléfono)
       const { data: details, error: detailsError } = await supabase
         .from('profile_details')
         .select('phone, address, city, state, postal_code, country')
@@ -82,7 +49,6 @@ async notifyOrder(event, { orderId, itemId, status, notes = '' }) {
         throw detailsError
       }
 
-      // Verificar campos requeridos
       const requiredFields = {
         name: profile?.name,
         email: profile?.email,
@@ -94,7 +60,7 @@ async notifyOrder(event, { orderId, itemId, status, notes = '' }) {
       }
 
       const missingFields = Object.entries(requiredFields)
-        .filter(([_, value]) => !value || value.trim() === '')
+        .filter(([_, value]) => !value || String(value).trim() === '')
         .map(([key]) => key)
 
       const isComplete = missingFields.length === 0
@@ -126,7 +92,6 @@ async notifyOrder(event, { orderId, itemId, status, notes = '' }) {
 
       console.log('🔄 Creando pedido:', orderData)
 
-      // Llamar a la función SQL create_order
       const { data, error } = await supabase.rpc('create_order', {
         p_user_id: orderData.user_id,
         p_customer_name: orderData.customer_name,
@@ -148,9 +113,8 @@ async notifyOrder(event, { orderId, itemId, status, notes = '' }) {
         throw error
       }
 
-      console.log('✅ Pedido creado:', data)
+      console.log('✅ Pedido creado ID:', data)
 
-      // Obtener el pedido completo con sus items
       const orderResult = await this.getOrderById(data)
 
       return {
@@ -167,13 +131,15 @@ async notifyOrder(event, { orderId, itemId, status, notes = '' }) {
     }
   },
 
-  // Obtener pedido por ID
+  // Obtener pedido por ID con rescate explícito de email de vendedores desde la tabla `profiles`
+  // Obtener pedido por ID con garantía de traer el perfil del vendedor
   async getOrderById(orderId) {
     try {
       if (!isSupabaseConfigured()) {
         throw new Error('Supabase no está configurado')
       }
 
+      // 1. Obtener la orden con sus ítems
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .select(`
@@ -192,14 +158,48 @@ async notifyOrder(event, { orderId, itemId, status, notes = '' }) {
               email
             )
           ),
-          order_status_history (
-            *
-          )
+          order_status_history ( * )
         `)
         .eq('id', orderId)
         .single()
 
       if (orderError) throw orderError
+
+      // 2. FORZAR BÚSQUEDA DE PROFILES: Garantiza que sellerEmail nunca venga vacío
+      if (order && order.order_items && order.order_items.length > 0) {
+        // Extraer todos los seller_id válidos de los ítems
+        const sellerIds = [...new Set(
+          order.order_items
+            .map(item => item.seller_id)
+            .filter(Boolean)
+        )]
+
+        if (sellerIds.length > 0) {
+          // Consultar directamente a la tabla profiles
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, name, email')
+            .in('id', sellerIds)
+
+          if (!profilesError && profilesData) {
+            const profileMap = {}
+            profilesData.forEach(p => {
+              profileMap[p.id] = p
+            })
+
+            // Mapear manualmente los perfiles en cada ítem
+            order.order_items = order.order_items.map(item => {
+              const matchedProfile = profileMap[item.seller_id] || item.profiles
+              return {
+                ...item,
+                profiles: matchedProfile,
+                seller_email: matchedProfile?.email || '',
+                seller_name: matchedProfile?.name || ''
+              }
+            })
+          }
+        }
+      }
 
       return {
         success: true,
@@ -252,7 +252,7 @@ async notifyOrder(event, { orderId, itemId, status, notes = '' }) {
     }
   },
 
-  // Obtener pedidos para vendedor (productos que le pertenecen)
+  // Obtener pedidos para vendedor
   async getSellerOrders(sellerId) {
     try {
       if (!isSupabaseConfigured()) {
@@ -282,7 +282,6 @@ async notifyOrder(event, { orderId, itemId, status, notes = '' }) {
 
       if (error) throw error
 
-      // Agrupar por order_id para tener la estructura completa
       const ordersMap = {}
       data?.forEach(item => {
         if (!ordersMap[item.order_id]) {
@@ -374,7 +373,6 @@ async notifyOrder(event, { orderId, itemId, status, notes = '' }) {
 
       if (error) throw error
 
-      // Obtener el pedido actualizado
       const orderResult = await this.getOrderById(orderId)
 
       return {
@@ -390,7 +388,7 @@ async notifyOrder(event, { orderId, itemId, status, notes = '' }) {
     }
   },
 
-  // El estado pertenece a cada artículo: así un pedido puede tener varios vendedores.
+  // Actualizar estado de artículo individual
   async updateOrderItemStatus(itemId, sellerId, status) {
     try {
       if (!isSupabaseConfigured()) throw new Error('Supabase no está configurado')
@@ -398,20 +396,38 @@ async notifyOrder(event, { orderId, itemId, status, notes = '' }) {
         throw new Error('Estado no permitido')
       }
 
-      // Primero obtener el item para saber el order_id
       const { data: item, error: itemError } = await supabase
         .from('order_items')
-        .select('order_id, order_id')
+        .select('order_id')
         .eq('id', itemId)
         .single()
 
       if (itemError) throw itemError
 
-      // Actualizar el estado del item
-      const { data, error } = await supabase.rpc('update_order_item_status', {
-        p_item_id: itemId,
-        p_status: status
-      })
+      let data
+      let error
+
+      if (status === 'cancelled') {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.access_token) throw new Error('Sesión no válida')
+
+        const response = await fetch('/api/orders/cancel-item', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({ itemId })
+        })
+        const result = await response.json()
+        if (!response.ok) throw new Error(result.error || 'No se pudo cancelar el artículo')
+        data = result
+      } else {
+        ({ data, error } = await supabase.rpc('update_order_item_status', {
+          p_item_id: itemId,
+          p_status: status
+        }))
+      }
 
       if (error) throw error
       

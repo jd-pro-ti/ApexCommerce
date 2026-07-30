@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { Suspense, useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
@@ -45,6 +45,18 @@ const statusConfig = {
   }
 };
 
+const getOrderStatus = (order) => {
+  const items = order.order_items || [];
+  if (!items.length) return order.status || 'pending';
+
+  const statuses = items.map(item => item.status || order.status || 'pending');
+  if (statuses.every(status => status === 'cancelled')) return 'cancelled';
+  if (statuses.every(status => status === 'delivered')) return 'delivered';
+  if (statuses.includes('shipped')) return 'shipped';
+  if (statuses.includes('processing')) return 'processing';
+  return 'pending';
+};
+
 const showCustomToast = (message) => {
   toast.success(message, {
     style: {
@@ -63,11 +75,11 @@ const showCustomToast = (message) => {
   });
 };
 
-export default function PerfilPage() {
+function PerfilPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, isAuthenticated, updateProfile: updateAuthProfile, logout } = useAuth();
-  const { orders, loading: ordersLoading, error: ordersError, loadOrders } = useOrders();
+  const { user, isAuthenticated, loading: authLoading, updateProfile: updateAuthProfile, logout } = useAuth();
+  const { orders, loading: ordersLoading, error: ordersError, loadOrders, updateOrderStatus } = useOrders();
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -78,6 +90,8 @@ export default function PerfilPage() {
 
   const [orderSearchTerm, setOrderSearchTerm] = useState('');
   const [orderStatusFilter, setOrderStatusFilter] = useState('all');
+  const [confirmingCancelId, setConfirmingCancelId] = useState(null);
+  const [cancellingId, setCancellingId] = useState(null);
 
   const [profile, setProfile] = useState({
     id: '',
@@ -110,14 +124,23 @@ export default function PerfilPage() {
 
   const [formData, setFormData] = useState({});
 
+  const cancelOrder = async (order) => {
+    setCancellingId(order.id);
+    const result = await updateOrderStatus(order.id, 'cancelled', 'El cliente canceló el pedido.')
+    setCancellingId(null);
+    setConfirmingCancelId(null);
+    if (result.success) showCustomToast('Pedido cancelado correctamente');
+  };
+
   useEffect(() => {
+    if (authLoading) return;
     if (!isAuthenticated) {
       router.push('/login?redirect=/perfil');
       return;
     }
     loadProfile();
     loadOrders();
-  }, [isAuthenticated, router, loadOrders]);
+  }, [authLoading, isAuthenticated, user?.id, router, loadOrders]);
 
   useEffect(() => {
     const requestedTab = searchParams?.get('tab');
@@ -260,7 +283,7 @@ export default function PerfilPage() {
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.order_number?.toLowerCase().includes(orderSearchTerm.toLowerCase());
-    const matchesStatus = orderStatusFilter === 'all' || order.status === orderStatusFilter;
+    const matchesStatus = orderStatusFilter === 'all' || getOrderStatus(order) === orderStatusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -634,8 +657,9 @@ export default function PerfilPage() {
                     { id: 'all', label: 'Todos' },
                     { id: 'pending', label: 'Pendientes' },
                     { id: 'processing', label: 'En proceso' },
-                    { id: 'shipped', label: 'Enviados' },
-                    { id: 'delivered', label: 'Entregados' }
+                     { id: 'shipped', label: 'Enviados' },
+                     { id: 'delivered', label: 'Entregados' },
+                     { id: 'cancelled', label: 'Cancelados' }
                   ].map(tab => (
                     <button
                       key={tab.id}
@@ -682,7 +706,7 @@ export default function PerfilPage() {
               ) : (
                 <div className="space-y-4">
                   {filteredOrders.map(order => {
-                    const currentStatus = order.status || 'pending';
+                    const currentStatus = getOrderStatus(order);
                     const statusInfo = statusConfig[currentStatus] || statusConfig.pending;
                     const StatusIcon = statusInfo.icon;
                     
@@ -741,12 +765,17 @@ export default function PerfilPage() {
                             )}
                           </div>
 
-                          <div className="flex items-center justify-between sm:justify-end gap-6 border-t sm:border-t-0 pt-4 sm:pt-0 border-slate-100">
+                          <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-4 sm:pt-0 border-slate-100">
                             <div className="text-left sm:text-right">
                               <span className="text-xs text-slate-400 block">Total pagado</span>
                               <span className="text-sm font-bold text-slate-900">${order.total?.toFixed(2)}</span>
                             </div>
 
+                            {['pending', 'processing'].includes(currentStatus) && confirmingCancelId !== order.id && (
+                              <button type="button" onClick={() => setConfirmingCancelId(order.id)} className="px-4 py-2.5 rounded-xl text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 transition-all">
+                                Cancelar pedido
+                              </button>
+                            )}
                             <Link 
                               href={`/dashboard/cliente/pedidos/${order.id}`}
                               className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-900 hover:text-white text-slate-700 px-4.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
@@ -756,6 +785,18 @@ export default function PerfilPage() {
                             </Link>
                           </div>
                         </div>
+                        {confirmingCancelId === order.id && (
+                          <div className="px-6 pb-6">
+                            <Alert variant="info">
+                              <p className="font-bold">¿Confirmas la cancelación de este pedido?</p>
+                              <p className="mt-1 text-xs font-normal">Esta acción enviará una notificación al vendedor.</p>
+                              <div className="mt-3 flex gap-2">
+                                <button type="button" onClick={() => setConfirmingCancelId(null)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700">No, regresar</button>
+                                <button type="button" disabled={cancellingId === order.id} onClick={() => cancelOrder(order)} className="rounded-lg bg-rose-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">{cancellingId === order.id ? 'Cancelando...' : 'Sí, cancelar pedido'}</button>
+                              </div>
+                            </Alert>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -804,5 +845,13 @@ export default function PerfilPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PerfilPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-slate-50"><LoadingSpinner size="lg" /></div>}>
+      <PerfilPageContent />
+    </Suspense>
   );
 }

@@ -1,11 +1,6 @@
 import nodemailer from 'nodemailer'
 import { NextResponse } from 'next/server'
 
-// Validar credenciales
-if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-  console.error('❌ Faltan las variables de entorno GMAIL_USER o GMAIL_APP_PASSWORD')
-}
-
 // Configurar transporter de Gmail
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -30,12 +25,6 @@ transporter.verify((error, success) => {
 export async function POST(request) {
   try {
     const { to, subject, html, from } = await request.json()
-
-    // Revisar que existan credenciales antes de intentar enviar
-    if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-      console.error('❌ Intento de envío sin credenciales SMTP configuradas')
-      return NextResponse.json({ success: false, error: 'SMTP no configurado' }, { status: 500 })
-    }
 
     if (!to || !subject || !html) {
       return NextResponse.json(

@@ -43,7 +43,12 @@ export default function LoginPage() {
       const result = await login(formData.email, formData.password);
 
       if (result && result.success) {
-        router.push('/dashboard/cliente');
+        const roleHome = {
+          admin: '/dashboard/admin',
+          vendedor: '/dashboard/vendedor',
+          cliente: '/dashboard/cliente',
+        };
+        router.replace(roleHome[result.user?.role] || roleHome.cliente);
       } else {
         setError(result?.error || 'Credenciales inválidas o error al iniciar sesión.');
       }

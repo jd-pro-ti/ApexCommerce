@@ -100,10 +100,11 @@ export function OrderProvider({ children }) {
       if (result.success) {
         setCurrentOrder(result.order);
         
-        // Enviar notificaciones por correo (no bloquear)
-        orderService.notifyOrder('created', { orderId: result.orderId })
-          .then(() => console.log('✅ Notificaciones de pedido enviadas'))
-          .catch(err => console.error('❌ Error en notificaciones:', err));
+        // Esperar la notificación para garantizar el aviso al vendedor
+        const notificationResult = await orderService.notifyOrder('created', { orderId: result.orderId })
+        if (!notificationResult.sent) {
+          console.error('❌ Error en notificaciones:', notificationResult.error)
+        }
         
         // Limpiar el carrito después de crear el pedido
         await clearCart();
@@ -133,9 +134,8 @@ export function OrderProvider({ children }) {
       
       if (result.success) {
         // Enviar notificación por correo
-        orderService.notifyOrder(status, { orderId, notes })
-          .then(() => console.log(`✅ Notificación de estado ${status} enviada`))
-          .catch(err => console.error('❌ Error en notificación:', err));
+        const notificationResult = await orderService.notifyOrder(status, { orderId, notes })
+        if (!notificationResult.sent) console.error('❌ Error en notificación:', notificationResult.error)
         
         await loadOrders();
         return { success: true, order: result.order };
@@ -164,13 +164,13 @@ export function OrderProvider({ children }) {
       
       if (result.success) {
         // Enviar notificación por correo
-        orderService.notifyOrder('item-status', { 
+        const notificationResult = await orderService.notifyOrder('item-status', {
           orderId: result.orderId, 
           itemId, 
           status,
           notes: `Estado del producto actualizado a: ${status}`
-        }).then(() => console.log(`✅ Notificación de item ${status} enviada`))
-          .catch(err => console.error('❌ Error en notificación:', err));
+        })
+        if (!notificationResult.sent) console.error('❌ Error en notificación:', notificationResult.error)
         
         await loadOrders();
         return { success: true, orderId: result.orderId };

@@ -2,18 +2,13 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import { productService } from '@/services/productService';
 import ProductCard from '@/components/ui/ProductCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-<<<<<<< HEAD
-import {useAuth} from '@/context/AuthContext';
-import { ShoppingBag } from 'lucide-react';
-import Card from '@/components/ui/Card';
-=======
 import { ShoppingBag, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const PRODUCTS_PER_PAGE = 12; // 3 filas de 4 productos
->>>>>>> 626db0617f8794b2d4d92bc86415a2b5640f9b86
 
 export default function CatalogoContent() {
   const searchParams = useSearchParams();

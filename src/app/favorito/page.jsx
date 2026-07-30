@@ -12,12 +12,13 @@ import Alert from '@/components/ui/Alert';
 
 export default function FavoritosPage() {
   const router = useRouter();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading: authLoading } = useAuth();
   const { wishlist, loading, error, loadWishlist } = useWishlist();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Verificar autenticación
+    if (authLoading) return;
     if (!isAuthenticated) {
       router.push('/login?redirect=/favoritos');
       return;
@@ -38,7 +39,7 @@ export default function FavoritosPage() {
     };
 
     loadData();
-  }, [isAuthenticated, router, loadWishlist]);
+  }, [authLoading, isAuthenticated, user?.role, router, loadWishlist]);
 
   if (!isAuthenticated) {
     return null; // Redirigiendo...

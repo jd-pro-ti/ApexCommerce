@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Eye, Package, ArrowRight, Clock, CheckCircle2, Truck, XCircle, AlertCircle, ShoppingBag } from 'lucide-react';
 import { useOrders } from '@/context/OrderContext';
@@ -40,11 +40,21 @@ const statusConfig = {
 };
 
 export default function ClientOrdersPage() {
-  const { orders, loading, error, loadOrders } = useOrders();
+  const { orders, loading, error, loadOrders, updateOrderStatus } = useOrders();
+  const [confirmingCancelId, setConfirmingCancelId] = useState(null);
+  const [cancellingId, setCancellingId] = useState(null);
 
   useEffect(() => { 
     loadOrders(); 
   }, [loadOrders]);
+
+  const cancelOrder = async (order) => {
+    setCancellingId(order.id);
+    const result = await updateOrderStatus(order.id, 'cancelled', 'El cliente canceló el pedido.');
+    setCancellingId(null);
+    setConfirmingCancelId(null);
+    if (!result.success) console.error('Error al cancelar pedido:', result.error);
+  };
 
   if (loading && orders.length === 0) {
     return (
@@ -120,6 +130,8 @@ export default function ClientOrdersPage() {
               month: 'long',
               day: 'numeric'
             });
+            const orderCanCancel = ['pending', 'processing'].includes(order.status || 'pending') &&
+              (order.order_items || []).some(item => ['pending', 'processing'].includes(item.status || order.status || 'pending'));
 
             return (
               <article 
@@ -151,14 +163,21 @@ export default function ClientOrdersPage() {
                     </div>
                   </div>
 
-                  <Link 
-                    href={`/dashboard/cliente/pedidos/${order.id}`} 
-                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-extrabold uppercase tracking-wider text-slate-900 bg-gray-50 border border-gray-200/80 hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all shadow-2xs group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900"
-                    style={{ fontFamily: "'Montserrat', sans-serif" }}
-                  >
-                    <Eye className="h-4 w-4" />
-                    <span>Ver detalle completo</span>
-                  </Link>
+                  <div className="flex flex-wrap gap-2">
+                    {orderCanCancel && confirmingCancelId !== order.id && (
+                      <button type="button" onClick={() => setConfirmingCancelId(order.id)} className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-extrabold tracking-wider text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 transition-all">
+                        Cancelar pedido
+                      </button>
+                    )}
+                    <Link
+                      href={`/dashboard/cliente/pedidos/${order.id}`}
+                      className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-extrabold uppercase tracking-wider text-slate-900 bg-gray-50 border border-gray-200/80 hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all shadow-2xs group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900"
+                      style={{ fontFamily: "'Montserrat', sans-serif" }}
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span>Ver detalle completo</span>
+                    </Link>
+                  </div>
                 </div>
 
                 {/* ARTÍCULOS / PRODUCTOS DENTRO DEL PEDIDO */}
@@ -203,6 +222,18 @@ export default function ClientOrdersPage() {
                     );
                   })}
                 </div>
+                {confirmingCancelId === order.id && (
+                  <div className="mt-5">
+                    <Alert variant="info">
+                      <p className="font-bold">¿Confirmas la cancelación de este pedido?</p>
+                      <p className="mt-1 text-xs font-normal">El vendedor recibirá una notificación por correo.</p>
+                      <div className="mt-3 flex gap-2">
+                        <button type="button" onClick={() => setConfirmingCancelId(null)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700">No, regresar</button>
+                        <button type="button" disabled={cancellingId === order.id} onClick={() => cancelOrder(order)} className="rounded-lg bg-rose-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">{cancellingId === order.id ? 'Cancelando...' : 'Sí, cancelar pedido'}</button>
+                      </div>
+                    </Alert>
+                  </div>
+                )}
               </article>
             );
           })}

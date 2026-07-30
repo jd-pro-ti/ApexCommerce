@@ -12,7 +12,7 @@ import Alert from '@/components/ui/Alert';
 export default function CartPage() {
   const router = useRouter();
   const { cart, total, itemsCount, updateQuantity, removeFromCart, clearCart } = useCart();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showCheckout, setShowCheckout] = useState(false);
@@ -25,9 +25,9 @@ export default function CartPage() {
   const tax = 0.00;
   const grandTotal = subtotal + shipping + tax;
 
-<<<<<<< HEAD
   useEffect(() => {
     // Verificar autenticación
+    if (authLoading) return;
     if (!isAuthenticated) {
       router.push('/login?redirect=/carrito');
       return;
@@ -40,45 +40,12 @@ export default function CartPage() {
       router.push('/dashboard/vendedor?redirect=/carrito');
       return;
     }
+  }, [authLoading, isAuthenticated, user?.role, router]);
 
-
-    loadData();
-  }, [isAuthenticated, router]);
-
-  const handleCheckout = async () => {
-  if (!isAuthenticated) {
-    router.push('/login');
-    return;
-  }
-
-  setLoading(true);
-  try {
-    // Preparar datos del carrito
-    const cartItems = cart.map(item => ({
-      id: item.id,
-      quantity: item.quantity
-    }));
-
-    const result = await createOrder({
-      cart_items: cartItems,
-      notes: ''
-    });
-
-    if (result.success) {
-      setShowCheckout(true);
-    } else {
-      if (result.missingFields) {
-        // Redirigir al perfil para completar datos
-        router.push('/perfil?return=checkout');
-      } else {
-        setError(result.error || 'Error al crear el pedido');
-      }
-=======
   const handlePreCheckout = () => {
     if (!isAuthenticated) {
       router.push('/login');
       return;
->>>>>>> 626db0617f8794b2d4d92bc86415a2b5640f9b86
     }
     setShowConfirmModal(true);
   };

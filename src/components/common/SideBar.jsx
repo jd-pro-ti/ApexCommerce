@@ -24,7 +24,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
-  const { logout } = useAuth();
+  const { logout, role } = useAuth();
 
   const handleLogout = async () => {
     await logout();
@@ -32,7 +32,8 @@ export default function Sidebar() {
   };
 
   const menuItems = [
-    { name: 'Panel Principal', href: '/dashboard/vendedor', icon: FiGrid },
+    { name: 'Panel Principal', href: role === 'admin' ? '/dashboard/admin' : '/dashboard/vendedor', icon: FiGrid },
+    ...(role === 'vendedor' ? [{ name: 'Mi perfil', href: '/dashboard/vendedor/perfil', icon: FiUserCheck }] : []),
     { name: 'Pedidos', href: '/dashboard/vendedor/pedidos', icon: FiShoppingBag, badge: '18' },
     { name: 'Productos', href: '/dashboard/vendedor/productos', icon: FiBox, hasSub: true },
     { name: 'Reportes', href: '/dashboard/reports', icon: FiBarChart2, hasSub: true },

@@ -72,7 +72,13 @@ export function AuthProvider({ children }) {
   // Función de login
   const login = async (email, password) => {
     try {
-      const result = await authService.login(email, password);
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const result = await response.json();
+
       if (result.success) {
         setUser(result.user);
         setRole(result.user.role || 'cliente');
