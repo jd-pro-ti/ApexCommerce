@@ -388,6 +388,30 @@ export const orderService = {
     }
   },
 
+  // Cancelar un pedido desde el cliente, validando la propiedad en el servidor
+  async cancelOrder(orderId) {
+    try {
+      if (!isSupabaseConfigured()) throw new Error('Supabase no está configurado')
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) throw new Error('Sesión no válida')
+
+      const response = await fetch('/api/orders/cancel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ orderId })
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'No se pudo cancelar el pedido')
+      return result
+    } catch (error) {
+      console.error('Error al cancelar pedido:', error)
+      return { success: false, error: error.message }
+    }
+  },
+
   // Actualizar estado de artículo individual
   async updateOrderItemStatus(itemId, sellerId, status) {
     try {

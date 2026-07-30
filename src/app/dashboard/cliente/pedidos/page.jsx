@@ -40,7 +40,7 @@ const statusConfig = {
 };
 
 export default function ClientOrdersPage() {
-  const { orders, loading, error, loadOrders, updateOrderStatus } = useOrders();
+  const { orders, loading, error, loadOrders, cancelOrder: cancelOrderRequest } = useOrders();
   const [confirmingCancelId, setConfirmingCancelId] = useState(null);
   const [cancellingId, setCancellingId] = useState(null);
 
@@ -50,7 +50,7 @@ export default function ClientOrdersPage() {
 
   const cancelOrder = async (order) => {
     setCancellingId(order.id);
-    const result = await updateOrderStatus(order.id, 'cancelled', 'El cliente canceló el pedido.');
+    const result = await cancelOrderRequest(order.id);
     setCancellingId(null);
     setConfirmingCancelId(null);
     if (!result.success) console.error('Error al cancelar pedido:', result.error);
@@ -130,8 +130,8 @@ export default function ClientOrdersPage() {
               month: 'long',
               day: 'numeric'
             });
-            const orderCanCancel = ['pending', 'processing'].includes(order.status || 'pending') &&
-              (order.order_items || []).some(item => ['pending', 'processing'].includes(item.status || order.status || 'pending'));
+            const orderCanCancel = (order.order_items || []).length > 0 &&
+              (order.order_items || []).every(item => ['pending', 'processing'].includes(item.status || order.status || 'pending'));
 
             return (
               <article 

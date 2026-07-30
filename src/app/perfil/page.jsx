@@ -79,7 +79,7 @@ function PerfilPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isAuthenticated, loading: authLoading, updateProfile: updateAuthProfile, logout } = useAuth();
-  const { orders, loading: ordersLoading, error: ordersError, loadOrders, updateOrderStatus } = useOrders();
+  const { orders, loading: ordersLoading, error: ordersError, loadOrders, cancelOrder: cancelOrderRequest } = useOrders();
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -126,7 +126,7 @@ function PerfilPageContent() {
 
   const cancelOrder = async (order) => {
     setCancellingId(order.id);
-    const result = await updateOrderStatus(order.id, 'cancelled', 'El cliente canceló el pedido.')
+    const result = await cancelOrderRequest(order.id)
     setCancellingId(null);
     setConfirmingCancelId(null);
     if (result.success) showCustomToast('Pedido cancelado correctamente');

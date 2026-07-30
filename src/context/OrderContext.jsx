@@ -152,6 +152,32 @@ export function OrderProvider({ children }) {
     }
   };
 
+  const cancelOrder = async (orderId) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await orderService.cancelOrder(orderId);
+      if (!result.success) {
+        setError(result.error || 'Error al cancelar el pedido');
+        return result;
+      }
+
+      const notificationResult = await orderService.notifyOrder('cancelled', {
+        orderId,
+        notes: 'El cliente canceló el pedido.'
+      });
+      if (!notificationResult.sent) console.error('❌ Error en notificación:', notificationResult.error);
+      await loadOrders();
+      return result;
+    } catch (error) {
+      setError('Error al cancelar el pedido');
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Actualizar estado de un item específico (para vendedores)
   const updateOrderItemStatus = async (itemId, status) => {
     if (!user?.id) return { success: false, error: 'Sesión no válida' };
@@ -209,6 +235,7 @@ export function OrderProvider({ children }) {
     loadOrders,
     createOrder,
     updateOrderStatus,
+    cancelOrder,
     updateOrderItemStatus,
     getOrder,
     setError
