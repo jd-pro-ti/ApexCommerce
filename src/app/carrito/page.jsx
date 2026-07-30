@@ -74,7 +74,7 @@ export default function CartPage() {
             <div style={{ fontSize: 12, marginTop: 4 }}>Recibirás un correo con los detalles y el seguimiento.</div>
           </div>,
           {
-            duration: 8000,
+            duration: 4000,
             style: {
               background: 'var(--color-primary, #010f20)',
               color: 'var(--color-on-primary, #ffffff)',
