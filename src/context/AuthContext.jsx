@@ -20,7 +20,8 @@ export function AuthProvider({ children }) {
           return
         }
 
-        const result = await authService.getSession();
+        const response = await fetch('/api/auth/session', { cache: 'no-store' });
+        const result = await response.json();
         console.log('📊 Resultado de sesión:', result)
         
         if (result.success && result.user) {
@@ -59,7 +60,10 @@ export function AuthProvider({ children }) {
             setRole(null);
             console.log('👋 Sesión cerrada')
           }
-          setLoading(false);
+          // La sesión inicial ya se está resolviendo en checkSession.
+          // No marcar loading como false aquí: INITIAL_SESSION puede llegar
+          // antes que la respuesta del servidor y provocar un redirect falso.
+          if (event !== 'INITIAL_SESSION') setLoading(false);
         }
       );
 
