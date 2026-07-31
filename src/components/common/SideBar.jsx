@@ -9,14 +9,13 @@ import {
   FiBox,
   FiBarChart2,
   FiUsers,
-  FiGlobe,
-  FiInstagram,
-  FiFacebook,
+  FiBell,
+  FiTrendingUp,
+  FiFileText,
   FiSettings,
   FiLogOut,
   FiUserCheck,
-  FiChevronDown,
-  FiPlus
+  FiChevronDown
 } from 'react-icons/fi';
 import { useAuth } from '@/context/AuthContext';
 
@@ -31,25 +30,33 @@ export default function Sidebar() {
     router.push('/login');
   };
 
-  const menuItems = [
-    { name: 'Panel Principal', href: role === 'admin' ? '/dashboard/admin' : '/dashboard/vendedor', icon: FiGrid },
-    ...(role === 'vendedor' ? [{ name: 'Mi perfil', href: '/dashboard/vendedor/perfil', icon: FiUserCheck }] : []),
-    { name: 'Pedidos', href: '/dashboard/vendedor/pedidos', icon: FiShoppingBag, badge: '18' },
-    { name: 'Productos', href: '/dashboard/vendedor/productos', icon: FiBox, hasSub: true },
-    { name: 'Reportes', href: '/dashboard/reports', icon: FiBarChart2, hasSub: true },
-    { name: 'Clientes', href: '/dashboard/customers', icon: FiUsers, hasSub: true },
+  const adminMenu = [
+    { name: 'Dashboard', href: '/dashboard/admin', icon: FiGrid },
+    { name: 'Perfil', href: '/perfil', icon: FiUserCheck },
+    { name: 'Gestión de usuarios', href: '/dashboard/admin/usuarios', icon: FiUsers },
+    { name: 'Analíticas', href: '/dashboard/admin/analiticas', icon: FiBarChart2 },
+    { name: 'Logs', href: '/dashboard/admin/logs', icon: FiFileText },
+    { name: 'Reportes', href: '/dashboard/admin/reportes', icon: FiBarChart2 }
   ];
 
-  const salesChannels = [
-    { name: 'Sitio Web', href: '/admin/channels/website', icon: FiGlobe },
-    { name: 'Instagram', href: '/admin/channels/instagram', icon: FiInstagram },
-    { name: 'Facebook', href: '/admin/channels/facebook', icon: FiFacebook },
+  const sellerMenu = [
+    { name: 'Dashboard', href: '/dashboard/vendedor', icon: FiGrid },
+    { name: 'Perfil', href: '/dashboard/vendedor/perfil', icon: FiUserCheck },
+    { name: 'Productos', href: '/dashboard/vendedor/productos', icon: FiBox },
+    { name: 'Pedidos', href: '/dashboard/vendedor/pedidos', icon: FiShoppingBag },
+    { name: 'Notificaciones', href: '/dashboard/vendedor/notificaciones', icon: FiBell },
+    { name: 'Analíticas', href: '/dashboard/vendedor/analiticas', icon: FiBarChart2 },
+    { name: 'Ganancias', href: '/dashboard/vendedor/ganancias', icon: FiTrendingUp }
   ];
+
+  const currentMenuItems = role === 'admin' ? adminMenu : sellerMenu;
+  const menuTitle = role === 'admin' ? 'ADMINISTRACIÓN' : 'VENDEDOR';
 
   return (
     <aside
-      className={`h-screen bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-30 sticky top-0 shadow-sm ${collapsed ? 'w-20' : 'w-64'
-        }`}
+      className={`h-screen bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-30 sticky top-0 shadow-sm ${
+        collapsed ? 'w-20' : 'w-64'
+      }`}
     >
       {/* Header del Sidebar con los puntos de Mac y Logo */}
       <div className="p-5 flex items-center justify-between border-b border-slate-100">
@@ -91,16 +98,14 @@ export default function Sidebar() {
 
       {/* Contenido desplazable del menú */}
       <div className="flex-1 overflow-y-auto px-3 py-2 space-y-6 scrollbar-thin scrollbar-thumb-slate-200">
-
-        {/* Sección: Overview */}
         <div>
           {!collapsed && (
             <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-              GENERAL
+              {menuTitle}
             </p>
           )}
           <nav className="space-y-1">
-            {menuItems.map((item) => {
+            {currentMenuItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
 
@@ -108,10 +113,11 @@ export default function Sidebar() {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group relative ${isActive
-                    ? 'bg-amber-50/80 text-amber-700 font-bold shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                    }`}
+                  className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group relative ${
+                    isActive
+                      ? 'bg-amber-50/80 text-amber-700 font-bold shadow-sm'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
                   style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                 >
                   <div className="flex items-center gap-3">
@@ -141,40 +147,6 @@ export default function Sidebar() {
             })}
           </nav>
         </div>
-
-        {/* Sección: Sales Channels */}
-        <div>
-          {!collapsed && (
-            <div className="px-3 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-              <span>CANALES DE VENTA</span>
-              <button className="text-slate-400 hover:text-slate-900 transition-colors">
-                <FiPlus className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
-          <nav className="space-y-1">
-            {salesChannels.map((channel) => {
-              const Icon = channel.icon;
-              const isActive = pathname === channel.href;
-
-              return (
-                <Link
-                  key={channel.name}
-                  href={channel.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group ${isActive
-                    ? 'bg-amber-50/80 text-amber-700 font-bold'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                    }`}
-                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                >
-                  <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-amber-600' : 'text-slate-500 group-hover:text-slate-800'}`} />
-                  {!collapsed && <span className="truncate">{channel.name}</span>}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-
       </div>
 
       {/* Footer del Sidebar (Settings, Logout y Copyright) */}

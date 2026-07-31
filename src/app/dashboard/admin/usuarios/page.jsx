@@ -144,7 +144,7 @@ export default function AdminUsuarios() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f1f3f6] py-28 font-sans" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="min-h-screen bg-[#f1f3f6] py-12 font-sans" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Cabecera de la sección */}
@@ -276,15 +276,6 @@ export default function AdminUsuarios() {
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </button>
-                          {user.id !== currentUser?.id && (
-                            <button
-                              onClick={() => handleDeleteUser(user.id)}
-                              className="p-2 bg-red-50 hover:bg-red-600 hover:text-white rounded-xl text-red-600 text-xs font-bold transition-all cursor-pointer shadow-sm flex items-center gap-1.5 border border-red-200"
-                              title="Eliminar usuario"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
                         </div>
                       </td>
                     </tr>
@@ -389,21 +380,6 @@ export default function AdminUsuarios() {
                     >
                       <UserX className="w-3.5 h-3.5" /> Suspender
                     </Button>
-                    {selectedUser.id !== currentUser?.id && (
-                      <Button
-                        size="sm"
-                        variant="danger"
-                        onClick={() => {
-                          if (confirm('¿Eliminar este usuario?')) {
-                            handleDeleteUser(selectedUser.id);
-                            setShowModal(false);
-                          }
-                        }}
-                        className="bg-red-50 hover:bg-red-600 text-red-600 hover:text-white border border-red-200 text-xs font-bold py-2 px-4 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" /> Eliminar
-                      </Button>
-                    )}
                   </div>
                 </div>
               </div>

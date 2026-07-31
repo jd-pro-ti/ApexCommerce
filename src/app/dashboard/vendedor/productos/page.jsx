@@ -99,22 +99,8 @@ export default function SellerProducts() {
   }
 
   return (
-    <div className="bg-[#f8f9fa] min-h-screen pt-28 md:pt-32 pb-16">
+    <div className="bg-[#f8f9fa] min-h-screen pt-28 md:pt-12 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-        {/* Botón de retorno independiente fuera de la tarjeta principal */}
-        <div className="mb-6">
-          <Link href="/dashboard/vendedor">
-            <Button
-              variant="outline"
-              size="sm"
-              className="border border-gray-200 hover:border-slate-800 bg-white text-slate-700 text-xs font-semibold py-2 px-3.5 rounded-xl transition-all shadow-sm focus:ring-0 inline-flex items-center gap-2 cursor-pointer"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-            >
-              <ArrowLeft className="w-4 h-4 text-slate-500" /> Volver al Dashboard
-            </Button>
-          </Link>
-        </div>
 
         {/* Cabecera de la sección */}
         <div className="bg-white rounded-2xl border border-[#efedef] p-6 sm:p-8 shadow-sm mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

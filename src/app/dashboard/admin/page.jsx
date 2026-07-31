@@ -2,23 +2,25 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { authService } from '@/services/authService';
+import { orderService } from '@/services/orderService';
+import { productService } from '@/services/productService';
 import { 
   Users, 
   Package, 
   ShoppingBag, 
   AlertTriangle, 
-  CheckCircle2, 
-  XCircle, 
-  ShieldCheck, 
   FolderTree, 
   BarChart3, 
-  FileText, 
-  ArrowRight,
+  Sparkles,
+  ArrowUpRight,
   TrendingUp,
-  Sparkles
+  Zap,
+  Layers,
+  ShieldAlert,
+  Settings
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -29,242 +31,259 @@ export default function AdminDashboard() {
   const [systemAlerts, setSystemAlerts] = useState([]);
 
   useEffect(() => {
-    // Simular carga de datos estáticos
-    setTimeout(() => {
-      setStats({
-        totalUsers: 1250,
-        totalSellers: 45,
-        totalProducts: 3280,
-        totalOrders: 892,
-        totalRevenue: 157920.50,
-        pendingApprovals: 12,
-      });
-      setRecentUsers([
-        { id: '1', name: 'María García', email: 'maria@email.com', role: 'vendedor', date: '2024-01-15' },
-        { id: '2', name: 'Juan Pérez', email: 'juan@email.com', role: 'cliente', date: '2024-01-14' },
-        { id: '3', name: 'Ana López', email: 'ana@email.com', role: 'vendedor', date: '2024-01-13' },
-      ]);
-      setSystemAlerts([
-        { id: '1', type: 'warning', message: '3 productos sin stock', date: '2024-01-15' },
-        { id: '2', type: 'info', message: 'Nuevo vendedor registrado', date: '2024-01-14' },
-        { id: '3', type: 'success', message: 'Pagos procesados correctamente', date: '2024-01-13' },
-      ]);
-      setLoading(false);
-    }, 600);
-  }, []);
+    const loadAdminData = async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const [usersResp, ordersResp, categoriesResp, pendingResp] = await Promise.all([
+          authService.getAllUsers(),
+          orderService.getAllOrders(),
+          productService.getCategoriesWithCount(),
+          productService.getPendingApprovals()
+        ]);
+
+        const users = usersResp?.success ? usersResp.users || [] : [];
+        const orders = ordersResp?.success ? ordersResp.orders || [] : [];
+        const categories = categoriesResp?.success ? categoriesResp.categories || [] : [];
+        const pendingCount = pendingResp?.success ? pendingResp.count || 0 : 0;
+
+        const totalProducts = categories.reduce((s, c) => s + (c.count || 0), 0);
+        const totalRevenue = (orders || []).reduce((sum, ord) => {
+          if (ord.total) return sum + Number(ord.total);
+          if (ord.order_items && ord.order_items.length) {
+            return sum + ord.order_items.reduce((ss, it) => ss + (it.subtotal || 0), 0);
+          }
+          return sum;
+        }, 0);
+
+        setStats({
+          totalUsers: users.length,
+          totalSellers: users.filter(u => u.role === 'vendedor').length,
+          totalProducts,
+          totalOrders: orders.length,
+          totalRevenue,
+          pendingApprovals: pendingCount
+        });
+
+        setRecentUsers(users.slice(0, 3).map(u => ({
+          id: u.id,
+          name: u.name || u.email || 'Usuario',
+          email: u.email,
+          role: u.role || 'cliente',
+          date: u.created_at ? new Date(u.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) : ''
+        })));
+
+        setSystemAlerts([
+          { id: '1', type: 'warning', message: `${pendingCount} productos pendientes de aprobación en el catálogo.`, date: new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) },
+        ]);
+
+      } catch (error) {
+        console.error('Error cargando dashboard admin:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAdminData();
+  }, [user]);
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center bg-[#f1f3f6]">
+      <div className="min-h-[70vh] flex items-center justify-center bg-[#f8fafc]">
         <LoadingSpinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f1f3f6] py-28 font-sans" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-[#f8fafc] via-[#f1f5f9] to-[#e2e8f0] py-12 text-[#0f172a]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         
-        {/* Cabecera de Bienvenida */}
-        <div className="mb-8 bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-[#efedef] relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="absolute -top-12 -right-12 w-48 h-48 bg-[#dd9448]/10 rounded-full blur-2xl pointer-events-none"></div>
-          
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="px-3 py-1 bg-[#010f20]/5 text-[#010f20] rounded-full text-[10px] uppercase tracking-widest font-extrabold flex items-center gap-1.5">
-                <Sparkles className="w-3 h-3 text-[#dd9448]" /> Panel de Administración
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#010f20] tracking-tight" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-              ¡Hola, {user?.name || 'Administrador'}!
-            </h1>
-            <p className="text-xs sm:text-sm text-[#44474c] mt-1">
-              Control total y supervisión general de la plataforma.
-            </p>
-          </div>
+        {/* Banner de Bienvenida Creativo */}
+        <div className="relative overflow-hidden bg-[#162536] rounded-3xl p-8 sm:p-10 shadow-xl text-white">
+          <div className="absolute -right-16 -top-16 w-64 h-64 bg-[#FFB872]/15 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="absolute right-1/3 -bottom-20 w-60 h-60 bg-[#545F6D]/30 rounded-full blur-3xl pointer-events-none"></div>
 
-          <div className="relative z-10 flex items-center gap-3 w-full md:w-auto">
-            <Link href="/dashboard/admin/reportes" className="w-full md:w-auto">
-              <Button 
-                className="w-full md:w-auto bg-[#010f20] text-white hover:bg-[#010f20]/90 text-xs font-bold uppercase tracking-widest py-3 px-6 rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
-              >
-                <BarChart3 className="w-4 h-4" /> Ver Reportes
-              </Button>
-            </Link>
+          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-medium text-[#FFB872] border border-white/10">
+                <Sparkles className="w-3.5 h-3.5" /> Panel de Administración
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
+                Hola, {user?.name || 'Administrador'}
+              </h1>
+              <p className="text-sm text-slate-300 max-w-xl leading-relaxed">
+                Supervisa la actividad global, usuarios y estado general de la plataforma con control total.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Link href="/dashboard/admin/reportes">
+                <Button className="bg-[#FFB872] text-[#162536] hover:bg-[#ffaa54] text-xs font-bold py-3 px-6 rounded-2xl shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer border-0">
+                  <BarChart3 className="w-4 h-4" /> Ver Reportes
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+        {/* Tarjetas de Métricas Dinámicas (Grid de 4) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           
           {/* Usuarios Totales */}
-          <div className="bg-white rounded-3xl p-6 shadow-xl border border-[#efedef] relative overflow-hidden group hover:border-[#010f20] transition-all">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full pointer-events-none"></div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-bold text-[#44474c] uppercase tracking-wider">Usuarios Totales</p>
-                <p className="text-3xl font-extrabold text-[#010f20] mt-1" style={{ fontFamily: "'Montserrat', sans-serif" }}>{stats.totalUsers}</p>
-              </div>
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm">
-                <Users className="w-6 h-6" />
+          <div className="group bg-white/80 backdrop-blur-xl p-6 rounded-3xl border border-white/60 shadow-xl shadow-slate-200/50 transition-all duration-300 hover:bg-white hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Usuarios Totales</span>
+              <div className="p-3 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 text-blue-600 rounded-2xl group-hover:scale-110 transition-transform">
+                <Users className="w-5 h-5" />
               </div>
             </div>
-            <div className="mt-4 pt-3 border-t border-[#efedef] flex items-center text-[11px] text-[#44474c]">
-              <span className="text-blue-600 font-bold mr-1">{stats.totalSellers} vendedores</span> registrados
+            <div className="text-3xl font-bold text-slate-800 tracking-tight">
+              {stats.totalUsers || 0}
             </div>
-          </div>
-
-          {/* Productos */}
-          <div className="bg-white rounded-3xl p-6 shadow-xl border border-[#efedef] relative overflow-hidden group hover:border-[#010f20] transition-all">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full pointer-events-none"></div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-bold text-[#44474c] uppercase tracking-wider">Productos</p>
-                <p className="text-3xl font-extrabold text-[#010f20] mt-1" style={{ fontFamily: "'Montserrat', sans-serif" }}>{stats.totalProducts}</p>
-              </div>
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-sm">
-                <Package className="w-6 h-6" />
-              </div>
-            </div>
-            <div className="mt-4 pt-3 border-t border-[#efedef] flex items-center text-[11px] text-[#44474c]">
-              <span className="text-emerald-600 font-bold mr-1">{stats.pendingApprovals} por aprobar</span> en catálogo
+            <div className="mt-3 flex items-center gap-1.5 text-xs text-blue-600 font-medium">
+              <TrendingUp className="w-3.5 h-3.5" /> {stats.totalSellers || 0} vendedores activos
             </div>
           </div>
 
-          {/* Pedidos y Ventas */}
-          <div className="bg-white rounded-3xl p-6 shadow-xl border border-[#efedef] relative overflow-hidden group hover:border-[#010f20] transition-all">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 rounded-bl-full pointer-events-none"></div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-bold text-[#44474c] uppercase tracking-wider">Pedidos</p>
-                <p className="text-3xl font-extrabold text-[#010f20] mt-1" style={{ fontFamily: "'Montserrat', sans-serif" }}>{stats.totalOrders}</p>
-              </div>
-              <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-600 shadow-sm">
-                <ShoppingBag className="w-6 h-6" />
+          {/* Productos en Catálogo */}
+          <div className="group bg-white/80 backdrop-blur-xl p-6 rounded-3xl border border-white/60 shadow-xl shadow-slate-200/50 transition-all duration-300 hover:bg-white hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Productos</span>
+              <div className="p-3 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 text-emerald-600 rounded-2xl group-hover:scale-110 transition-transform">
+                <Package className="w-5 h-5" />
               </div>
             </div>
-            <div className="mt-4 pt-3 border-t border-[#efedef] flex items-center text-[11px] text-[#44474c]">
-              <span className="text-purple-600 font-bold mr-1">${stats.totalRevenue?.toFixed(2)}</span> en ventas
+            <div className="text-3xl font-bold text-slate-800 tracking-tight">
+              {stats.totalProducts || 0}
+            </div>
+            <div className="mt-3 flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
+              <Zap className="w-3.5 h-3.5" /> {stats.pendingApprovals || 0} pendientes de revisión
+            </div>
+          </div>
+
+          {/* Pedidos Globales */}
+          <div className="group bg-white/80 backdrop-blur-xl p-6 rounded-3xl border border-white/60 shadow-xl shadow-slate-200/50 transition-all duration-300 hover:bg-white hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Pedidos Globales</span>
+              <div className="p-3 bg-gradient-to-br from-violet-500/10 to-purple-500/10 text-violet-600 rounded-2xl group-hover:scale-110 transition-transform">
+                <ShoppingBag className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-slate-800 tracking-tight">
+              {stats.totalOrders || 0}
+            </div>
+            <div className="mt-3 flex items-center gap-1.5 text-xs text-violet-600 font-medium">
+              <Layers className="w-3.5 h-3.5" /> ${stats.totalRevenue?.toFixed(2) || '0.00'} facturados
             </div>
           </div>
 
           {/* Alertas del Sistema */}
-          <div className="bg-white rounded-3xl p-6 shadow-xl border border-[#efedef] relative overflow-hidden group hover:border-[#010f20] transition-all">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/5 rounded-bl-full pointer-events-none"></div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-bold text-[#44474c] uppercase tracking-wider">Sistema</p>
-                <p className="text-3xl font-extrabold text-[#010f20] mt-1" style={{ fontFamily: "'Montserrat', sans-serif" }}>{systemAlerts.length}</p>
-              </div>
-              <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center text-[#dd9448] shadow-sm">
-                <AlertTriangle className="w-6 h-6" />
+          <div className="group bg-white/80 backdrop-blur-xl p-6 rounded-3xl border border-white/60 shadow-xl shadow-slate-200/50 transition-all duration-300 hover:bg-white hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Sistema</span>
+              <div className="p-3 bg-gradient-to-br from-amber-500/10 to-orange-500/10 text-amber-500 rounded-2xl group-hover:scale-110 transition-transform">
+                <ShieldAlert className="w-5 h-5" />
               </div>
             </div>
-            <div className="mt-4 pt-3 border-t border-[#efedef] flex items-center text-[11px] text-[#44474c]">
-              <span className="text-[#dd9448] font-bold mr-1">Alertas activas</span> requiriendo atención
+            <div className="text-3xl font-bold text-slate-800 tracking-tight">
+              {systemAlerts.length}
+            </div>
+            <div className="mt-3 flex items-center gap-1.5 text-xs text-amber-600 font-medium">
+              <AlertTriangle className="w-3.5 h-3.5" /> Avisos activos en plataforma
             </div>
           </div>
 
         </div>
 
-        {/* Contenido Principal (Usuarios recientes y Alertas) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* Sección de Contenido Principal (Usuarios recientes + Alertas del Sistema) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* Usuarios Recientes (Ocupa 2 columnas) */}
-          <div className="lg:col-span-2 bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-[#efedef] flex flex-col justify-between">
+          {/* Usuarios Recientes (2 Columnas) */}
+          <div className="lg:col-span-2 bg-white/90 backdrop-blur-xl p-7 rounded-3xl border border-white/60 shadow-xl shadow-slate-200/50 flex flex-col justify-between">
             <div>
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-lg font-extrabold text-[#010f20]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-                    Usuarios recientes
-                  </h2>
-                  <p className="text-xs text-[#44474c] mt-0.5">
-                    Últimos registros en la plataforma
-                  </p>
+                  <h2 className="text-lg font-bold text-slate-800">Usuarios Recientes</h2>
+                  <p className="text-xs text-slate-400 mt-0.5">Últimos registros de cuentas creadas</p>
                 </div>
                 <Link href="/dashboard/admin/usuarios">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="border border-[#efedef] hover:border-[#010f20] text-[#010f20] text-xs font-semibold py-2 px-4 rounded-xl transition-all cursor-pointer"
-                  >
-                    Gestionar usuarios
-                  </Button>
+                  <span className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 group">
+                    Ver todos <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  </span>
                 </Link>
               </div>
 
-              <div className="space-y-3">
-                {recentUsers.map((u) => (
-                  <div key={u.id} className="flex items-center justify-between p-4 bg-[#fdfdfd] hover:bg-[#f1f3f6]/50 rounded-2xl border border-[#efedef] transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 font-extrabold text-xs">
-                        {u.name.charAt(0)}
+              <div className="space-y-3.5">
+                {recentUsers.length > 0 ? (
+                  recentUsers.map((u) => (
+                    <div key={u.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50/80 border border-slate-100 hover:bg-white hover:shadow-md transition-all duration-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 font-extrabold text-xs">
+                          {u.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold text-slate-800">{u.name}</div>
+                          <div className="text-xs text-slate-500">{u.email}</div>
+                          <div className="text-[11px] text-slate-400">{u.date}</div>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-extrabold text-sm text-[#010f20]" style={{ fontFamily: "'Montserrat', sans-serif" }}>{u.name}</p>
-                        <p className="text-xs text-[#44474c]">{u.email}</p>
+                      
+                      <div className="text-right">
+                        <span className={`inline-block text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider ${
+                          u.role === 'admin' ? 'bg-red-50 text-red-600 border border-red-200/50' :
+                          u.role === 'vendedor' ? 'bg-blue-50 text-blue-600 border border-blue-200/50' :
+                          'bg-emerald-50 text-emerald-600 border border-emerald-200/50'
+                        }`}>
+                          {u.role}
+                        </span>
                       </div>
                     </div>
-                    
-                    <div className="text-right">
-                      <span className={`inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
-                        u.role === 'admin' ? 'bg-red-50 text-red-600 border border-red-200' :
-                        u.role === 'vendedor' ? 'bg-blue-50 text-blue-600 border border-blue-200' :
-                        'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                      }`}>
-                        {u.role}
-                      </span>
-                      <p className="text-[11px] text-[#44474c] mt-1">{u.date}</p>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-xs text-slate-400 text-center py-10">No hay usuarios recientes registrados.</p>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Alertas del Sistema (Ocupa 1 columna) */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-[#efedef] flex flex-col justify-between">
+          {/* Alertas del Sistema (1 Columna) */}
+          <div className="bg-white/90 backdrop-blur-xl p-7 rounded-3xl border border-white/60 shadow-xl shadow-slate-200/50 flex flex-col justify-between">
             <div>
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-lg font-extrabold text-[#010f20]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-                    Alertas del sistema
-                  </h2>
-                  <p className="text-xs text-[#44474c] mt-0.5">
-                    Estado de actividad y avisos
-                  </p>
+                  <h2 className="text-lg font-bold text-slate-800">Alertas del Sistema</h2>
+                  <p className="text-xs text-slate-400 mt-0.5">Avisos y notificaciones críticas</p>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                {systemAlerts.map((alert) => (
-                  <div key={alert.id} className={`p-4 rounded-2xl border transition-colors ${
-                    alert.type === 'warning' ? 'bg-amber-50/50 border-amber-200' :
-                    alert.type === 'error' ? 'bg-red-50/50 border-red-200' :
-                    'bg-emerald-50/50 border-emerald-200'
-                  }`}>
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 shrink-0">
-                        {alert.type === 'warning' ? <AlertTriangle className="w-5 h-5 text-amber-600" /> :
-                         alert.type === 'error' ? <XCircle className="w-5 h-5 text-red-600" /> :
-                         <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-[#010f20] leading-snug">{alert.message}</p>
-                        <p className="text-[10px] text-[#44474c] mt-1">{alert.date}</p>
+              <div className="space-y-3.5">
+                {systemAlerts.length > 0 ? (
+                  systemAlerts.map((alert) => (
+                    <div key={alert.id} className="p-4 rounded-2xl bg-amber-50/50 border border-amber-200/60 flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-bold text-slate-800 leading-snug">{alert.message}</p>
+                        <p className="text-[10px] text-slate-400 mt-1">{alert.date}</p>
                       </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-200/60 flex items-center gap-3">
+                    <p className="text-xs font-bold text-emerald-700">Todo en orden, sin alertas pendientes.</p>
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-[#efedef]">
+            <div className="mt-6 pt-4 border-t border-slate-100">
               <Link href="/dashboard/admin/logs">
-                <Button 
-                  variant="outline" 
-                  className="w-full border border-[#efedef] hover:border-[#010f20] text-[#010f20] text-xs font-semibold py-2.5 rounded-xl transition-all cursor-pointer"
-                >
+                <Button variant="outline" className="w-full border border-slate-200 text-slate-700 hover:bg-slate-900 hover:text-white hover:border-slate-900 text-xs font-semibold py-2.5 rounded-2xl transition-all cursor-pointer shadow-sm">
                   Ver todos los logs
                 </Button>
               </Link>
@@ -273,56 +292,38 @@ export default function AdminDashboard() {
 
         </div>
 
-        {/* Acciones Rápidas */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-[#efedef]">
-          <h2 className="text-lg font-extrabold text-[#010f20] mb-4" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-            Accesos Rápidos
-          </h2>
+        {/* Accesos Rápidos Creativos */}
+        <div className="bg-white/90 backdrop-blur-xl p-7 rounded-3xl border border-white/60 shadow-xl shadow-slate-200/50">
+          <h2 className="text-lg font-bold text-slate-800 mb-5">Accesos Directos</h2>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             
-            <Link href="/dashboard/admin/usuarios">
-              <div className="p-4 bg-[#fdfdfd] hover:bg-[#010f20] hover:text-white rounded-2xl border border-[#efedef] transition-all group cursor-pointer flex flex-col items-center text-center shadow-sm">
-                <div className="w-10 h-10 rounded-xl bg-[#010f20]/5 group-hover:bg-white/10 flex items-center justify-center text-[#010f20] group-hover:text-white mb-2 transition-colors">
-                  <Users className="w-5 h-5" />
-                </div>
-                <span className="text-xs font-bold text-[#010f20] group-hover:text-white transition-colors">
-                  Gestionar usuarios
-                </span>
+            <Link href="/dashboard/admin/usuarios" className="p-5 rounded-2xl border border-slate-100 bg-gradient-to-br from-slate-50 to-slate-100/50 hover:from-slate-900 hover:to-slate-800 hover:text-white transition-all duration-300 group flex flex-col items-center text-center shadow-sm hover:shadow-lg">
+              <div className="p-3 rounded-2xl bg-white shadow-md text-slate-800 group-hover:bg-white/10 group-hover:text-white mb-3 transition-colors">
+                <Users className="w-5 h-5" />
               </div>
+              <span className="text-xs font-bold text-slate-800 group-hover:text-white transition-colors">Gestionar usuarios</span>
             </Link>
 
-            <Link href="/dashboard/admin/productos">
-              <div className="p-4 bg-[#fdfdfd] hover:bg-[#010f20] hover:text-white rounded-2xl border border-[#efedef] transition-all group cursor-pointer flex flex-col items-center text-center shadow-sm">
-                <div className="w-10 h-10 rounded-xl bg-[#010f20]/5 group-hover:bg-white/10 flex items-center justify-center text-[#010f20] group-hover:text-white mb-2 transition-colors">
-                  <Package className="w-5 h-5" />
-                </div>
-                <span className="text-xs font-bold text-[#010f20] group-hover:text-white transition-colors">
-                  Gestionar productos
-                </span>
+            <Link href="/dashboard/admin/productos" className="p-5 rounded-2xl border border-slate-100 bg-gradient-to-br from-slate-50 to-slate-100/50 hover:from-slate-900 hover:to-slate-800 hover:text-white transition-all duration-300 group flex flex-col items-center text-center shadow-sm hover:shadow-lg">
+              <div className="p-3 rounded-2xl bg-white shadow-md text-slate-800 group-hover:bg-white/10 group-hover:text-white mb-3 transition-colors">
+                <Package className="w-5 h-5" />
               </div>
+              <span className="text-xs font-bold text-slate-800 group-hover:text-white transition-colors">Gestionar productos</span>
             </Link>
 
-            <Link href="/dashboard/admin/categorias">
-              <div className="p-4 bg-[#fdfdfd] hover:bg-[#010f20] hover:text-white rounded-2xl border border-[#efedef] transition-all group cursor-pointer flex flex-col items-center text-center shadow-sm">
-                <div className="w-10 h-10 rounded-xl bg-[#010f20]/5 group-hover:bg-white/10 flex items-center justify-center text-[#010f20] group-hover:text-white mb-2 transition-colors">
-                  <FolderTree className="w-5 h-5" />
-                </div>
-                <span className="text-xs font-bold text-[#010f20] group-hover:text-white transition-colors">
-                  Categorías
-                </span>
+            <Link href="/dashboard/admin/categorias" className="p-5 rounded-2xl border border-slate-100 bg-gradient-to-br from-slate-50 to-slate-100/50 hover:from-slate-900 hover:to-slate-800 hover:text-white transition-all duration-300 group flex flex-col items-center text-center shadow-sm hover:shadow-lg">
+              <div className="p-3 rounded-2xl bg-white shadow-md text-slate-800 group-hover:bg-white/10 group-hover:text-white mb-3 transition-colors">
+                <FolderTree className="w-5 h-5" />
               </div>
+              <span className="text-xs font-bold text-slate-800 group-hover:text-white transition-colors">Categorías</span>
             </Link>
 
-            <Link href="/dashboard/admin/reportes">
-              <div className="p-4 bg-[#fdfdfd] hover:bg-[#010f20] hover:text-white rounded-2xl border border-[#efedef] transition-all group cursor-pointer flex flex-col items-center text-center shadow-sm">
-                <div className="w-10 h-10 rounded-xl bg-[#010f20]/5 group-hover:bg-white/10 flex items-center justify-center text-[#010f20] group-hover:text-white mb-2 transition-colors">
-                  <BarChart3 className="w-5 h-5" />
-                </div>
-                <span className="text-xs font-bold text-[#010f20] group-hover:text-white transition-colors">
-                  Reportes avanzados
-                </span>
+            <Link href="/dashboard/admin/reportes" className="p-5 rounded-2xl border border-slate-100 bg-gradient-to-br from-slate-50 to-slate-100/50 hover:from-slate-900 hover:to-slate-800 hover:text-white transition-all duration-300 group flex flex-col items-center text-center shadow-sm hover:shadow-lg">
+              <div className="p-3 rounded-2xl bg-white shadow-md text-slate-800 group-hover:bg-white/10 group-hover:text-white mb-3 transition-colors">
+                <BarChart3 className="w-5 h-5" />
               </div>
+              <span className="text-xs font-bold text-slate-800 group-hover:text-white transition-colors">Reportes avanzados</span>
             </Link>
 
           </div>

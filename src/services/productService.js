@@ -725,6 +725,30 @@ export const productService = {
     }
   },
 
+  // Contar productos pendientes de aprobación (status != 'active')
+  async getPendingApprovals() {
+    try {
+      if (!isSupabaseConfigured()) {
+        throw new Error('Supabase no está configurado')
+      }
+
+      const { data, error } = await supabase
+        .from('products')
+        .select('id')
+        .neq('status', 'active')
+
+      if (error) throw error
+
+      return {
+        success: true,
+        count: data?.length || 0
+      }
+    } catch (error) {
+      console.error('Error al obtener pendientes de aprobación:', error)
+      return { success: false, error: error.message }
+    }
+  },
+
   // ============================================
   // MÉTODOS PARA EL CARRITO
   // ============================================
