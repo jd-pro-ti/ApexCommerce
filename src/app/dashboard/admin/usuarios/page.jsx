@@ -153,9 +153,6 @@ export default function AdminUsuarios() {
           
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-2">
-              <Link href="/dashboard/admin" className="text-xs font-bold text-[#44474c] hover:text-[#010f20] transition-colors flex items-center gap-1">
-                <ArrowLeft className="w-3.5 h-3.5" /> Volver al panel
-              </Link>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#010f20] tracking-tight" style={{ fontFamily: "'Montserrat', sans-serif" }}>
               Gestión de Usuarios
