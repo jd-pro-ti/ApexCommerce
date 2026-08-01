@@ -159,18 +159,12 @@ export default function NewProduct() {
   }
 
   return (
-    <div className="bg-[#f8f9fa] min-h-screen pt-28 md:pt-32 pb-20">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="bg-[#f8f9fa] min-h-screen pt-28 md:pt-12 pb-20">
+      {/* Contenedor ampliado a max-w-7xl para aprovechar pantallas grandes */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Cabecera y Navegación */}
         <div className="mb-8">
-          <Link 
-            href="/dashboard/vendedor/productos"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#44474c]/70 hover:text-[#010f20] mb-3 transition-colors"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-          >
-            <ArrowLeft className="w-4 h-4" /> Volver a mis productos
-          </Link>
           <span 
             className="text-[11px] font-bold tracking-widest text-[#dd9448] uppercase block mb-1"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
@@ -198,10 +192,11 @@ export default function NewProduct() {
         )}
 
         <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Grid de 12 columnas para un diseño fluido y proporcionado */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
-            {/* Columna Principal: Información General */}
-            <div className="lg:col-span-2">
+            {/* Columna Principal: Información General (8 de 12 columnas) */}
+            <div className="lg:col-span-8">
               <div className="bg-white rounded-2xl border border-[#efedef] p-8 sm:p-10 shadow-sm">
                 <h3 
                   className="font-bold text-[#010f20] text-lg mb-6 pb-4 border-b border-[#efedef]"
@@ -345,9 +340,9 @@ export default function NewProduct() {
               </div>
             </div>
 
-            {/* Columna Lateral: Imágenes y Acciones */}
-            <div className="space-y-6">
-              <div className="bg-white rounded-2xl border border-[#efedef] p-8 shadow-sm">
+            {/* Columna Lateral: Imágenes y Acciones (4 de 12 columnas) */}
+            <div className="lg:col-span-4 space-y-6">
+              <div className="bg-white rounded-2xl border border-[#efedef] p-6 sm:p-8 shadow-sm">
                 <h3 
                   className="font-bold text-[#010f20] text-lg mb-5 pb-3 border-b border-[#efedef]"
                   style={{ fontFamily: "'Montserrat', sans-serif" }}
@@ -356,7 +351,7 @@ export default function NewProduct() {
                 </h3>
                 
                 <div className="space-y-5">
-                  <div className="border-2 border-dashed border-gray-200 hover:border-slate-400 rounded-2xl p-8 text-center transition-colors bg-[#fafbfc]">
+                  <div className="border-2 border-dashed border-gray-200 hover:border-slate-400 rounded-2xl p-6 text-center transition-colors bg-[#fafbfc]">
                     <input
                       type="file"
                       accept="image/*"
@@ -400,7 +395,7 @@ export default function NewProduct() {
                           <button
                             type="button"
                             onClick={() => removeImage(image)}
-                            className="absolute top-2 right-2 bg-red-600 text-white rounded-lg w-7 h-7 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                            className="absolute top-2 right-2 bg-red-600 text-white rounded-lg w-7 h-7 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -422,7 +417,7 @@ export default function NewProduct() {
               <div className="bg-white rounded-2xl border border-[#efedef] p-6 shadow-sm space-y-3">
                 <Button 
                   type="submit" 
-                  className="w-full !bg-[#0b1523] hover:!bg-slate-800 !text-white text-sm font-bold py-4 rounded-xl transition-all shadow-sm focus:ring-0 uppercase tracking-wide flex items-center justify-center gap-2"
+                  className="w-full !bg-[#0b1523] hover:!bg-slate-800 !text-white text-sm font-bold py-4 rounded-xl transition-all shadow-sm focus:ring-0 uppercase tracking-wide flex items-center justify-center gap-2 cursor-pointer"
                   style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                   loading={loading}
                 >
@@ -433,7 +428,7 @@ export default function NewProduct() {
                   <Button 
                     type="button"
                     variant="outline" 
-                    className="w-full border border-gray-200 hover:border-slate-800 text-slate-700 text-sm font-semibold py-3.5 rounded-xl transition-all shadow-sm focus:ring-0"
+                    className="w-full border border-gray-200 hover:border-slate-800 text-slate-700 text-sm font-semibold py-3.5 rounded-xl transition-all shadow-sm focus:ring-0 cursor-pointer"
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                   >
                     Cancelar
