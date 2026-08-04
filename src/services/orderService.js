@@ -1,18 +1,52 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 
 export const orderService = {
+  async getAuthToken() {
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    if (sessionError) {
+      console.warn('⚠️ Error al obtener sesión:', sessionError)
+    }
+    if (session?.access_token) return session.access_token
+
+    const { data, error: refreshError } = await supabase.auth.refreshSession()
+    if (refreshError) {
+      console.warn('⚠️ Error al refrescar sesión:', refreshError)
+      throw new Error('Sesión no válida')
+    }
+    if (data?.session?.access_token) return data.session.access_token
+
+    throw new Error('Sesión no válida')
+  },
+
+  async fetchWithAuth(path, options = {}, retry = true) {
+    const token = await this.getAuthToken()
+    const headers = new Headers(options.headers || {})
+    headers.set('Authorization', `Bearer ${token}`)
+    if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
+
+    const response = await fetch(path, {
+      ...options,
+      headers
+    })
+
+    if (response.status === 401 && retry) {
+      try {
+        await supabase.auth.refreshSession()
+      } catch (refreshError) {
+        console.warn('⚠️ Error al refrescar sesión en retry:', refreshError)
+        return response
+      }
+      return this.fetchWithAuth(path, options, false)
+    }
+
+    return response
+  },
+
   // Enviar notificaciones por correo
   async notifyOrder(event, { orderId, itemId, status, notes = '' }) {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.access_token) return { sent: false, error: 'Sesión no válida' }
-
-      const response = await fetch('/api/orders/notify', {
+      const response = await this.fetchWithAuth('/api/orders/notify', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`
-        },
         body: JSON.stringify({ event, orderId, itemId, status, notes })
       })
       const result = await response.json()
@@ -392,15 +426,8 @@ export const orderService = {
   async cancelOrder(orderId) {
     try {
       if (!isSupabaseConfigured()) throw new Error('Supabase no está configurado')
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.access_token) throw new Error('Sesión no válida')
-
-      const response = await fetch('/api/orders/cancel', {
+      const response = await this.fetchWithAuth('/api/orders/cancel', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`
-        },
         body: JSON.stringify({ orderId })
       })
       const result = await response.json()
@@ -432,15 +459,8 @@ export const orderService = {
       let error
 
       if (status === 'cancelled') {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session?.access_token) throw new Error('Sesión no válida')
-
-        const response = await fetch('/api/orders/cancel-item', {
+        const response = await this.fetchWithAuth('/api/orders/cancel-item', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`
-          },
           body: JSON.stringify({ itemId })
         })
         const result = await response.json()

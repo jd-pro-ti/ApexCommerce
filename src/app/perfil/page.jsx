@@ -297,7 +297,6 @@ function PerfilPageContent() {
 
   return (
     <div className="min-h-screen bg-slate-50/60 pt-28 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-slate-800" style={{ fontFamily: "Inter, system-ui, -apple-system, sans-serif" }}>
-      <Toaster position="bottom-center" />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         

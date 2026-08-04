@@ -196,10 +196,23 @@ export function OrderProvider({ children }) {
           status,
           notes: `Estado del producto actualizado a: ${status}`
         })
-        if (!notificationResult.sent) console.error('❌ Error en notificación:', notificationResult.error)
+        if (!notificationResult.sent) {
+          console.error('❌ Error en notificación:', notificationResult.error)
+          await loadOrders();
+          return {
+            success: true,
+            orderId: result.orderId,
+            notificationSent: false,
+            notificationError: notificationResult.error || 'No autorizado'
+          }
+        }
         
         await loadOrders();
-        return { success: true, orderId: result.orderId };
+        return {
+          success: true,
+          orderId: result.orderId,
+          notificationSent: true
+        };
       } else {
         setError(result.error || 'Error al actualizar el estado');
         return result;
