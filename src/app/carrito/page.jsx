@@ -1,13 +1,15 @@
 'use client';
-import { useState , useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import Button from '@/components/ui/Button';
 import toast from 'react-hot-toast';
-import { useOrders } from '@/context/OrderContext';
 import Alert from '@/components/ui/Alert';
+import PayPalCheckout from '@/components/payments/PayPalCheckout';
+import { orderService } from '@/services/orderService';
+import { useOrders } from '@/context/OrderContext';
 
 export default function CartPage() {
   const router = useRouter();
@@ -15,11 +17,10 @@ export default function CartPage() {
   const { isAuthenticated, user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [paymentAlert, setPaymentAlert] = useState(null);
   const [showCheckout, setShowCheckout] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   
-  const { createOrder, loading: orderLoading } = useOrders();
-
   const subtotal = total;
   const shipping = subtotal > 150 ? 0 : 19.99;
   const tax = 0.00;
@@ -49,6 +50,26 @@ export default function CartPage() {
     }
     setShowConfirmModal(true);
   };
+
+  const paypalCartItems = useMemo(() => cart.map(item => ({
+    id: item.id,
+    quantity: item.quantity
+  })), [cart]);
+
+  const handlePaymentSuccess = useCallback(async result => {
+    setPaymentAlert({ variant: 'success', message: 'Pago realizado correctamente. Tu pedido fue confirmado y el stock fue actualizado.' });
+    setShowConfirmModal(false);
+    await clearCart();
+    await orderService.notifyOrder('created', { orderId: result.orderId });
+    toast.success('Pago confirmado. Tu pedido ya está siendo procesado.');
+    setShowCheckout(true);
+    setTimeout(() => router.push('/perfil?tab=orders'), 1000);
+  }, [clearCart, router]);
+
+  const handlePaymentError = useCallback(message => {
+    setPaymentAlert({ variant: 'error', message: message || 'El pago no pudo completarse. No se descontó el stock.' });
+    setError(message || 'No se pudo procesar el pago');
+  }, []);
 
   const handleConfirmCheckout = async () => {
     setShowConfirmModal(false);
@@ -192,6 +213,7 @@ export default function CartPage() {
           <h2 className="text-2xl font-bold text-on-surface mb-2" style={{ fontFamily: "'Montserrat', sans-serif" }}>
             Pedido Confirmado
           </h2>
+          {paymentAlert && <Alert variant={paymentAlert.variant} className="mb-4 text-left">{paymentAlert.message}</Alert>}
           <p className="text-sm text-on-surface-variant/80 mb-6 leading-relaxed" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
             Tu pedido curado ha sido procesado correctamente. Recibirás un correo electrónico de confirmación con los detalles y el rastreo de inmediato.
           </p>
@@ -387,7 +409,7 @@ export default function CartPage() {
       {/* Tarjeta flotante / Alerta de confirmación con fondo opaco */}
       {showConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-inverse-surface/60 backdrop-blur-xs p-4 animate-fadeIn">
-          <div className="bg-surface-container-lowest border border-surface-container rounded-2xl shadow-xl max-w-md w-full p-8 text-center space-y-6">
+          <div className="bg-surface-container-lowest border border-surface-container rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto overscroll-contain p-8 text-center space-y-6">
             <div className="w-14 h-14 bg-primary-container/20 text-primary rounded-full flex items-center justify-center mx-auto border border-primary/10 shadow-xs">
               <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
@@ -403,6 +425,16 @@ export default function CartPage() {
               </p>
             </div>
 
+            <div className="mb-4 rounded-xl border border-surface-container bg-surface-container-low p-4">
+              <PayPalCheckout
+                cartItems={paypalCartItems}
+                onSuccess={handlePaymentSuccess}
+                onCancel={() => setShowConfirmModal(false)}
+                onError={handlePaymentError}
+              />
+              <p className="mt-3 text-center text-xs text-outline">Pago de prueba en PayPal Sandbox. Usa la cuenta personal sandbox como comprador.</p>
+            </div>
+
             <div className="grid grid-cols-2 gap-3 pt-2">
               <button
                 type="button"
@@ -414,7 +446,7 @@ export default function CartPage() {
               </button>
               <Button
                 type="button"
-                onClick={handleConfirmCheckout}
+                onClick={() => setShowConfirmModal(false)}
                 className="w-full !bg-primary hover:!bg-primary-container !text-on-primary text-sm font-bold py-3.5 rounded-lg shadow-sm"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
