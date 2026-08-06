@@ -7,7 +7,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { profileService } from '@/services/profileService';
+import { supabase } from '@/lib/supabase';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import Alert from '@/components/ui/Alert';
 import { Camera, Edit3, LogOut, Save, User, MapPin, BriefcaseBusiness, Bell, Globe } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -81,6 +83,9 @@ export default function VendedorPerfilPage() {
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [paypalAccount, setPaypalAccount] = useState(null);
+  const [paypalLoading, setPaypalLoading] = useState(false);
+  const [paypalError, setPaypalError] = useState('');
 
   const loadProfile = useCallback(async () => {
     setLoading(true);
@@ -95,6 +100,16 @@ export default function VendedorPerfilPage() {
     setLoading(false);
   }, [user?.id]);
 
+  const loadPaypalAccount = useCallback(async () => {
+    if (!user?.id) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    const response = await fetch('/api/paypal/sellers/onboard', {
+      headers: { Authorization: `Bearer ${session?.access_token || ''}` },
+    });
+    const result = await response.json();
+    if (response.ok) setPaypalAccount(result.account || null);
+  }, [user?.id]);
+
   useEffect(() => {
     if (authLoading) return;
     if (!isAuthenticated || !user?.id) {
@@ -102,7 +117,29 @@ export default function VendedorPerfilPage() {
       return;
     }
     loadProfile();
-  }, [authLoading, isAuthenticated, user?.id, router, loadProfile]);
+    loadPaypalAccount();
+  }, [authLoading, isAuthenticated, user?.id, router, loadProfile, loadPaypalAccount]);
+
+  const connectPaypal = async () => {
+    setPaypalLoading(true);
+    setPaypalError('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch('/api/paypal/sellers/onboard', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session?.access_token || ''}` },
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        console.error('Respuesta de onboarding PayPal:', result);
+        throw new Error(result.error || 'No se pudo iniciar la conexión con PayPal');
+      }
+      window.location.href = result.actionUrl;
+    } catch (error) {
+      setPaypalError(error.message);
+      setPaypalLoading(false);
+    }
+  };
 
   const handleProfileChange = (event) => {
     const { name, value } = event.target;
@@ -256,6 +293,21 @@ export default function VendedorPerfilPage() {
           </aside>
 
           <main className="lg:col-span-9">
+            <div className="mb-6 rounded-2xl border border-blue-100 bg-white p-6 shadow-sm sm:p-8">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Pagos del vendedor</p>
+                  <h2 className="mt-1 text-lg font-bold text-slate-950">Conecta tu cuenta PayPal</h2>
+                  <p className="mt-1 max-w-2xl text-sm text-slate-500">Recibe el 85% de tus ventas. Apex Commerce retiene el 15% de comisión.</p>
+                  {paypalAccount?.onboarding_status === 'pending' && <p className="mt-2 text-xs font-semibold text-amber-600">Onboarding pendiente. Continúa el proceso en PayPal.</p>}
+                  {paypalAccount?.onboarding_status === 'connected' && <p className="mt-2 text-xs font-semibold text-emerald-600">Cuenta PayPal conectada correctamente.</p>}
+                  {paypalError && <Alert variant="error" className="mt-3">{paypalError}</Alert>}
+                </div>
+                <button type="button" onClick={connectPaypal} disabled={paypalLoading || paypalAccount?.onboarding_status === 'connected'} className="shrink-0 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
+                  {paypalLoading ? 'Conectando...' : paypalAccount?.onboarding_status === 'connected' ? 'PayPal conectado' : paypalAccount?.onboarding_status === 'pending' ? 'Continuar con PayPal' : 'Conectar PayPal'}
+                </button>
+              </div>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
                 <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-5">
