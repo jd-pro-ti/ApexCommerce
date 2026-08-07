@@ -4,17 +4,33 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Alert from '@/components/ui/Alert'
 
-function loadPaypalSdk() {
+async function getMerchantIds(productIds) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.access_token) throw new Error('SesiÃ³n no vÃ¡lida')
+  const response = await fetch('/api/paypal/sellers/merchant-ids', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+    body: JSON.stringify({ productIds })
+  })
+  const result = await response.json()
+  if (!response.ok) throw new Error(result.error || 'No se pudieron consultar los vendedores PayPal')
+  if (!result.merchantIds?.length) throw new Error('Ningún vendedor del carrito tiene PayPal conectado')
+  return result.merchantIds
+}
+
+function loadPaypalSdk(merchantIds) {
   return new Promise((resolve, reject) => {
-    if (window.paypal) return resolve(window.paypal)
+    const merchantIdValue = merchantIds.join(',')
     const existing = document.querySelector('script[data-apex-paypal]')
     if (existing) {
-      existing.addEventListener('load', () => resolve(window.paypal), { once: true })
-      existing.addEventListener('error', reject, { once: true })
-      return
+      if (existing.dataset.merchantId === merchantIdValue && window.paypal) return resolve(window.paypal)
+      existing.remove()
+      try { delete window.paypal } catch {}
     }
     const script = document.createElement('script')
-    script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '')}&currency=MXN&buyer-country=MX&locale=es_MX&intent=capture&components=buttons&enable-funding=card`
+    script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '')}&merchant-id=*&currency=MXN&buyer-country=MX&locale=es_MX&intent=capture&components=buttons&enable-funding=card`
+    script.dataset.merchantId = merchantIdValue
+    script.setAttribute('data-merchant-id', merchantIdValue)
     script.async = true
     script.dataset.apexPaypal = 'true'
     script.onload = () => resolve(window.paypal)
@@ -33,7 +49,8 @@ export default function PayPalCheckout({ cartItems, onSuccess, onCancel, onError
     let cancelled = false
     async function renderButtons() {
       try {
-        const paypal = await loadPaypalSdk()
+        const merchantIds = await getMerchantIds(cartItems.map((item) => item.id))
+        const paypal = await loadPaypalSdk(merchantIds)
         if (cancelled || !paypal || !containerRef.current || renderedRef.current) return
         renderedRef.current = true
         await paypal.Buttons({

@@ -40,9 +40,11 @@ const statusConfig = {
 };
 
 export default function ClientOrdersPage() {
-  const { orders, loading, error, loadOrders, cancelOrder: cancelOrderRequest } = useOrders();
+  const { orders, loading, error, loadOrders, cancelOrder: cancelOrderRequest, confirmOrderDelivery } = useOrders();
   const [confirmingCancelId, setConfirmingCancelId] = useState(null);
   const [cancellingId, setCancellingId] = useState(null);
+  const [confirmingDeliveryId, setConfirmingDeliveryId] = useState(null);
+  const [deliveryMessage, setDeliveryMessage] = useState('');
 
   useEffect(() => { 
     loadOrders(); 
@@ -54,6 +56,21 @@ export default function ClientOrdersPage() {
     setCancellingId(null);
     setConfirmingCancelId(null);
     if (!result.success) console.error('Error al cancelar pedido:', result.error);
+  };
+
+  const confirmDelivery = async (order) => {
+    if (!window.confirm('¿Confirmas que recibiste todos los productos de este pedido?')) return;
+    setConfirmingDeliveryId(order.id);
+    setDeliveryMessage('');
+    const result = await confirmOrderDelivery(order.id);
+    setConfirmingDeliveryId(null);
+    if (!result.success) {
+      setDeliveryMessage(result.error || 'No se pudo confirmar la entrega.');
+      return;
+    }
+    setDeliveryMessage(result.payout?.released
+      ? 'Entrega confirmada. Los pagos de los vendedores fueron liberados.'
+      : 'Entrega confirmada. La liberación de los pagos quedó pendiente de revisión.');
   };
 
   if (loading && orders.length === 0) {
@@ -96,6 +113,7 @@ export default function ClientOrdersPage() {
       </div>
 
       {error && <Alert className="mb-8 rounded-2xl" variant="error">{error}</Alert>}
+      {deliveryMessage && <Alert className="mb-8 rounded-2xl" variant="success">{deliveryMessage}</Alert>}
 
       {orders.length === 0 ? (
         /* ESTADO VACÍO MEJORADO */
@@ -132,6 +150,10 @@ export default function ClientOrdersPage() {
             });
             const orderCanCancel = (order.order_items || []).length > 0 &&
               (order.order_items || []).every(item => ['pending', 'processing'].includes(item.status || order.status || 'pending'));
+            const deliveryItems = (order.order_items || []).filter(item => item.status !== 'cancelled');
+            const canConfirmDelivery = deliveryItems.length > 0 &&
+              deliveryItems.some(item => ['processing', 'shipped'].includes(item.status)) &&
+              deliveryItems.every(item => ['processing', 'shipped', 'delivered'].includes(item.status));
 
             return (
               <article 
@@ -164,6 +186,17 @@ export default function ClientOrdersPage() {
                   </div>
 
                   <div className="flex flex-wrap gap-2">
+                    {canConfirmDelivery && (
+                      <button
+                        type="button"
+                        disabled={confirmingDeliveryId === order.id}
+                        onClick={() => confirmDelivery(order)}
+                        className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-extrabold tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50 transition-all"
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                        {confirmingDeliveryId === order.id ? 'Confirmando...' : 'Confirmar recepción'}
+                      </button>
+                    )}
                     {orderCanCancel && confirmingCancelId !== order.id && (
                       <button type="button" onClick={() => setConfirmingCancelId(order.id)} className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-extrabold tracking-wider text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 transition-all">
                         Cancelar pedido

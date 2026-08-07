@@ -6,11 +6,12 @@ import { useOrders } from '@/context/OrderContext';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import toast from 'react-hot-toast';
 
-const labels = { pending: 'Pendiente', processing: 'En proceso', shipped: 'Enviado', cancelled: 'Cancelado' };
+const labels = { pending: 'Pendiente', processing: 'En proceso', shipped: 'Enviado', delivered: 'Entregado', cancelled: 'Cancelado' };
 const colors = {
   pending: 'bg-yellow-50 text-yellow-700 border border-yellow-200',
   processing: 'bg-blue-50 text-blue-700 border border-blue-200',
   shipped: 'bg-purple-50 text-purple-700 border border-purple-200',
+  delivered: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
   cancelled: 'bg-rose-50 text-rose-700 border border-rose-200',
 };
 
@@ -47,6 +48,10 @@ export default function SellerOrders() {
     if (result.notificationSent === false) {
       toast.error(result.notificationError || 'El estado se actualizó, pero no se pudo enviar la notificación.');
       return;
+    }
+
+    if (status === 'delivered' && result.payoutResult?.released === false) {
+      toast('Pedido entregado. La liberación del pago quedó pendiente de revisión.', { duration: 5000 });
     }
 
     toast.success(
@@ -179,7 +184,7 @@ export default function SellerOrders() {
 
                           {/* Acciones de Cambio de Estado */}
                           <div className="flex flex-wrap items-center gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-gray-100">
-                            {status !== 'shipped' && status !== 'cancelled' ? (
+                            {status !== 'delivered' && status !== 'cancelled' ? (
                               <div className="flex flex-wrap gap-2 w-full md:w-auto">
                                 <button 
                                   disabled={isUpdating || status === 'processing'} 
@@ -207,6 +212,7 @@ export default function SellerOrders() {
                                   <XCircle className="w-3.5 h-3.5" />
                                   Cancelar
                                 </button>
+
                               </div>
                             ) : (
                               <span className="text-xs text-gray-400 font-semibold italic">

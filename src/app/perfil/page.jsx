@@ -79,7 +79,7 @@ function PerfilPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isAuthenticated, loading: authLoading, updateProfile: updateAuthProfile, logout } = useAuth();
-  const { orders, loading: ordersLoading, error: ordersError, loadOrders, cancelOrder: cancelOrderRequest } = useOrders();
+  const { orders, loading: ordersLoading, error: ordersError, loadOrders, cancelOrder: cancelOrderRequest, confirmOrderDelivery } = useOrders();
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -92,6 +92,7 @@ function PerfilPageContent() {
   const [orderStatusFilter, setOrderStatusFilter] = useState('all');
   const [confirmingCancelId, setConfirmingCancelId] = useState(null);
   const [cancellingId, setCancellingId] = useState(null);
+  const [confirmingDeliveryId, setConfirmingDeliveryId] = useState(null);
 
   const [profile, setProfile] = useState({
     id: '',
@@ -130,6 +131,20 @@ function PerfilPageContent() {
     setCancellingId(null);
     setConfirmingCancelId(null);
     if (result.success) showCustomToast('Pedido cancelado correctamente');
+  };
+
+  const confirmDelivery = async (order) => {
+    if (!window.confirm('¿Confirmas que recibiste todos los productos de este pedido?')) return;
+    setConfirmingDeliveryId(order.id);
+    const result = await confirmOrderDelivery(order.id);
+    setConfirmingDeliveryId(null);
+    if (result.success) {
+      showCustomToast(result.payout?.released
+        ? 'Entrega confirmada y pagos liberados'
+        : 'Entrega confirmada; liberación pendiente');
+    } else {
+      toast.error(result.error || 'No se pudo confirmar la entrega');
+    }
   };
 
   useEffect(() => {
@@ -708,6 +723,10 @@ function PerfilPageContent() {
                     const currentStatus = getOrderStatus(order);
                     const statusInfo = statusConfig[currentStatus] || statusConfig.pending;
                     const StatusIcon = statusInfo.icon;
+                    const deliveryItems = (order.order_items || []).filter(item => item.status !== 'cancelled');
+                    const canConfirmDelivery = deliveryItems.length > 0 &&
+                      deliveryItems.some(item => ['processing', 'shipped'].includes(item.status)) &&
+                      deliveryItems.every(item => ['processing', 'shipped', 'delivered'].includes(item.status));
                     
                     const formattedDate = new Date(order.created_at).toLocaleDateString('es-MX', {
                       day: '2-digit',
@@ -746,7 +765,7 @@ function PerfilPageContent() {
                         <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                           <div className="flex items-center gap-3 overflow-x-auto pb-1 sm:pb-0">
                             {order.order_items?.slice(0, 3).map((item, idx) => {
-                              const img = item.product_image || item.image_url || item.image || item.product?.image_url;
+                              const img = item.product_image || item.image_url || item.image || item.product?.image_url || item.products?.images?.[0];
                               return (
                                 <div key={idx} className="relative w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex-shrink-0">
                                   {img ? (
@@ -773,6 +792,17 @@ function PerfilPageContent() {
                             {['pending', 'processing'].includes(currentStatus) && confirmingCancelId !== order.id && (
                               <button type="button" onClick={() => setConfirmingCancelId(order.id)} className="px-4 py-2.5 rounded-xl text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 transition-all">
                                 Cancelar pedido
+                              </button>
+                            )}
+                            {canConfirmDelivery && (
+                              <button
+                                type="button"
+                                disabled={confirmingDeliveryId === order.id}
+                                onClick={() => confirmDelivery(order)}
+                                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50 transition-all"
+                              >
+                                <CheckCircle2 className="w-4 h-4" />
+                                {confirmingDeliveryId === order.id ? 'Confirmando...' : 'Confirmar recepción'}
                               </button>
                             )}
                             <Link 

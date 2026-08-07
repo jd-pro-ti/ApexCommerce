@@ -848,7 +848,7 @@ async addToCart(userId, productId, quantity = 1) {
     // OBTENER EL STOCK DEL PRODUCTO
     const { data: productData, error: productError } = await supabase
       .from('products')
-      .select('stock')
+      .select('stock, reserved_stock')
       .eq('id', productId)
       .single()
 
@@ -879,8 +879,8 @@ async addToCart(userId, productId, quantity = 1) {
     let newTotalQuantity = currentQuantity + quantity
 
     // VALIDAR STOCK DISPONIBLE
-    if (newTotalQuantity > productData.stock) {
-      const available = productData.stock - currentQuantity
+    if (newTotalQuantity > productData.stock - (productData.reserved_stock || 0)) {
+      const available = productData.stock - (productData.reserved_stock || 0) - currentQuantity
       throw new Error(`Stock insuficiente. Solo quedan ${available} unidades disponibles.`)
     }
 
@@ -956,15 +956,16 @@ async addToCart(userId, productId, quantity = 1) {
       // OBTENER STOCK DEL PRODUCTO
       const { data: productData, error: productError } = await supabase
         .from('products')
-        .select('stock')
+        .select('stock, reserved_stock')
         .eq('id', productId)
         .single()
 
       if (productError) throw productError
 
       // VALIDAR STOCK
-      if (quantity > productData.stock) {
-        throw new Error(`Stock insuficiente. Solo quedan ${productData.stock} unidades disponibles.`)
+      const available = productData.stock - (productData.reserved_stock || 0)
+      if (quantity > available) {
+        throw new Error(`Stock insuficiente. Solo quedan ${available} unidades disponibles.`)
       }
 
       const { data, error } = await supabase

@@ -51,3 +51,11 @@ export async function paypalRequest(path, options = {}) {
   }
   return data
 }
+
+export function createPaypalAuthAssertion(sellerMerchantId) {
+  const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
+  if (!clientId || !sellerMerchantId) throw new Error('Faltan datos para autorizar al vendedor en PayPal')
+
+  const encode = (value) => Buffer.from(JSON.stringify(value)).toString('base64url')
+  return `${encode({ alg: 'none' })}.${encode({ iss: clientId, payer_id: sellerMerchantId })}.`
+}

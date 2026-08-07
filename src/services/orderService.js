@@ -439,11 +439,35 @@ export const orderService = {
     }
   },
 
+  async confirmOrderDelivery(orderId) {
+    try {
+      if (!isSupabaseConfigured()) throw new Error('Supabase no está configurado')
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user?.id) throw new Error('Sesión no válida')
+      const { data, error } = await supabase.rpc('confirm_order_delivery', {
+        p_user_id: user.id,
+        p_order_id: orderId
+      })
+      if (error) throw error
+
+      const response = await this.fetchWithAuth('/api/paypal/payouts/release', {
+        method: 'POST',
+        body: JSON.stringify({ orderId })
+      })
+      const payout = await response.json()
+      if (!response.ok && !payout.alreadyReleased) throw new Error(payout.error || 'No se pudo liberar el pago')
+      return { success: true, orderId: data, payout }
+    } catch (error) {
+      console.error('Error al confirmar entrega:', error)
+      return { success: false, error: error.message }
+    }
+  },
+
   // Actualizar estado de artículo individual
   async updateOrderItemStatus(itemId, sellerId, status) {
     try {
       if (!isSupabaseConfigured()) throw new Error('Supabase no está configurado')
-      if (!['processing', 'shipped', 'delivered', 'cancelled'].includes(status)) {
+      if (!['processing', 'shipped', 'cancelled'].includes(status)) {
         throw new Error('Estado no permitido')
       }
 

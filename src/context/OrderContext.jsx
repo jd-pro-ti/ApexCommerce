@@ -178,6 +178,26 @@ export function OrderProvider({ children }) {
     }
   };
 
+  const confirmOrderDelivery = async (orderId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await orderService.confirmOrderDelivery(orderId);
+      if (!result.success) {
+        setError(result.error || 'No se pudo confirmar la entrega');
+        return result;
+      }
+      const notificationResult = await orderService.notifyOrder('delivered', { orderId });
+      await loadOrders();
+      return { ...result, notificationSent: notificationResult.sent };
+    } catch (error) {
+      setError(error.message || 'No se pudo confirmar la entrega');
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Actualizar estado de un item específico (para vendedores)
   const updateOrderItemStatus = async (itemId, status) => {
     if (!user?.id) return { success: false, error: 'Sesión no válida' };
@@ -189,6 +209,18 @@ export function OrderProvider({ children }) {
       const result = await orderService.updateOrderItemStatus(itemId, user.id, status);
       
       if (result.success) {
+        let payoutResult = null;
+        if (status === 'delivered') {
+          try {
+            const payoutResponse = await orderService.fetchWithAuth('/api/paypal/payouts/release', {
+              method: 'POST',
+              body: JSON.stringify({ orderId: result.orderId })
+            });
+            payoutResult = await payoutResponse.json();
+          } catch (payoutError) {
+            payoutResult = { success: false, released: false, error: payoutError.message };
+          }
+        }
         // Enviar notificación por correo
         const notificationResult = await orderService.notifyOrder('item-status', {
           orderId: result.orderId, 
@@ -202,6 +234,7 @@ export function OrderProvider({ children }) {
           return {
             success: true,
             orderId: result.orderId,
+            payoutResult,
             notificationSent: false,
             notificationError: notificationResult.error || 'No autorizado'
           }
@@ -211,6 +244,7 @@ export function OrderProvider({ children }) {
         return {
           success: true,
           orderId: result.orderId,
+          payoutResult,
           notificationSent: true
         };
       } else {
@@ -249,6 +283,7 @@ export function OrderProvider({ children }) {
     createOrder,
     updateOrderStatus,
     cancelOrder,
+    confirmOrderDelivery,
     updateOrderItemStatus,
     getOrder,
     setError
