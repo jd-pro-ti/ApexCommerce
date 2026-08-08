@@ -78,7 +78,7 @@ const showCustomToast = (message) => {
 function PerfilPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, isAuthenticated, loading: authLoading, updateProfile: updateAuthProfile, logout } = useAuth();
+  const { user, role, isAuthenticated, loading: authLoading, updateProfile: updateAuthProfile, logout } = useAuth();
   const { orders, loading: ordersLoading, error: ordersError, loadOrders, cancelOrder: cancelOrderRequest, confirmOrderDelivery } = useOrders();
   
   const [loading, setLoading] = useState(true);
@@ -93,6 +93,7 @@ function PerfilPageContent() {
   const [confirmingCancelId, setConfirmingCancelId] = useState(null);
   const [cancellingId, setCancellingId] = useState(null);
   const [confirmingDeliveryId, setConfirmingDeliveryId] = useState(null);
+  const [sellerApplication, setSellerApplication] = useState(null);
 
   const [profile, setProfile] = useState({
     id: '',
@@ -156,6 +157,16 @@ function PerfilPageContent() {
     loadProfile();
     loadOrders();
   }, [authLoading, isAuthenticated, user?.id, router, loadOrders]);
+
+  useEffect(() => {
+    if (role !== 'cliente' || !user?.id) return;
+    let active = true;
+    fetch('/api/seller-applications', { cache: 'no-store' })
+      .then((response) => response.json())
+      .then((result) => { if (active) setSellerApplication(result.application || null); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [role, user?.id]);
 
   useEffect(() => {
     const requestedTab = searchParams?.get('tab');
@@ -353,7 +364,7 @@ function PerfilPageContent() {
               {formData.name || 'Usuario'}
             </h2>
             <div className="mt-2 inline-block bg-slate-100 text-slate-700 text-xs font-semibold px-3 py-1 rounded-full">
-              Cliente
+              {role === 'vendedor' ? 'Vendedor' : role === 'admin' ? 'Administrador' : 'Cliente'}
             </div>
           </div>
 
@@ -397,6 +408,16 @@ function PerfilPageContent() {
 
         {/* Columna Derecha: Contenido */}
         <div className="lg:col-span-9 space-y-6">
+          {role === 'cliente' && sellerApplication?.status === 'pending' && (
+            <div className="block bg-[#162536] text-white rounded-2xl p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div><p className="text-xs uppercase tracking-widest text-amber-300 font-bold">Solicitud en revisión</p><h2 className="mt-1 text-xl font-bold">Solicitud enviada</h2><p className="mt-1 text-sm text-slate-300">Te avisaremos por correo cuando el administrador revise tus datos.</p></div><span className="bg-emerald-400 text-[#162536] px-4 py-2 rounded-xl text-sm font-bold">Enviada</span></div>
+            </div>
+          )}
+          {role === 'cliente' && (!sellerApplication || sellerApplication.status === 'rejected') && (
+            <Link href={sellerApplication?.status === 'pending' ? '/perfil' : '/convertirse-vendedor'} className="block bg-[#162536] text-white rounded-2xl p-6 hover:bg-slate-800 transition-colors">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div><p className="text-xs uppercase tracking-widest text-amber-300 font-bold">Nueva oportunidad</p><h2 className="mt-1 text-xl font-bold">Conviértete en vendedor</h2><p className="mt-1 text-sm text-slate-300">Conoce los beneficios y envía tu solicitud de validación.</p></div><span className="bg-[#FFB872] text-[#162536] px-4 py-2 rounded-xl text-sm font-bold">Comenzar</span></div>
+            </Link>
+          )}
           
           {activeTab === 'profile' && (
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">

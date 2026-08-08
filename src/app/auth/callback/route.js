@@ -80,7 +80,7 @@ export async function GET(request) {
         
         console.log('✅ Perfil creado con rol:', role)
         console.log(`✅ Redirigiendo a la pantalla principal (rol: ${role})`)
-        return NextResponse.redirect(new URL('/', request.url))
+        return NextResponse.redirect(new URL(role === 'admin' ? '/dashboard/admin' : role === 'vendedor' ? '/dashboard/vendedor' : '/', request.url))
       }
       
       // Si hay error diferente
@@ -94,7 +94,7 @@ export async function GET(request) {
       console.log('🎯 Rol del usuario:', role)
       
       console.log(`✅ Redirigiendo a la pantalla principal (rol: ${role})`)
-      return NextResponse.redirect(new URL('/', request.url))
+      return NextResponse.redirect(new URL(role === 'admin' ? '/dashboard/admin' : role === 'vendedor' ? '/dashboard/vendedor' : '/', request.url))
     }
     
     // Fallback
