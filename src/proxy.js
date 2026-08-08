@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 const ROLE_HOME = {
   admin: '/dashboard/admin',
   vendedor: '/dashboard/vendedor',
-  cliente: '/dashboard/cliente',
+  cliente: '/',
 }
 
 const PUBLIC_ROUTES = ['/', '/login', '/registro', '/catalogo', '/producto', '/auth/callback']
@@ -89,8 +89,12 @@ export async function proxy(request) {
   const home = ROLE_HOME[role]
 
   // Admines y vendedores trabajan únicamente dentro de su área.
-  if (pathname === '/login' || pathname === '/registro' || isPublicRoute) {
-    if (role !== 'cliente') return redirectTo(request, home)
+  if (pathname === '/login' || pathname === '/registro') {
+    return redirectTo(request, '/')
+  }
+
+  if (isPublicRoute && pathname !== '/' && role !== 'cliente') {
+    return redirectTo(request, home)
   }
 
   if (matchesRoute(pathname, '/dashboard/admin') && role !== 'admin') {
@@ -98,10 +102,6 @@ export async function proxy(request) {
   }
 
   if (matchesRoute(pathname, '/dashboard/vendedor') && role !== 'vendedor') {
-    return redirectTo(request, home)
-  }
-
-  if (matchesRoute(pathname, '/dashboard/cliente') && role !== 'cliente') {
     return redirectTo(request, home)
   }
 

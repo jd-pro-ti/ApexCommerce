@@ -82,13 +82,21 @@ export async function POST(request) {
       const shippingCents = index === groups.length - 1 ? totalShippingCents - allocatedShippingCents : totalItemsCents ? Math.round(totalShippingCents * itemCents / totalItemsCents) : 0
       allocatedShippingCents += shippingCents
       const grossCents = itemCents + shippingCents
-      const feeCents = Math.round(grossCents * 0.15)
+      // La comisión se calcula únicamente sobre los productos, nunca sobre el envío.
+      const feeCents = Math.round(itemCents * 0.15)
       totalFeeCents += feeCents
+      // El vendedor recibe 85% de productos + 100% del envío.
       return { ...group, grossAmount: (grossCents / 100).toFixed(2), platformFeeAmount: (feeCents / 100).toFixed(2), sellerAmount: ((grossCents - feeCents) / 100).toFixed(2) }
     })
     const paypalOrder = await paypalRequest('/v2/checkout/orders', {
       method: 'POST',
-      headers: { 'PayPal-Request-Id': `apex-${session.id}`, 'PayPal-Auth-Assertion': createPaypalAuthAssertion(accounts[0].paypal_merchant_id) },
+      headers: {
+        'PayPal-Request-Id': `apex-${session.id}`,
+        'PayPal-Auth-Assertion': createPaypalAuthAssertion(accounts[0].paypal_merchant_id),
+        ...(process.env.PAYPAL_PARTNER_ATTRIBUTION_ID
+          ? { 'PayPal-Partner-Attribution-Id': process.env.PAYPAL_PARTNER_ATTRIBUTION_ID }
+          : {})
+      },
       body: JSON.stringify({ intent: 'CAPTURE', purchase_units: breakdown.map((group) => ({ reference_id: `seller-${group.sellerId}`, custom_id: session.id, description: 'Apex Commerce - vendedor', amount: { currency_code: 'MXN', value: group.grossAmount }, payee: { merchant_id: group.account.paypal_merchant_id }, payment_instruction: { disbursement_mode: 'DELAYED', platform_fees: [{ amount: { currency_code: 'MXN', value: group.platformFeeAmount } }] } })), application_context: { brand_name: 'Apex Commerce', user_action: 'PAY_NOW', shipping_preference: 'NO_SHIPPING' } })
     })
     const sellerPayoutTotal = breakdown.reduce((sum, item) => sum + Number(item.sellerAmount), 0)

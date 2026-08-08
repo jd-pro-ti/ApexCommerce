@@ -67,7 +67,7 @@ export default function RegistroPage() {
       if (result.success) {
         setSuccess(true);
         setTimeout(() => {
-          router.push('/dashboard/cliente');
+          router.push('/');
         }, 2000);
       } else {
         setError(result.error || 'Ocurrió un error al registrar el usuario.');

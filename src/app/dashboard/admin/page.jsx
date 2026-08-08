@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import Button from '@/components/ui/Button';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import EarningsPanel from '@/components/dashboard/EarningsPanel';
 import { authService } from '@/services/authService';
 import { orderService } from '@/services/orderService';
 import { productService } from '@/services/productService';
@@ -200,6 +201,8 @@ export default function AdminDashboard() {
           </div>
 
         </div>
+
+        <EarningsPanel userId={user?.id} role="admin" />
 
         {/* Sección de Contenido Principal (Usuarios recientes + Alertas del Sistema) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

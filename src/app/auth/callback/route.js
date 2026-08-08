@@ -79,43 +79,27 @@ export async function GET(request) {
           })
         
         console.log('✅ Perfil creado con rol:', role)
-        const roleToUse = role
-        let dashboardRoute = '/dashboard/cliente'
-        
-        if (roleToUse === 'admin') {
-          dashboardRoute = '/dashboard/admin'
-        } else if (roleToUse === 'vendedor') {
-          dashboardRoute = '/dashboard/vendedor'
-        }
-        
-        console.log(`✅ Redirigiendo a: ${dashboardRoute} (rol: ${roleToUse})`)
-        return NextResponse.redirect(new URL(dashboardRoute, request.url))
+        console.log(`✅ Redirigiendo a la pantalla principal (rol: ${role})`)
+        return NextResponse.redirect(new URL('/', request.url))
       }
       
       // Si hay error diferente
       if (profileError) {
         console.error('❌ Error al obtener perfil:', profileError)
-        return NextResponse.redirect(new URL('/dashboard/cliente', request.url))
+        return NextResponse.redirect(new URL('/', request.url))
       }
       
       // Determinar redirección según el rol del perfil
       const role = profile?.role || 'cliente'
       console.log('🎯 Rol del usuario:', role)
       
-      let dashboardRoute = '/dashboard/cliente'
-      if (role === 'admin') {
-        dashboardRoute = '/dashboard/admin'
-      } else if (role === 'vendedor') {
-        dashboardRoute = '/dashboard/vendedor'
-      }
-      
-      console.log(`✅ Redirigiendo a: ${dashboardRoute} (rol: ${role})`)
-      return NextResponse.redirect(new URL(dashboardRoute, request.url))
+      console.log(`✅ Redirigiendo a la pantalla principal (rol: ${role})`)
+      return NextResponse.redirect(new URL('/', request.url))
     }
     
     // Fallback
-    console.log('⚠️ No hay usuario, redirigiendo a cliente')
-    return NextResponse.redirect(new URL('/dashboard/cliente', request.url))
+    console.log('⚠️ No hay usuario, redirigiendo a la pantalla principal')
+    return NextResponse.redirect(new URL('/', request.url))
     
   } catch (error) {
     console.error('❌ Error en callback:', error)

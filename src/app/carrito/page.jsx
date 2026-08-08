@@ -22,7 +22,7 @@ export default function CartPage() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   
   const subtotal = total;
-  const shipping = subtotal > 150 ? 0 : 19.99;
+  const shipping = 0;
   const tax = 0.00;
   const grandTotal = subtotal + shipping + tax;
 

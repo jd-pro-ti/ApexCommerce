@@ -21,16 +21,25 @@ async function getMerchantIds(productIds) {
 function loadPaypalSdk(merchantIds) {
   return new Promise((resolve, reject) => {
     const merchantIdValue = merchantIds.join(',')
+    const isMultiSeller = merchantIds.length > 1
+    const sdkMerchantQuery = isMultiSeller
+      ? '*'
+      : encodeURIComponent(merchantIds[0])
     const existing = document.querySelector('script[data-apex-paypal]')
     if (existing) {
-      if (existing.dataset.merchantId === merchantIdValue && window.paypal) return resolve(window.paypal)
-      existing.remove()
-      try { delete window.paypal } catch {}
+      const existingIsMultiSeller = existing.hasAttribute('data-merchant-id')
+      if (existing.dataset.merchantId === merchantIdValue && existingIsMultiSeller === isMultiSeller && window.paypal) return resolve(window.paypal)
+      // PayPal registra listeners globales y no permite bootstrappear el SDK
+      // otra vez en la misma pestaña. Se reutiliza la instancia existente.
+      if (window.paypal) return resolve(window.paypal)
+      existing.addEventListener('load', () => resolve(window.paypal), { once: true })
+      existing.addEventListener('error', reject, { once: true })
+      return
     }
     const script = document.createElement('script')
-    script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '')}&merchant-id=*&currency=MXN&buyer-country=MX&locale=es_MX&intent=capture&components=buttons&enable-funding=card`
+    script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '')}&merchant-id=${sdkMerchantQuery}&currency=MXN&buyer-country=MX&locale=es_MX&intent=capture&components=buttons&enable-funding=card`
     script.dataset.merchantId = merchantIdValue
-    script.setAttribute('data-merchant-id', merchantIdValue)
+    if (isMultiSeller) script.setAttribute('data-merchant-id', merchantIdValue)
     script.async = true
     script.dataset.apexPaypal = 'true'
     script.onload = () => resolve(window.paypal)

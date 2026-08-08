@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import Button from '@/components/ui/Button';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import EarningsPanel from '@/components/dashboard/EarningsPanel';
 import { orderService } from '@/services/orderService';
 import { productService } from '@/services/productService';
 import {
@@ -29,6 +30,17 @@ export default function SellerDashboard() {
   const [stats, setStats] = useState({});
   const [recentOrders, setRecentOrders] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
+
+  const mapStatus = (status) => {
+    if (!status) return 'Pendiente';
+    const s = String(status).toLowerCase();
+    if (s.includes('delivered')) return 'Entregado';
+    if (s.includes('shipped')) return 'Enviado';
+    if (s.includes('processing')) return 'Procesando';
+    if (s.includes('pending')) return 'Pendiente';
+    if (s.includes('cancel')) return 'Cancelado';
+    return String(status);
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -113,17 +125,6 @@ export default function SellerDashboard() {
 
     loadData();
   }, [user]);
-
-  const mapStatus = (status) => {
-    if (!status) return 'Pendiente';
-    const s = String(status).toLowerCase();
-    if (s.includes('delivered')) return 'Entregado';
-    if (s.includes('shipped')) return 'Enviado';
-    if (s.includes('processing')) return 'Procesando';
-    if (s.includes('pending')) return 'Pendiente';
-    if (s.includes('cancel')) return 'Cancelado';
-    return String(status);
-  };
 
   if (loading) {
     return (
@@ -231,6 +232,8 @@ export default function SellerDashboard() {
           </div>
 
         </div>
+
+        <EarningsPanel userId={user?.id} role="vendedor" />
 
         {/* Sección de Contenido Principal: Pedidos y Productos Top */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

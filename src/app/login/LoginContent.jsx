@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import Button from '@/components/ui/Button';
@@ -8,7 +8,6 @@ import { ShoppingBag, Package, Gift, Tag, Eye, EyeOff, ArrowLeft } from 'lucide-
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { login, loginWithGoogle } = useAuth();
   
   const [showPassword, setShowPassword] = useState(false);
@@ -44,16 +43,7 @@ export default function LoginPage() {
       const result = await login(formData.email, formData.password);
 
       if (result && result.success) {
-        const roleHome = {
-          admin: '/dashboard/admin',
-          vendedor: '/dashboard/vendedor',
-          cliente: '/dashboard/cliente',
-        };
-        const requestedRedirect = searchParams.get('redirect');
-        const redirect = requestedRedirect?.startsWith('/') && !requestedRedirect.startsWith('//')
-          ? requestedRedirect
-          : roleHome[result.user?.role] || roleHome.cliente;
-        router.replace(redirect);
+        router.replace('/');
       } else {
         setError(result?.error || 'Credenciales inválidas o error al iniciar sesión.');
       }

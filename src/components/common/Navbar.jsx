@@ -42,7 +42,7 @@ const Navbar = () => {
   const getDashboardRoute = () => {
     if (role === 'admin') return '/dashboard/admin';
     if (role === 'vendedor') return '/dashboard/vendedor';
-    return '/dashboard/cliente';
+    return '/';
   };
 
   const handleLogout = async () => {

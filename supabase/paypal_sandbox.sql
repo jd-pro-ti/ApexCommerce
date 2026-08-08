@@ -380,7 +380,12 @@ begin
     where user_id = p_user_id and status = 'pending' and expires_at > now()
       and cart_items = p_cart_items
     order by created_at desc limit 1;
-  if v_session_id is not null then return v_session_id; end if;
+  if v_session_id is not null then
+    update public.paypal_checkout_sessions
+      set shipping_cost = 0, total = subtotal, expires_at = now() + interval '30 minutes'
+      where id = v_session_id;
+    return v_session_id;
+  end if;
 
   insert into public.paypal_checkout_sessions(
     user_id, cart_items, customer_name, customer_email, customer_phone,
@@ -406,7 +411,8 @@ begin
     v_subtotal := v_subtotal + round(v_product.price * v_quantity, 2);
   end loop;
 
-  v_shipping := case when v_subtotal > 150 then 0 else 19.99 end;
+  -- El envío queda temporalmente en cero para las pruebas de comisión.
+  v_shipping := 0;
   update public.paypal_checkout_sessions set
     subtotal = v_subtotal, shipping_cost = v_shipping, total = v_subtotal + v_shipping,
     expires_at = now() + interval '30 minutes'
