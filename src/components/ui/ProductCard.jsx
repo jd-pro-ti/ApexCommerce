@@ -126,12 +126,12 @@ const ProductCard = ({ product }) => {
     <div className="group bg-white rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 h-full flex flex-col overflow-hidden">
       
       <Link href={`/producto/${product.id}`}>
-        <div className="relative h-60 w-full bg-gray-50 overflow-hidden flex items-center justify-center">
+        <div className="relative h-60 w-full bg-gray-50 overflow-hidden flex items-center justify-center p-2">
           {product.images?.[0] ? (
             <img
               src={product.images[0]}
               alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
               loading="lazy"
             />
           ) : (

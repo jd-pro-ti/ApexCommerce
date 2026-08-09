@@ -238,11 +238,25 @@ const Navbar = () => {
               <span>Carrito</span>
               <span className="bg-[#e0a96d] text-[#010f20] px-2 py-0.5 rounded-full text-[10px] font-black">{itemsCount}</span>
             </Link>
-            {isAuthenticated && (
-              <button onClick={() => { setIsMobileMenuOpen(false); handleLogout(); }} className="py-2 text-left text-rose-400 hover:text-rose-300">
-                Cerrar Sesión
-              </button>
-            )}
+
+            {/* Acciones de Autenticación para Móvil */}
+            <div className="pt-3 border-t border-white/15 mt-2">
+              {isAuthenticated ? (
+                <button 
+                  onClick={() => { setIsMobileMenuOpen(false); handleLogout(); }} 
+                  disabled={isLoggingOut}
+                  className="w-full py-3 text-center bg-rose-500/20 border border-rose-500/40 text-rose-300 rounded-xl font-bold uppercase tracking-wider hover:bg-rose-500/30 transition-colors"
+                >
+                  {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar Sesión'}
+                </button>
+              ) : (
+                <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                  <button className="w-full py-3 bg-gradient-to-r from-[#e0a96d] to-[#c58b4e] text-[#010f20] rounded-xl text-xs font-extrabold uppercase tracking-wider hover:opacity-95 transition-all shadow-lg">
+                    Ingresar
+                  </button>
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       )}
