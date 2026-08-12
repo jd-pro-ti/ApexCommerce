@@ -2,6 +2,72 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase-admin'
 
 export const authService = {
+  // Solicitar un código de recuperación por correo
+  async requestPasswordReset(email) {
+    try {
+      if (!isSupabaseConfigured()) {
+        throw new Error('Supabase no está configurado')
+      }
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/actualizar-password`
+      })
+
+      if (error) throw error
+
+      return { success: true }
+    } catch (error) {
+      console.error('Error al solicitar recuperación:', error)
+      return {
+        success: false,
+        error: error.message || 'No se pudo enviar el código de recuperación'
+      }
+    }
+  },
+
+  // Validar el código enviado por Supabase para recuperación
+  async verifyRecoveryCode(email, token) {
+    try {
+      if (!isSupabaseConfigured()) {
+        throw new Error('Supabase no está configurado')
+      }
+
+      const { error } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: token.trim(),
+        type: 'recovery'
+      })
+
+      if (error) throw error
+      return { success: true }
+    } catch (error) {
+      console.error('Error al verificar código de recuperación:', error)
+      return {
+        success: false,
+        error: error.message || 'El código no es válido o ya expiró'
+      }
+    }
+  },
+
+  // Actualizar la contraseña después de validar la recuperación
+  async updatePassword(password) {
+    try {
+      if (!isSupabaseConfigured()) {
+        throw new Error('Supabase no está configurado')
+      }
+
+      const { error } = await supabase.auth.updateUser({ password })
+      if (error) throw error
+      return { success: true }
+    } catch (error) {
+      console.error('Error al actualizar contraseña:', error)
+      return {
+        success: false,
+        error: error.message || 'No se pudo actualizar la contraseña'
+      }
+    }
+  },
+
   // Iniciar sesión con email y contraseña
   async login(email, password) {
     try {

@@ -10,7 +10,7 @@ import { profileService } from '@/services/profileService';
 import { supabase } from '@/lib/supabase';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Alert from '@/components/ui/Alert';
-import { Camera, Edit3, LogOut, Save, User, MapPin, BriefcaseBusiness, Bell, Globe } from 'lucide-react';
+import { Camera, Edit3, LogOut, Save, User, MapPin, BriefcaseBusiness, Bell, Globe, Trash2 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
 const defaultProfile = {
@@ -86,6 +86,10 @@ export default function VendedorPerfilPage() {
   const [paypalAccount, setPaypalAccount] = useState(null);
   const [paypalLoading, setPaypalLoading] = useState(false);
   const [paypalError, setPaypalError] = useState('');
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteAccountError, setDeleteAccountError] = useState('');
 
   const loadProfile = useCallback(async () => {
     setLoading(true);
@@ -238,6 +242,31 @@ export default function VendedorPerfilPage() {
     router.replace('/login');
   };
 
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmation !== 'ELIMINAR') {
+      setDeleteAccountError('Escribe ELIMINAR exactamente para continuar.');
+      return;
+    }
+    setDeletingAccount(true);
+    setDeleteAccountError('');
+    try {
+      const response = await fetch('/api/account/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirmation: deleteConfirmation })
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        const detail = typeof result.error === 'string' ? result.error : JSON.stringify(result.error || {});
+        throw new Error(detail || 'No se pudo eliminar la cuenta.');
+      }
+      window.location.replace('/login?account_deleted=1');
+    } catch (error) {
+      setDeletingAccount(false);
+      setDeleteAccountError(error.message);
+    }
+  };
+
   const inputClass = `w-full rounded-xl border px-4 py-3 text-sm outline-none transition-all ${
     isEditing
       ? 'border-slate-300 bg-white text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10'
@@ -289,7 +318,10 @@ export default function VendedorPerfilPage() {
               })}
             </nav>
 
-            <button type="button" onClick={handleLogout} className="flex w-full items-center gap-3 border-t border-slate-100 pt-5 text-sm font-semibold text-rose-600 hover:text-rose-700"><LogOut className="h-4 w-4" />Cerrar sesión</button>
+            <div className="border-t border-slate-100 pt-4">
+              <button type="button" onClick={() => { setDeleteAccountOpen(true); setDeleteAccountError(''); setDeleteConfirmation(''); }} className="mb-3 flex w-full items-center gap-3 rounded-xl px-2 py-1.5 text-xs font-semibold text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-3.5 w-3.5" />Eliminar cuenta</button>
+              <button type="button" onClick={handleLogout} className="flex w-full items-center gap-3 text-sm font-semibold text-rose-600 hover:text-rose-700"><LogOut className="h-4 w-4" />Cerrar sesión</button>
+            </div>
           </aside>
 
           <main className="lg:col-span-9">
@@ -329,6 +361,27 @@ export default function VendedorPerfilPage() {
           </main>
         </div>
       </div>
+
+      {deleteAccountOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4" role="dialog" aria-modal="true" aria-labelledby="seller-delete-account-title">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-4 flex items-start gap-3">
+              <div className="rounded-xl bg-rose-50 p-2 text-rose-600"><Trash2 className="h-5 w-5" /></div>
+              <div>
+                <h2 id="seller-delete-account-title" className="text-base font-bold text-slate-900">Eliminar cuenta de vendedor</h2>
+                <p className="mt-1 text-sm leading-5 text-slate-500">Se eliminarán permanentemente tu perfil, información personal, productos, imágenes y datos relacionados. Esta acción no se puede deshacer.</p>
+              </div>
+            </div>
+            <label className="block text-xs font-bold uppercase tracking-wide text-slate-600">Escribe ELIMINAR para confirmar</label>
+            <input value={deleteConfirmation} onChange={(event) => setDeleteConfirmation(event.target.value)} autoComplete="off" className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-100" />
+            {deleteAccountError && <p className="mt-3 rounded-lg bg-rose-50 p-3 text-xs text-rose-700">{deleteAccountError}</p>}
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" onClick={() => setDeleteAccountOpen(false)} disabled={deletingAccount} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50">Cancelar</button>
+              <button type="button" onClick={handleDeleteAccount} disabled={deletingAccount || deleteConfirmation !== 'ELIMINAR'} className="rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50">{deletingAccount ? 'Eliminando...' : 'Eliminar permanentemente'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

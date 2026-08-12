@@ -7,7 +7,7 @@ const ROLE_HOME = {
   cliente: '/',
 }
 
-const PUBLIC_ROUTES = ['/', '/login', '/registro', '/catalogo', '/producto', '/auth/callback']
+const PUBLIC_ROUTES = ['/', '/login', '/registro', '/recuperar', '/actualizar-password', '/catalogo', '/producto', '/auth/callback']
 const CLIENT_ONLY_ROUTES = ['/carrito', '/favorito', '/favoritos', '/perfil']
 
 function matchesRoute(pathname, route) {
@@ -90,7 +90,13 @@ export async function proxy(request) {
 
   // Admines y vendedores trabajan únicamente dentro de su área.
   if (pathname === '/login' || pathname === '/registro') {
-    return redirectTo(request, '/')
+    return redirectTo(request, home)
+  }
+
+  // Los administradores y vendedores deben trabajar desde su dashboard.
+  // Solo los clientes pueden permanecer en la página principal.
+  if (pathname === '/' && role !== 'cliente') {
+    return redirectTo(request, home)
   }
 
   if (isPublicRoute && pathname !== '/' && role !== 'cliente') {

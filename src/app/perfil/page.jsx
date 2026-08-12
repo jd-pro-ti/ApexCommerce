@@ -10,7 +10,7 @@ import Alert from '@/components/ui/Alert';
 import { 
   User, ShoppingBag, Heart, MapPin, CreditCard, LogOut, 
   Camera, Edit3, Save, Eye, Package, ArrowRight, Clock, 
-  CheckCircle2, Truck, XCircle, AlertCircle, ChevronRight, ArrowUpRight, Search
+  CheckCircle2, Truck, XCircle, AlertCircle, ChevronRight, ArrowUpRight, Search, Trash2
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -94,6 +94,10 @@ function PerfilPageContent() {
   const [cancellingId, setCancellingId] = useState(null);
   const [confirmingDeliveryId, setConfirmingDeliveryId] = useState(null);
   const [sellerApplication, setSellerApplication] = useState(null);
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteAccountError, setDeleteAccountError] = useState('');
 
   const [profile, setProfile] = useState({
     id: '',
@@ -307,6 +311,32 @@ function PerfilPageContent() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmation !== 'ELIMINAR') {
+      setDeleteAccountError('Escribe ELIMINAR exactamente para continuar.');
+      return;
+    }
+
+    setDeletingAccount(true);
+    setDeleteAccountError('');
+    try {
+      const response = await fetch('/api/account/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirmation: deleteConfirmation })
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        const detail = typeof result.error === 'string' ? result.error : JSON.stringify(result.error || {});
+        throw new Error(detail || 'No se pudo eliminar la cuenta.');
+      }
+      window.location.replace('/login?account_deleted=1');
+    } catch (error) {
+      setDeletingAccount(false);
+      setDeleteAccountError(error.message);
+    }
+  };
+
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.order_number?.toLowerCase().includes(orderSearchTerm.toLowerCase());
     const matchesStatus = orderStatusFilter === 'all' || getOrderStatus(order) === orderStatusFilter;
@@ -396,6 +426,14 @@ function PerfilPageContent() {
           </nav>
 
           <div className="pt-4 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => { setDeleteAccountOpen(true); setDeleteAccountError(''); setDeleteConfirmation(''); }}
+              className="w-full flex items-center gap-3 px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Eliminar cuenta</span>
+            </button>
             <button
               onClick={() => logout && logout()}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
@@ -894,6 +932,27 @@ function PerfilPageContent() {
 
         </div>
       </div>
+
+      {deleteAccountOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4" role="dialog" aria-modal="true" aria-labelledby="delete-account-title">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-4 flex items-start gap-3">
+              <div className="rounded-xl bg-rose-50 p-2 text-rose-600"><Trash2 className="h-5 w-5" /></div>
+              <div>
+                <h2 id="delete-account-title" className="text-base font-bold text-slate-900">Eliminar cuenta</h2>
+                <p className="mt-1 text-sm leading-5 text-slate-500">Se eliminarán permanentemente tu perfil, información personal, productos y datos relacionados. Esta acción no se puede deshacer.</p>
+              </div>
+            </div>
+            <label className="block text-xs font-bold uppercase tracking-wide text-slate-600">Escribe ELIMINAR para confirmar</label>
+            <input value={deleteConfirmation} onChange={(event) => setDeleteConfirmation(event.target.value)} autoComplete="off" className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-100" />
+            {deleteAccountError && <p className="mt-3 rounded-lg bg-rose-50 p-3 text-xs text-rose-700">{deleteAccountError}</p>}
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" onClick={() => setDeleteAccountOpen(false)} disabled={deletingAccount} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50">Cancelar</button>
+              <button type="button" onClick={handleDeleteAccount} disabled={deletingAccount || deleteConfirmation !== 'ELIMINAR'} className="rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50">{deletingAccount ? 'Eliminando...' : 'Eliminar permanentemente'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

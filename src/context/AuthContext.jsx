@@ -123,6 +123,10 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const requestPasswordReset = (email) => authService.requestPasswordReset(email);
+  const verifyRecoveryCode = (email, token) => authService.verifyRecoveryCode(email, token);
+  const updatePassword = (password) => authService.updatePassword(password);
+
   // Función de logout
   const logout = async () => {
     try {
@@ -181,6 +185,9 @@ const updateProfile = async (updates) => {
     login,
     register,
     loginWithGoogle,
+    requestPasswordReset,
+    verifyRecoveryCode,
+    updatePassword,
     logout,
     updateProfile,
     isAuthenticated: !!user,
