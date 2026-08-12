@@ -177,6 +177,32 @@ export const authService = {
     }
   },
 
+  // Iniciar sesión con Facebook
+  async loginWithFacebook() {
+    try {
+      if (!isSupabaseConfigured()) {
+        throw new Error('Supabase no está configurado')
+      }
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'facebook',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      })
+
+      if (error) throw error
+
+      return { success: true, url: data.url }
+    } catch (error) {
+      console.error('Error en login con Facebook:', error)
+      return {
+        success: false,
+        error: error.message || 'Error al iniciar sesión con Facebook'
+      }
+    }
+  },
+
   // Cerrar sesión
   async logout() {
     try {

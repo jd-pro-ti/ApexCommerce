@@ -18,6 +18,7 @@ export default function RegistroPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const validateForm = () => {
     if (!formData.name.trim()) {
@@ -42,6 +43,10 @@ export default function RegistroPage() {
     }
     if (formData.password !== formData.confirmPassword) {
       setError('Las contraseñas no coinciden');
+      return false;
+    }
+    if (!acceptedTerms) {
+      setError('Debes aceptar los términos y condiciones para continuar');
       return false;
     }
     return true;
@@ -83,6 +88,11 @@ export default function RegistroPage() {
   const handleGoogleRegister = async () => {
     setLoading(true);
     setError('');
+    if (!acceptedTerms) {
+      setError('Debes aceptar los términos y condiciones para continuar');
+      setLoading(false);
+      return;
+    }
     try {
       const result = await loginWithGoogle();
       if (!result.success) {
@@ -245,6 +255,11 @@ export default function RegistroPage() {
             </div>
 
             {/* Botón principal de Registro con color principal (#010f20) y hover en cobre (#dd9448) */}
+            <label className="flex items-start gap-2 text-xs text-[#44474c]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              <input type="checkbox" checked={acceptedTerms} onChange={(e) => { setAcceptedTerms(e.target.checked); if (error) setError(''); }} className="mt-0.5 h-4 w-4 rounded border-[#efedef] text-[#010f20] focus:ring-[#010f20]" />
+              <span>Acepto los <Link href="/terminos" target="_blank" className="font-bold text-[#010f20] underline">Términos y condiciones</Link> y el <Link href="/privacidad" target="_blank" className="font-bold text-[#010f20] underline">Aviso de Privacidad</Link>.</span>
+            </label>
+
             <div className="pt-1">
               <Button 
                 type="submit" 

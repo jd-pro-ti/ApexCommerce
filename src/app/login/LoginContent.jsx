@@ -8,7 +8,7 @@ import { ShoppingBag, Package, Gift, Tag, Eye, EyeOff, ArrowLeft } from 'lucide-
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, loginWithGoogle } = useAuth();
+  const { login, loginWithGoogle, loginWithFacebook } = useAuth();
   
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -76,6 +76,22 @@ export default function LoginPage() {
     }
   };
 
+  const handleFacebookLogin = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const result = await loginWithFacebook();
+      if (result && !result.success) {
+        setError(result.error || 'Error al iniciar sesión con Facebook.');
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error('Error Facebook Login:', err);
+      setError('Error al conectar con Facebook. Intenta nuevamente.');
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#f1f3f6] flex items-center justify-center p-4 sm:p-6 lg:p-8 font-sans">
       
@@ -133,6 +149,7 @@ export default function LoginPage() {
 
               <button 
                 type="button"
+                onClick={handleFacebookLogin}
                 disabled={loading}
                 className="border border-[#efedef] hover:border-[#010f20] bg-white text-[#010f20] text-xs font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer disabled:opacity-50"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
