@@ -16,9 +16,43 @@ alter table public.orders
   add column if not exists payout_status text not null default 'pending',
   add column if not exists payouts_released_at timestamptz;
 
+alter table public.orders drop constraint if exists orders_payment_status_check;
+alter table public.orders add constraint orders_payment_status_check
+  check (payment_status in ('pending', 'paid', 'failed', 'refunded'));
+
 alter table public.orders drop constraint if exists orders_payout_status_check;
 alter table public.orders add constraint orders_payout_status_check
-  check (payout_status in ('pending', 'held', 'released', 'failed'));
+  check (payout_status in ('pending', 'held', 'released', 'failed', 'refunded'));
+
+create table if not exists public.simulated_refunds (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid not null unique references public.orders(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete restrict,
+  amount numeric(12,2) not null check (amount >= 0),
+  platform_fee_amount numeric(12,2) not null default 0 check (platform_fee_amount >= 0),
+  seller_amount numeric(12,2) not null default 0 check (seller_amount >= 0),
+  currency_code text not null default 'MXN',
+  status text not null default 'requested'
+    check (status in ('requested', 'processing', 'completed', 'cancelled')),
+  reason text not null default 'Cancelación solicitada por el cliente',
+  estimated_from date not null default current_date + 5,
+  estimated_until date not null default current_date + 10,
+  paypal_refund_ids jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists simulated_refunds_user_idx on public.simulated_refunds(user_id, created_at desc);
+drop trigger if exists simulated_refunds_updated_at on public.simulated_refunds;
+create trigger simulated_refunds_updated_at before update on public.simulated_refunds
+  for each row execute function public.set_updated_at();
+alter table public.simulated_refunds enable row level security;
+drop policy if exists simulated_refunds_read_own on public.simulated_refunds;
+create policy simulated_refunds_read_own on public.simulated_refunds
+  for select using (user_id = auth.uid() or public.is_admin());
+drop policy if exists simulated_refunds_admin on public.simulated_refunds;
+create policy simulated_refunds_admin on public.simulated_refunds
+  for all using (public.is_admin()) with check (public.is_admin());
 
 create unique index if not exists orders_paypal_order_id_idx
   on public.orders(paypal_order_id)
@@ -542,3 +576,80 @@ end;
 $$;
 
 grant execute on function public.confirm_order_delivery(uuid,uuid) to authenticated;
+
+-- Cancela un pedido y registra un reembolso simulado. No llama a PayPal:
+-- el dinero de prueba no se devuelve realmente al comprador.
+create or replace function public.cancel_paid_order_simulated_refund(p_user_id uuid, p_order_id uuid)
+returns uuid language plpgsql security definer set search_path = public as $$
+declare
+  v_order public.orders%rowtype;
+  v_item record;
+  v_refund_id uuid;
+begin
+  if auth.uid() is null or auth.uid() <> p_user_id then raise exception 'No autorizado'; end if;
+  select * into v_order from public.orders where id = p_order_id and user_id = p_user_id for update;
+  if not found then raise exception 'Pedido no encontrado'; end if;
+  if v_order.status = 'cancelled' then
+    select id into v_refund_id from public.simulated_refunds where order_id = p_order_id;
+    return v_refund_id;
+  end if;
+  if exists (select 1 from public.order_items where order_id = p_order_id and status in ('shipped', 'delivered', 'cancelled')) then
+    raise exception 'Este pedido ya no se puede cancelar';
+  end if;
+
+  for v_item in select product_id, quantity from public.order_items where order_id = p_order_id loop
+    if v_order.payment_status = 'paid' then
+      update public.products set stock = stock + v_item.quantity where id = v_item.product_id;
+    else
+      update public.products set reserved_stock = greatest(0, reserved_stock - v_item.quantity) where id = v_item.product_id;
+    end if;
+  end loop;
+  update public.order_items set status = 'cancelled' where order_id = p_order_id;
+
+  if v_order.payment_status = 'paid' then
+    insert into public.simulated_refunds(order_id, user_id, amount, platform_fee_amount, seller_amount)
+      values (v_order.id, v_order.user_id, v_order.total, v_order.platform_fee_total, v_order.seller_payout_total)
+      on conflict (order_id) do update set updated_at = now()
+      returning id into v_refund_id;
+    update public.orders set status = 'cancelled', payment_status = 'refunded', payout_status = 'refunded'
+      where id = p_order_id;
+    update public.seller_paypal_payouts set status = 'refunded' where order_id = p_order_id and status <> 'refunded';
+  else
+    update public.orders set status = 'cancelled' where id = p_order_id;
+  end if;
+  return v_refund_id;
+end;
+$$;
+
+grant execute on function public.cancel_paid_order_simulated_refund(uuid,uuid) to authenticated;
+
+create or replace function public.finalize_paid_order_real_refund(p_user_id uuid, p_order_id uuid)
+returns uuid language plpgsql security definer set search_path = public as $$
+declare
+  v_order public.orders%rowtype;
+  v_item record;
+  v_refund_id uuid;
+begin
+  if auth.uid() is null or auth.uid() <> p_user_id then raise exception 'No autorizado'; end if;
+  select * into v_order from public.orders where id = p_order_id and user_id = p_user_id for update;
+  if not found then raise exception 'Pedido no encontrado'; end if;
+  select id into v_refund_id from public.simulated_refunds where order_id = p_order_id for update;
+  if v_refund_id is null then raise exception 'Solicitud de reembolso no encontrada'; end if;
+  if v_order.payment_status = 'refunded' then return v_refund_id; end if;
+  if v_order.payment_status <> 'paid' then raise exception 'El pedido no tiene un pago reembolsable'; end if;
+  if exists (select 1 from public.order_items where order_id = p_order_id and status in ('shipped', 'delivered', 'cancelled')) then
+    raise exception 'Este pedido ya no se puede cancelar';
+  end if;
+
+  for v_item in select product_id, quantity from public.order_items where order_id = p_order_id loop
+    update public.products set stock = stock + v_item.quantity where id = v_item.product_id;
+  end loop;
+  update public.order_items set status = 'cancelled' where order_id = p_order_id;
+  update public.orders set status = 'cancelled', payment_status = 'refunded', payout_status = 'refunded' where id = p_order_id;
+  update public.seller_paypal_payouts set status = 'refunded' where order_id = p_order_id and status <> 'refunded';
+  update public.simulated_refunds set status = 'completed' where id = v_refund_id;
+  return v_refund_id;
+end;
+$$;
+
+grant execute on function public.finalize_paid_order_real_refund(uuid,uuid) to authenticated;

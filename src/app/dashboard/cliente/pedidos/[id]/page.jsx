@@ -15,6 +15,7 @@ const labels = {
   shipped: 'Enviado', 
   delivered: 'Entregado', 
   cancelled: 'Cancelado' 
+  ,refunded: 'Reembolsado'
 };
 
 const statusConfig = {
@@ -37,6 +38,10 @@ const statusConfig = {
   cancelled: {
     bg: 'bg-rose-50/80 text-rose-800 border-rose-200/80 font-semibold',
     icon: XCircle,
+  },
+  refunded: {
+    bg: 'bg-emerald-50/80 text-emerald-800 border-emerald-200/80 font-semibold',
+    icon: CheckCircle2,
   }
 };
 
@@ -97,7 +102,7 @@ export default function OrderDetail() {
     );
   }
 
-  const currentStatus = order.status || 'pending';
+  const currentStatus = order.payment_status === 'refunded' ? 'refunded' : (order.status || 'pending');
   const statusInfo = statusConfig[currentStatus] || statusConfig.pending;
   const StatusIcon = statusInfo.icon;
 
@@ -164,7 +169,7 @@ export default function OrderDetail() {
                   const itemStatus = item.status || order.status || 'pending';
                   const itemConfig = statusConfig[itemStatus] || statusConfig.pending;
                   const ItemStatusIcon = itemConfig.icon;
-                  const productImage = item.product_image || item.image_url || item.image || item.product?.image_url || item.product?.image;
+                  const productImage = item.product_image || item.image_url || item.image || item.product?.image_url || item.product?.image || item.products?.images?.[0] || item.products?.image;
 
                   return (
                     <div 
@@ -251,6 +256,7 @@ export default function OrderDetail() {
                     'bg-rose-50/80 text-rose-800 border-rose-200/80'
                   }`}>
                     {order.payment_status === 'paid' ? 'Pagado' :
+                     order.payment_status === 'refunded' ? 'Reembolsado' :
                      order.payment_status === 'pending' ? 'Pendiente' : 'Fallido'}
                   </span>
                 </div>

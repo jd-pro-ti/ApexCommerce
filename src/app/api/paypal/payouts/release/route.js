@@ -28,7 +28,7 @@ export async function POST(request) {
 
     const isAdmin = String(authenticated.profile.role || '').toLowerCase() === 'admin'
     const { data: order, error: orderError } = await supabaseAdmin
-      .from('orders').select('id, user_id, payment_status').eq('id', orderId).single()
+      .from('orders').select('id, user_id, status, payment_status').eq('id', orderId).single()
     if (orderError || !order) return NextResponse.json({ error: 'Pedido no encontrado' }, { status: 404 })
 
     const { data: items, error: itemsError } = await supabaseAdmin
@@ -39,6 +39,9 @@ export async function POST(request) {
     const isCustomer = order.user_id === authenticated.user.id
     if (!isAdmin && !isCustomer && !sellerIds.includes(authenticated.user.id)) {
       return NextResponse.json({ error: 'No tienes permiso para liberar este pedido' }, { status: 403 })
+    }
+    if (order.status === 'cancelled' || order.payment_status === 'refunded') {
+      return NextResponse.json({ error: 'El pedido fue cancelado y su pago no puede liberarse', released: false }, { status: 409 })
     }
     if (order.payment_status !== 'paid') {
       return NextResponse.json({ error: 'El pedido todavía no tiene un pago confirmado' }, { status: 409 })

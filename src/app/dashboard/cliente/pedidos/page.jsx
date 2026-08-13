@@ -45,6 +45,7 @@ export default function ClientOrdersPage() {
   const [cancellingId, setCancellingId] = useState(null);
   const [confirmingDeliveryId, setConfirmingDeliveryId] = useState(null);
   const [deliveryMessage, setDeliveryMessage] = useState('');
+  const [cancellationMessage, setCancellationMessage] = useState('');
 
   useEffect(() => { 
     loadOrders(); 
@@ -56,6 +57,11 @@ export default function ClientOrdersPage() {
     setCancellingId(null);
     setConfirmingCancelId(null);
     if (!result.success) console.error('Error al cancelar pedido:', result.error);
+    else setCancellationMessage(result.realRefund
+      ? 'Pedido cancelado. El reembolso real fue solicitado a PayPal; consulta el estado en Mis reembolsos.'
+      : result.simulatedRefund
+        ? 'Pedido cancelado. El reembolso simulado queda en proceso; consulta el plazo en Mis reembolsos.'
+      : 'Pedido cancelado y existencias restauradas.');
   };
 
   const confirmDelivery = async (order) => {
@@ -93,12 +99,12 @@ export default function ClientOrdersPage() {
             <ShoppingBag className="w-3.5 h-3.5" />
             <span>Historial de compras</span>
           </div>
-          <h1 
+          <div className="flex items-center justify-between gap-4"><h1 
             className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight" 
             style={{ fontFamily: "'Montserrat', sans-serif" }}
           >
             Mis pedidos
-          </h1>
+          </h1><Link href="/dashboard/cliente/reembolsos" className="text-sm font-bold text-slate-700 hover:text-amber-700">Ver reembolsos</Link></div>
           <p className="text-slate-500 text-base font-normal mt-1">
             Consulta el estatus actual de tus adquisiciones y da seguimiento detallado a tus entregas.
           </p>
@@ -114,6 +120,7 @@ export default function ClientOrdersPage() {
 
       {error && <Alert className="mb-8 rounded-2xl" variant="error">{error}</Alert>}
       {deliveryMessage && <Alert className="mb-8 rounded-2xl" variant="success">{deliveryMessage}</Alert>}
+      {cancellationMessage && <Alert className="mb-8 rounded-2xl" variant="success">{cancellationMessage}</Alert>}
 
       {orders.length === 0 ? (
         /* ESTADO VACÍO MEJORADO */

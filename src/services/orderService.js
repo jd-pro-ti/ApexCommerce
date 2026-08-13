@@ -308,6 +308,7 @@ export const orderService = {
           products (
             id,
             name,
+            price,
             images
           )
         `)
@@ -326,7 +327,10 @@ export const orderService = {
         }
         ordersMap[item.order_id].items.push({
           ...item,
-          product: item.products
+          product: item.products,
+          product_name: item.product_name || item.products?.name || 'Producto',
+          product_image: item.product_image || item.products?.images?.[0] || null,
+          product_price: item.product_price ?? item.products?.price ?? 0
         })
       })
 
