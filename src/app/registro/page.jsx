@@ -170,26 +170,16 @@ export default function RegistroPage() {
             </div>
           )}
 
-          {/* Botones de Registro Social: Facebook con su azul original (#1877F2) */}
-          <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="mb-4 w-full" aria-label="Registro con Google">
             <button 
               type="button" 
               onClick={handleGoogleRegister} 
               disabled={loading} 
-              className="border border-[#efedef] hover:border-[#010f20] bg-white text-[#010f20] text-xs font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
+              className="w-full h-12 border border-[#efedef] hover:border-[#010f20] bg-white text-[#010f20] text-xs font-semibold rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer disabled:opacity-50"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
               <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24"><path fill="#EA4335" d="M5.266 9.765A7.077 7.077 0 0 1 12 4.909c1.69 0 3.218.6 4.418 1.582L19.91 3C17.782 1.145 15.055 0 12 0 7.27 0 3.198 2.598 1.237 6.39l4.029 3.375z" /><path fill="#34A853" d="M16.218 18.5A7.077 7.077 0 0 1 12 21.09c-3.282 0-6.073-1.282-8.174-3.364l-3.98 3.98C3.198 21.402 7.27 24 12 24c3.055 0 5.782-1.145 7.91-3l-3.692-2.5z" /><path fill="#4A90E2" d="M21.5 12.5c0-.709-.064-1.4-.182-2.09H12v4.09h5.964c-.282 1.5-1.036 2.727-2.1 3.546l3.31 2.3C20.218 19.7 21.5 16.2 21.5 12.5z" /><path fill="#FBBC05" d="M5.266 14.235A7.077 7.077 0 0 1 4.909 12c0-.773.136-1.5.357-2.235L1.237 6.39C.436 8.018 0 9.91 0 12c0 2.09.436 3.982 1.237 5.61l4.029-3.375z" /></svg>
               Google
-            </button>
-            <button 
-              type="button" 
-              disabled={loading} 
-              className="border border-[#efedef] hover:border-[#010f20] bg-white text-[#010f20] text-xs font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-            >
-              <svg className="w-4 h-4 shrink-0" fill="#1877F2" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>
-              Facebook
             </button>
           </div>
 
@@ -263,7 +253,7 @@ export default function RegistroPage() {
             <div className="pt-1">
               <Button 
                 type="submit" 
-                className="w-full py-3 bg-[#010f20] text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-[#010f20]/90 transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50" 
+                className="w-full h-12 bg-[#010f20] text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-[#010f20]/90 transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50" 
                 loading={loading} 
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >

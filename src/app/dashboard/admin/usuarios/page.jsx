@@ -273,6 +273,14 @@ export default function AdminUsuarios() {
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </button>
+                          <button
+                            onClick={() => handleDeleteUser(user.id)}
+                            disabled={user.id === currentUser?.id}
+                            className="p-2 bg-rose-50 hover:bg-rose-600 hover:text-white rounded-xl text-rose-600 text-xs font-bold transition-all cursor-pointer shadow-sm disabled:cursor-not-allowed disabled:opacity-40"
+                            title="Eliminar cuenta"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </td>
                     </tr>

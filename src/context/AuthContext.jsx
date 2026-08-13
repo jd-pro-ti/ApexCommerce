@@ -123,18 +123,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const loginWithFacebook = async () => {
-    try {
-      const result = await authService.loginWithFacebook();
-      if (result.success) {
-        window.location.href = result.url;
-        return { success: true };
-      }
-      return { success: false, error: result.error };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  };
 
   const requestPasswordReset = (email) => authService.requestPasswordReset(email);
   const verifyRecoveryCode = (email, token) => authService.verifyRecoveryCode(email, token);
@@ -198,7 +186,6 @@ const updateProfile = async (updates) => {
     login,
     register,
     loginWithGoogle,
-    loginWithFacebook,
     requestPasswordReset,
     verifyRecoveryCode,
     updatePassword,

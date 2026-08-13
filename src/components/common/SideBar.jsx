@@ -38,7 +38,7 @@ export default function Sidebar() {
     { name: 'Perfil', href: '/perfil', icon: FiUserCheck },
     { name: 'Gestión de usuarios', href: '/dashboard/admin/usuarios', icon: FiUsers },
     { name: 'Analíticas', href: '/dashboard/admin/analiticas', icon: FiBarChart2 },
-    { name: 'Solicitudes de vendedor', href: '/dashboard/admin/vendedores-solicitudes', icon: FiUserCheck },
+    { name: 'Solicitudes', href: '/dashboard/admin/vendedores-solicitudes', icon: FiUserCheck },
     { name: 'Logs', href: '/dashboard/admin/logs', icon: FiFileText },
     { name: 'Reportes', href: '/dashboard/admin/reportes', icon: FiBarChart2 }
   ];

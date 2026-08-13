@@ -8,15 +8,41 @@ export async function GET() {
   if (profile?.role !== 'admin') return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
   const { data, error } = await supabaseAdmin.from('seller_applications').select('*, profiles:user_id(name,email)').order('created_at', { ascending: false })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ applications: data || [] })
+  const { data: deletionRequests, error: deletionError } = await supabaseAdmin.from('account_deletion_requests').select('*, profiles:user_id(name,email,role)').order('created_at', { ascending: false })
+  if (deletionError) return NextResponse.json({ error: deletionError.message }, { status: 500 })
+  return NextResponse.json({ applications: data || [], deletionRequests: deletionRequests || [] })
 }
 
 export async function PATCH(request) {
   try {
     const { user, profile } = await getServerAuth()
     if (profile?.role !== 'admin') return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
-    const { id, status, rejection_reason = '' } = await request.json()
+    const { id, status, rejection_reason = '', type = 'seller' } = await request.json()
     if (!id || !['approved', 'rejected'].includes(status)) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 })
+    if (type === 'deletion') {
+      const { data: deletionRequest, error: findDeletionError } = await supabaseAdmin.from('account_deletion_requests').select('*, profiles:user_id(name,email,role)').eq('id', id).single()
+      if (findDeletionError || !deletionRequest) return NextResponse.json({ error: 'Solicitud no encontrada' }, { status: 404 })
+      if (deletionRequest.status !== 'pending') return NextResponse.json({ error: 'La solicitud ya fue revisada' }, { status: 409 })
+      const { error: updateError } = await supabaseAdmin.from('account_deletion_requests').update({ status, rejection_reason: status === 'rejected' ? rejection_reason : null, reviewed_by: user.id, reviewed_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', id)
+      if (updateError) throw updateError
+      await supabaseAdmin.from('admin_logs').insert({
+        actor_id: user.id,
+        action: `account_deletion_request_${status}`,
+        entity_type: 'account_deletion_request',
+        entity_id: id,
+        message: `${status === 'approved' ? 'Aprobó' : 'Rechazó'} la solicitud de eliminación de ${deletionRequest.profiles?.name || 'un usuario'}`,
+        metadata: { applicant_id: deletionRequest.user_id, rejection_reason }
+      })
+      if (status === 'approved') {
+        const deletionResponse = await fetch(`${new URL(request.url).origin}/api/account/delete`, { method: 'DELETE', headers: { 'Content-Type': 'application/json', cookie: request.headers.get('cookie') || '' }, body: JSON.stringify({ confirmation: 'ELIMINAR', user_id: deletionRequest.user_id }), cache: 'no-store' })
+        if (!deletionResponse.ok) {
+          const detail = await deletionResponse.json().catch(() => ({}))
+          throw new Error(detail.error || 'No se pudo eliminar la cuenta aprobada')
+        }
+      }
+      await supabaseAdmin.from('notifications').insert({ user_id: deletionRequest.user_id, type: `account_deletion_${status}`, title: status === 'approved' ? 'Cuenta eliminada' : 'Solicitud de eliminación rechazada', message: status === 'approved' ? 'Tu cuenta fue eliminada por el administrador.' : `Tu solicitud de eliminación fue rechazada.${rejection_reason ? ` Motivo: ${rejection_reason}` : ''}` })
+      return NextResponse.json({ success: true })
+    }
     const { data: application, error: findError } = await supabaseAdmin.from('seller_applications').select('*, profiles:user_id(name,email)').eq('id', id).single()
     if (findError || !application) return NextResponse.json({ error: 'Solicitud no encontrada' }, { status: 404 })
     if (application.status !== 'pending') return NextResponse.json({ error: 'La solicitud ya fue revisada' }, { status: 409 })

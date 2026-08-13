@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase-admin'
+import { getServerAuth } from '@/lib/server-auth'
 
 const getServerSupabase = async () => {
   const cookieStore = await cookies()
@@ -48,10 +49,40 @@ const removeStorageFolder = async (bucket, folder) => {
   }
 }
 
+export async function POST(request) {
+  try {
+    const { user, profile } = await getServerAuth()
+    if (!user || !profile) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+    const body = await request.json().catch(() => ({}))
+    const reason = String(body.reason || '').trim()
+    if (!reason) return NextResponse.json({ error: 'Es necesario indicar por qué deseas eliminar tu cuenta.' }, { status: 400 })
+    const { data: pending } = await supabaseAdmin.from('account_deletion_requests').select('id').eq('user_id', user.id).eq('status', 'pending').maybeSingle()
+    if (pending) return NextResponse.json({ error: 'Ya tienes una solicitud de eliminación pendiente.' }, { status: 409 })
+    const { data: requestRow, error } = await supabaseAdmin.from('account_deletion_requests').insert({ user_id: user.id, reason }).select().single()
+    if (error) throw error
+    await supabaseAdmin.from('admin_logs').insert({
+      actor_id: user.id,
+      action: 'account_deletion_request_created',
+      entity_type: 'account_deletion_request',
+      entity_id: requestRow.id,
+      message: `${profile.name || 'Un usuario'} solicitó eliminar su cuenta`,
+      metadata: { applicant_id: user.id, request_id: requestRow.id, reason }
+    })
+    const { data: admins } = await supabaseAdmin.from('profiles').select('id').eq('role', 'admin').eq('status', 'active')
+    if (admins?.length) {
+      await supabaseAdmin.from('notifications').insert(admins.map((admin) => ({ user_id: admin.id, type: 'account_deletion_request', title: 'Nueva solicitud de eliminación', message: `${profile.name || 'Un usuario'} solicita eliminar su cuenta.` })))
+    }
+    return NextResponse.json({ success: true, request: requestRow })
+  } catch (error) {
+    console.error('Error al crear solicitud de eliminación:', error)
+    return NextResponse.json({ error: error.message || 'No se pudo enviar la solicitud' }, { status: 500 })
+  }
+}
+
 export async function DELETE(request) {
   let step = 'inicio'
   try {
-    const { confirmation } = await request.json().catch(() => ({}))
+    const { confirmation, user_id: requestedUserId } = await request.json().catch(() => ({}))
     if (confirmation !== 'ELIMINAR') {
       return NextResponse.json({ success: false, error: 'Escribe ELIMINAR para confirmar.' }, { status: 400 })
     }
@@ -67,7 +98,25 @@ export async function DELETE(request) {
       return NextResponse.json({ success: false, error: 'Tu sesión ya no es válida.' }, { status: 401 })
     }
 
-    const userId = user.id
+    const { profile } = await getServerAuth()
+    if (requestedUserId && (profile?.role !== 'admin' || requestedUserId === user.id)) {
+      return NextResponse.json({ success: false, error: 'No autorizado para eliminar esta cuenta.' }, { status: 403 })
+    }
+    if (!requestedUserId) {
+      return NextResponse.json({ success: false, error: 'La eliminación de cuentas se realiza mediante una solicitud al administrador.' }, { status: 403 })
+    }
+    const userId = requestedUserId
+    if (profile?.role === 'admin') {
+      const { data: targetProfile } = await supabaseAdmin.from('profiles').select('name,email').eq('id', userId).maybeSingle()
+      await supabaseAdmin.from('admin_logs').insert({
+        actor_id: user.id,
+        action: 'account_deleted_by_admin',
+        entity_type: 'profile',
+        entity_id: userId,
+        message: `Eliminó la cuenta de ${targetProfile?.name || targetProfile?.email || 'un usuario'}`,
+        metadata: { deleted_user_id: userId }
+      })
+    }
     step = 'buscar pedidos'
     const { data: ownedOrders, error: ordersError } = await supabaseAdmin
       .from('orders').select('id').eq('user_id', userId)

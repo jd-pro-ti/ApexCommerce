@@ -88,6 +88,7 @@ export default function VendedorPerfilPage() {
   const [paypalError, setPaypalError] = useState('');
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deleteReason, setDeleteReason] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteAccountError, setDeleteAccountError] = useState('');
 
@@ -243,24 +244,27 @@ export default function VendedorPerfilPage() {
   };
 
   const handleDeleteAccount = async () => {
-    if (deleteConfirmation !== 'ELIMINAR') {
-      setDeleteAccountError('Escribe ELIMINAR exactamente para continuar.');
+    if (!deleteReason.trim()) {
+      setDeleteAccountError('Cuéntanos por qué deseas eliminar tu cuenta.');
       return;
     }
     setDeletingAccount(true);
     setDeleteAccountError('');
     try {
       const response = await fetch('/api/account/delete', {
-        method: 'DELETE',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ confirmation: deleteConfirmation })
+        body: JSON.stringify({ reason: deleteReason.trim() })
       });
       const result = await response.json();
       if (!response.ok || !result.success) {
         const detail = typeof result.error === 'string' ? result.error : JSON.stringify(result.error || {});
         throw new Error(detail || 'No se pudo eliminar la cuenta.');
       }
-      window.location.replace('/login?account_deleted=1');
+      setDeleteAccountOpen(false);
+      setDeleteConfirmation('');
+      setDeleteReason('');
+      toast.success('Solicitud enviada. El administrador revisará tu cuenta.');
     } catch (error) {
       setDeletingAccount(false);
       setDeleteAccountError(error.message);
@@ -319,7 +323,7 @@ export default function VendedorPerfilPage() {
             </nav>
 
             <div className="border-t border-slate-100 pt-4">
-              <button type="button" onClick={() => { setDeleteAccountOpen(true); setDeleteAccountError(''); setDeleteConfirmation(''); }} className="mb-3 flex w-full items-center gap-3 rounded-xl px-2 py-1.5 text-xs font-semibold text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-3.5 w-3.5" />Eliminar cuenta</button>
+              <button type="button" onClick={() => { setDeleteAccountOpen(true); setDeleteAccountError(''); setDeleteConfirmation(''); setDeleteReason(''); }} className="mb-3 flex w-full items-center gap-3 rounded-xl px-2 py-1.5 text-xs font-semibold text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-3.5 w-3.5" />Eliminar cuenta</button>
               <button type="button" onClick={handleLogout} className="flex w-full items-center gap-3 text-sm font-semibold text-rose-600 hover:text-rose-700"><LogOut className="h-4 w-4" />Cerrar sesión</button>
             </div>
           </aside>
@@ -372,12 +376,13 @@ export default function VendedorPerfilPage() {
                 <p className="mt-1 text-sm leading-5 text-slate-500">Se eliminarán permanentemente tu perfil, información personal, productos, imágenes y datos relacionados. Esta acción no se puede deshacer.</p>
               </div>
             </div>
-            <label className="block text-xs font-bold uppercase tracking-wide text-slate-600">Escribe ELIMINAR para confirmar</label>
-            <input value={deleteConfirmation} onChange={(event) => setDeleteConfirmation(event.target.value)} autoComplete="off" className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-100" />
+            <p className="mt-1 text-sm leading-5 text-slate-500">Tu solicitud será enviada al administrador. La cuenta no se eliminará hasta que sea revisada y aprobada.</p>
+            <label className="mt-4 block text-xs font-bold uppercase tracking-wide text-slate-600" htmlFor="seller-delete-account-reason">¿Por qué deseas eliminar tu cuenta?</label>
+            <textarea id="seller-delete-account-reason" value={deleteReason} onChange={(event) => setDeleteReason(event.target.value)} rows={4} maxLength={1000} placeholder="Escribe el motivo de tu solicitud..." className="mt-2 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-100" />
             {deleteAccountError && <p className="mt-3 rounded-lg bg-rose-50 p-3 text-xs text-rose-700">{deleteAccountError}</p>}
             <div className="mt-5 flex justify-end gap-2">
               <button type="button" onClick={() => setDeleteAccountOpen(false)} disabled={deletingAccount} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50">Cancelar</button>
-              <button type="button" onClick={handleDeleteAccount} disabled={deletingAccount || deleteConfirmation !== 'ELIMINAR'} className="rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50">{deletingAccount ? 'Eliminando...' : 'Eliminar permanentemente'}</button>
+              <button type="button" onClick={handleDeleteAccount} disabled={deletingAccount} className="rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50">{deletingAccount ? 'Enviando...' : 'Solicitar eliminación'}</button>
             </div>
           </div>
         </div>

@@ -8,7 +8,7 @@ import { ShoppingBag, Package, Gift, Tag, Eye, EyeOff, ArrowLeft } from 'lucide-
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, loginWithGoogle, loginWithFacebook } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -76,21 +76,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleFacebookLogin = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const result = await loginWithFacebook();
-      if (result && !result.success) {
-        setError(result.error || 'Error al iniciar sesión con Facebook.');
-        setLoading(false);
-      }
-    } catch (err) {
-      console.error('Error Facebook Login:', err);
-      setError('Error al conectar con Facebook. Intenta nuevamente.');
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#f1f3f6] flex items-center justify-center p-4 sm:p-6 lg:p-8 font-sans">
@@ -118,7 +103,7 @@ export default function LoginPage() {
                 Bienvenido de nuevo
               </h1>
               <p className="text-xs text-[#44474c] mt-1" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                Ingresa tus datos o accede con tus redes sociales.
+                Ingresa tus datos o continúa con Google.
               </p>
             </div>
 
@@ -129,13 +114,13 @@ export default function LoginPage() {
               </div>
             )}
 
-            {/* Botones de Inicio de Sesión Social */}
-            <div className="grid grid-cols-2 gap-3 mb-3">
+            {/* Inicio de sesión con Google */}
+            <div className="mb-4 w-full">
               <button 
                 type="button"
                 onClick={handleGoogleLogin}
                 disabled={loading}
-                className="border border-[#efedef] hover:border-[#010f20] bg-white text-[#010f20] text-xs font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                className="w-full h-12 border border-[#efedef] hover:border-[#010f20] bg-white text-[#010f20] text-xs font-semibold rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer disabled:opacity-50"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
                 <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
@@ -147,18 +132,6 @@ export default function LoginPage() {
                 Google
               </button>
 
-              <button 
-                type="button"
-                onClick={handleFacebookLogin}
-                disabled={loading}
-                className="border border-[#efedef] hover:border-[#010f20] bg-white text-[#010f20] text-xs font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer disabled:opacity-50"
-                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-              >
-                <svg className="w-4 h-4 shrink-0" fill="#1877F2" viewBox="0 0 24 24">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                </svg>
-                Facebook
-              </button>
             </div>
 
             <div className="relative flex py-1 items-center mb-3">

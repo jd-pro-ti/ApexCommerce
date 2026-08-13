@@ -177,31 +177,6 @@ export const authService = {
     }
   },
 
-  // Iniciar sesión con Facebook
-  async loginWithFacebook() {
-    try {
-      if (!isSupabaseConfigured()) {
-        throw new Error('Supabase no está configurado')
-      }
-
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'facebook',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
-      })
-
-      if (error) throw error
-
-      return { success: true, url: data.url }
-    } catch (error) {
-      console.error('Error en login con Facebook:', error)
-      return {
-        success: false,
-        error: error.message || 'Error al iniciar sesión con Facebook'
-      }
-    }
-  },
 
   // Cerrar sesión
   async logout() {
@@ -574,13 +549,13 @@ async deleteUser(userId) {
       throw new Error('No autorizado - Se requieren permisos de administrador')
     }
 
-    // Eliminar el perfil
-    const { error } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('id', userId)
-
-    if (error) throw error
+    const response = await fetch('/api/account/delete', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confirmation: 'ELIMINAR', user_id: userId })
+    })
+    const result = await response.json()
+    if (!response.ok || !result.success) throw new Error(result.error || 'No se pudo eliminar el usuario')
 
     return {
       success: true,
