@@ -1,6 +1,6 @@
 'use client';
 
-import { Camera, LogOut, Trash2 } from 'lucide-react';
+import { Camera, LogOut } from 'lucide-react';
 import ProfileNavigation from './ProfileNavigation';
 
 export default function ProfileSidebar({
@@ -11,7 +11,6 @@ export default function ProfileSidebar({
   fileInputRef,
   uploadingAvatar,
   onAvatarUpload,
-  onDeleteAccount,
   onLogout
 }) {
   const roleLabel = role === 'vendedor' ? 'Vendedor' : role === 'admin' ? 'Administrador' : 'Cliente';
@@ -35,9 +34,6 @@ export default function ProfileSidebar({
       <ProfileNavigation activeTab={activeTab} onChange={onTabChange} />
 
       <div className="pt-4 border-t border-slate-100">
-        <button type="button" onClick={onDeleteAccount} className="w-full flex items-center gap-3 px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer">
-          <Trash2 className="w-3.5 h-3.5" /><span>Eliminar cuenta</span>
-        </button>
         <button type="button" onClick={onLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer">
           <LogOut className="w-4 h-4 text-rose-500" /><span>Cerrar Sesión</span>
         </button>

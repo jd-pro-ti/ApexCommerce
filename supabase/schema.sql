@@ -103,6 +103,12 @@ create table if not exists public.profile_details (
   bio text,
   website text,
   social_media jsonb not null default '{}'::jsonb,
+  preferences jsonb not null default jsonb_build_object(
+    'email_notifications', true,
+    'sms_alerts', false,
+    'order_updates', true,
+    'promotions', false
+  ),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

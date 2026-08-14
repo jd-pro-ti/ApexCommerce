@@ -91,8 +91,6 @@ function PerfilPageContent() {
 
   const handleChange = (event) => setFormData((previous) => ({ ...previous, [event.target.name]: event.target.value }));
   const handleDetailsChange = (event) => setFormData((previous) => ({ ...previous, details: { ...previous.details, [event.target.name]: event.target.value } }));
-  const handleTogglePreference = (field) => { setFormData((previous) => ({ ...previous, details: { ...previous.details, preferences: { ...previous.details.preferences, [field]: !previous.details.preferences?.[field] } } })); showSuccess('Preferencias actualizadas'); };
-
   const handleAvatarUpload = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -141,16 +139,15 @@ function PerfilPageContent() {
   return <div className="min-h-screen bg-slate-50/60 pt-28 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-slate-800" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
     <Toaster position="top-right" />
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-      <ProfileSidebar formData={formData} role={role} activeTab={activeTab} onTabChange={setActiveTab} fileInputRef={fileInputRef} uploadingAvatar={uploadingAvatar} onAvatarUpload={handleAvatarUpload} onDeleteAccount={() => { setDeleteAccountOpen(true); setDeleteAccountError(''); setDeleteReason(''); }} onLogout={() => logout?.()} />
+      <ProfileSidebar formData={formData} role={role} activeTab={activeTab} onTabChange={setActiveTab} fileInputRef={fileInputRef} uploadingAvatar={uploadingAvatar} onAvatarUpload={handleAvatarUpload} onLogout={() => logout?.()} />
       <main className="lg:col-span-9 space-y-6">
         <ProfilePromotions role={role} sellerApplication={sellerApplication} />
-        {activeTab === 'profile' && <ProfileForm formData={formData} profile={profile} isEditing={isEditing} saving={saving} onEdit={() => setIsEditing(true)} onCancel={() => { setFormData(profile); setIsEditing(false); }} onSubmit={handleSubmit} onChange={handleChange} onDetailsChange={handleDetailsChange} onTogglePreference={handleTogglePreference} />}
+        {activeTab === 'profile' && <ProfileForm formData={formData} profile={profile} isEditing={isEditing} saving={saving} onEdit={() => setIsEditing(true)} onCancel={() => { setFormData(profile); setIsEditing(false); }} onSubmit={handleSubmit} onChange={handleChange} onDetailsChange={handleDetailsChange} />}
         {activeTab === 'orders' && <OrdersPanel orders={orders} loading={ordersLoading} error={ordersError} searchTerm={orderSearchTerm} statusFilter={orderStatusFilter} onSearchChange={setOrderSearchTerm} onStatusChange={setOrderStatusFilter} confirmingCancelId={confirmingCancelId} cancellingId={cancellingId} confirmingDeliveryId={confirmingDeliveryId} onCancelRequest={setConfirmingCancelId} onCancel={cancelOrder} onConfirmDelivery={confirmDelivery} />}
         {activeTab === 'wishlist' && <WishlistPanel />}
         {activeTab === 'payments-history' && <PaymentHistoryPanel orders={orders} />}
       </main>
     </div>
-    {deleteAccountOpen && <DeleteAccountModal reason={deleteReason} error={deleteAccountError} loading={deletingAccount} onReasonChange={setDeleteReason} onClose={() => setDeleteAccountOpen(false)} onSubmit={handleDeleteAccount} />}
   </div>;
 }
 

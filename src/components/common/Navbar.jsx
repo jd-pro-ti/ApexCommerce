@@ -169,11 +169,11 @@ const Navbar = () => {
                   </Link>
                   
                   <Link 
-                    href={getDashboardRoute()} 
+                    href="/configuraciones" 
                     onClick={() => setIsProfileMenuOpen(false)}
                     className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-white/80 hover:bg-white/10 hover:text-white transition-colors"
                   >
-                    <Settings className="w-4 h-4 text-[#e0a96d]" /> Dashboard
+                    <Settings className="w-4 h-4 text-[#e0a96d]" /> Configuraciones
                   </Link>
 
                   <div className="border-t border-white/10 my-1"></div>
@@ -226,6 +226,7 @@ const Navbar = () => {
               <>
                 <Link href={getDashboardRoute()} onClick={() => setIsMobileMenuOpen(false)} className="py-2 hover:text-[#e0a96d]">Dashboard</Link>
                 <Link href="/perfil" onClick={() => setIsMobileMenuOpen(false)} className="py-2 hover:text-[#e0a96d]">Mi Perfil</Link>
+                <Link href="/configuraciones" onClick={() => setIsMobileMenuOpen(false)} className="py-2 hover:text-[#e0a96d]">Configuraciones</Link>
               </>
             )}
             <Link href="/favorito" onClick={() => setIsMobileMenuOpen(false)} className="py-2 hover:text-[#e0a96d] flex items-center justify-between">

@@ -8,8 +8,8 @@ import { authService } from '@/services/authService';
 import Button from '@/components/ui/Button';
 
 export default function UpdatePasswordPage() {
-  const { verifyRecoveryCode, updatePassword } = useAuth();
-  const [step, setStep] = useState(1);
+  const { verifyRecoveryCode, updatePassword, isAuthenticated, loading: authLoading } = useAuth();
+  const [recoveryStep, setRecoveryStep] = useState(1);
   const [email, setEmail] = useState(() => (
     typeof window === 'undefined'
       ? ''
@@ -21,6 +21,8 @@ export default function UpdatePasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const step = authLoading ? null : isAuthenticated ? 2 : recoveryStep;
+
   const verifyCode = async (event) => {
     event.preventDefault();
     setError('');
@@ -29,7 +31,7 @@ export default function UpdatePasswordPage() {
     const result = await verifyRecoveryCode(email, token);
     setLoading(false);
     if (!result.success) return setError('El código no es válido o ya expiró.');
-    setStep(2);
+    setRecoveryStep(2);
   };
 
   const savePassword = async (event) => {
@@ -55,12 +57,14 @@ export default function UpdatePasswordPage() {
     window.location.replace(destination);
   };
 
+  if (step === null) return <main className="min-h-screen flex items-center justify-center bg-[#f1f3f6]"><div className="text-xs font-bold uppercase tracking-widest text-[#010f20]/50">Cargando...</div></main>;
+
   return (
     <main className="min-h-screen bg-[#f1f3f6] flex items-center justify-center p-4 font-sans">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-[#efedef] p-7 sm:p-10">
         <div className="flex items-center gap-2 mb-8"><div className="w-9 h-9 rounded-xl bg-[#010f20] flex items-center justify-center shadow-md"><ShoppingBag className="w-4 h-4 text-white" /></div><span className="font-extrabold text-sm tracking-widest text-[#010f20] uppercase">Apex Commerce</span></div>
         <div className="w-12 h-12 rounded-2xl bg-[#e0a96d]/20 text-[#010f20] flex items-center justify-center mb-5"><KeyRound className="w-6 h-6" /></div>
-        <h1 className="text-2xl font-extrabold text-[#010f20] tracking-tight">{step === 1 ? 'Introduce tu código' : 'Crea una contraseña nueva'}</h1>
+        <h1 className="text-2xl font-extrabold text-[#010f20] tracking-tight">{step === 1 ? 'Introduce tu código' : isAuthenticated ? 'Cambia tu contraseña' : 'Crea una contraseña nueva'}</h1>
         <p className="text-sm text-[#44474c] mt-2 mb-7">{step === 1 ? 'Revisa tu correo e introduce el código de recuperación.' : 'Usa una contraseña segura que no hayas utilizado antes.'}</p>
         {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-xl text-center">{error}</div>}
 

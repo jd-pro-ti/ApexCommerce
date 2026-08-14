@@ -129,6 +129,14 @@ export async function POST(request) {
       .single()
 
     if (orderError || !order) return NextResponse.json({ sent: false, error: 'Pedido no encontrado' }, { status: 404 })
+    const { data: customerDetails } = await admin
+      .from('profile_details')
+      .select('preferences')
+      .eq('user_id', order.user_id)
+      .maybeSingle()
+    const customerPreferences = customerDetails?.preferences || {}
+    const canEmailCustomer = customerPreferences.email_notifications !== false
+    const canEmailOrderUpdates = customerPreferences.order_updates !== false
     const { data: requester } = await admin
       .from('profiles')
       .select('role')
@@ -149,7 +157,7 @@ export async function POST(request) {
 
     if (event === 'created') {
       const items = order.order_items || []
-      await sendEmail({
+      if (canEmailCustomer) await sendEmail({
         to: order.customer_email,
         subject: `Confirmación de pedido ${order.order_number || order.id}`,
         html: emailLayout('Pedido confirmado', `<div class="content"><div class="success-icon">✅</div><h2 style="text-align:center;">¡Gracias por tu compra!</h2><p style="text-align:center;">Tu pedido ha sido confirmado y está siendo procesado.</p>${orderDetails(order)}<h3>📋 Resumen de tu pedido</h3><table class="items-table"><thead><tr><th>Producto</th><th>Cantidad</th><th style="text-align:right;">Subtotal</th></tr></thead><tbody>${itemRows(items)}</tbody></table><div class="total"><p>Subtotal: $${Number(order.subtotal || 0).toFixed(2)}</p><p>Envío: $${Number(order.shipping_cost || 0).toFixed(2)}</p><p>IVA (16%): $${Number(order.tax || 0).toFixed(2)}</p><p style="font-size:22px;">Total: $${Number(order.total || 0).toFixed(2)}</p></div><div style="text-align:center;margin-top:30px;"><a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/cliente/pedidos" class="button">Ver mis pedidos</a></div><p style="text-align:center;margin-top:20px;font-size:14px;color:#666;">Te notificaremos cuando tu pedido sea enviado. 📦</p></div>`)
@@ -176,13 +184,13 @@ export async function POST(request) {
       if (status === 'cancelled') {
         const { data: seller } = await admin.from('profiles').select('name, email').eq('id', item.seller_id).maybeSingle()
         await Promise.all([
-          sendEmail({ to: order.customer_email, subject: `Pedido cancelado ${order.order_number || order.id}`, html: cancellationEmail(order, [item], 'client') }),
+          ...(canEmailOrderUpdates ? [sendEmail({ to: order.customer_email, subject: `Pedido cancelado ${order.order_number || order.id}`, html: cancellationEmail(order, [item], 'client') })] : []),
           ...(seller?.email ? [sendEmail({ to: seller.email, subject: `Pedido cancelado ${order.order_number || order.id}`, html: cancellationEmail(order, [item], 'seller') })] : [])
         ])
         return NextResponse.json({ sent: true })
       }
 
-      await sendEmail({
+      if (canEmailOrderUpdates) await sendEmail({
         to: order.customer_email,
         subject: `Actualización de pedido ${order.order_number || order.id}`,
         html: emailLayout('Actualización de producto', `<div class="content"><div class="success-icon">${status === 'delivered' ? '✅' : '📦'}</div><h2 style="text-align:center;">${statusLabels[status]}</h2>${orderDetails(order)}<div class="order-info"><p><strong>Producto:</strong> ${escapeHtml(item.product_name || item.products?.name || 'Producto')}</p><p><strong>Cantidad:</strong> ${item.quantity || 1}</p><p><strong>Estado:</strong> <span class="badge">${statusLabels[status]}</span></p></div>${notes ? `<p><strong>Nota:</strong> ${escapeHtml(notes)}</p>` : ''}<div style="text-align:center;margin-top:30px;"><a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/cliente/pedidos" class="button">Ver estado del pedido</a></div></div>`)
@@ -195,7 +203,7 @@ export async function POST(request) {
         if (sellersError) throw sellersError
 
         await Promise.all([
-          sendEmail({ to: order.customer_email, subject: `Pedido cancelado ${order.order_number || order.id}`, html: cancellationEmail(order, items, 'client') }),
+          ...(canEmailOrderUpdates ? [sendEmail({ to: order.customer_email, subject: `Pedido cancelado ${order.order_number || order.id}`, html: cancellationEmail(order, items, 'client') })] : []),
           ...(sellers || []).filter(seller => seller.email).map(seller => sendEmail({
             to: seller.email,
             subject: `Pedido cancelado ${order.order_number || order.id}`,
@@ -205,7 +213,7 @@ export async function POST(request) {
         return NextResponse.json({ sent: true })
       }
 
-      await sendEmail({
+      if (canEmailOrderUpdates) await sendEmail({
         to: order.customer_email,
         subject: `Actualización de pedido ${order.order_number || order.id}`,
         html: emailLayout('Actualización de pedido', `<div class="content"><div class="success-icon">${event === 'delivered' ? '✅' : event === 'cancelled' ? '❌' : '📦'}</div><h2 style="text-align:center;">${statusLabels[event]}</h2><p style="text-align:center;">El estado de tu pedido ha cambiado.</p>${orderDetails(order)}${notes ? `<p><strong>Nota:</strong> ${escapeHtml(notes)}</p>` : ''}<div style="text-align:center;margin-top:30px;"><a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/cliente/pedidos" class="button">Ver estado del pedido</a></div></div>`)
