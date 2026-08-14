@@ -1,0 +1,12 @@
+User-Agent: *
+Allow: /
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /login
+Disallow: /registro
+Disallow: /recuperar
+Disallow: /perfil
+Disallow: /carrito
+Disallow: /favorito
+
+Sitemap: https://apex-commerce.com/sitemap.xml
