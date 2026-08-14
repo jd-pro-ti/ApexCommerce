@@ -23,7 +23,9 @@ export const metadata = {
     siteName: 'Apex Commerce',
     title: 'Apex Commerce | Compra productos premium en línea',
     description: 'Descubre productos premium de tecnología, hogar y estilo de vida.',
-    images: [{ url: '/logo.png', width: 512, height: 512, alt: 'Apex Commerce' }],
+    icons: {
+    icon: "/favicon.ico",
+  },
   },
   robots: {
     index: true,
