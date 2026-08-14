@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import {
@@ -20,13 +20,39 @@ import {
   FiX
 } from 'react-icons/fi';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const { logout, role } = useAuth();
+
+  const loadUnreadNotifications = useCallback(async () => {
+    if (role !== 'vendedor') return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+    const response = await fetch('/api/notifications', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' });
+    if (!response.ok) return;
+    const data = await response.json();
+    setUnreadNotifications((data.notifications || []).filter((notification) => !notification.read_at).length);
+  }, [role]);
+
+  useEffect(() => {
+    if (role !== 'vendedor') return undefined;
+    // Sincroniza el contador al montar y después mediante Realtime/polling.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadUnreadNotifications();
+    const interval = window.setInterval(loadUnreadNotifications, 30000);
+    const handleRead = (event) => setUnreadNotifications((current) => Math.max(0, current - Number(event.detail?.count || 0)));
+    window.addEventListener('seller-notifications-read', handleRead);
+    const channel = supabase.channel(`seller-notifications-${Date.now()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, loadUnreadNotifications)
+      .subscribe();
+    return () => { window.clearInterval(interval); window.removeEventListener('seller-notifications-read', handleRead); supabase.removeChannel(channel); };
+  }, [loadUnreadNotifications, role]);
 
   const handleLogout = async () => {
     await logout();
@@ -164,6 +190,11 @@ export default function Sidebar() {
 
                     {!collapsed && (
                       <div className="flex items-center gap-1.5">
+                        {item.name === 'Notificaciones' && unreadNotifications > 0 && (
+                          <span className="min-w-5 rounded-full bg-rose-500 px-1.5 py-0.5 text-center text-[10px] font-bold text-white">
+                            {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                          </span>
+                        )}
                         {item.badge && (
                           <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
                             {item.badge}

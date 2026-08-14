@@ -1,9 +1,23 @@
 import { NextResponse } from 'next/server'
+import nodemailer from 'nodemailer'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createSupabaseRouteClient } from '@/lib/supabase-route'
 import { createPaypalAuthAssertion, paypalRequest } from '@/lib/paypal'
 
 export const runtime = 'nodejs'
+
+const mailer = nodemailer.createTransport({ service: 'gmail', auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD }, tls: { rejectUnauthorized: false } })
+
+async function notifyReleasedPayment(sellerId, orderNumber, amount, products) {
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) return
+  const { data: seller } = await supabaseAdmin.from('profiles').select('name, email').eq('id', sellerId).single()
+  if (!seller?.email) return
+  const subject = `Pago liberado - pedido ${orderNumber}`
+  const message = `Tu pago de $${Number(amount || 0).toFixed(2)} MXN fue liberado porque el cliente confirmó la entrega del pedido ${orderNumber}. Productos: ${products || 'tus productos'}.`
+  try {
+    await mailer.sendMail({ from: `"Apex Commerce" <${process.env.GMAIL_USER}>`, to: seller.email, subject, html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:28px"><h2>${subject}</h2><p>${message}</p><p>Gracias por vender en Apex Commerce.</p></div>` })
+  } catch (error) { console.error('No se pudo enviar correo de pago liberado:', error) }
+}
 
 async function getAuthenticatedUser(request) {
   const token = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
@@ -28,11 +42,11 @@ export async function POST(request) {
 
     const isAdmin = String(authenticated.profile.role || '').toLowerCase() === 'admin'
     const { data: order, error: orderError } = await supabaseAdmin
-      .from('orders').select('id, user_id, status, payment_status').eq('id', orderId).single()
+      .from('orders').select('id, order_number, user_id, status, payment_status').eq('id', orderId).single()
     if (orderError || !order) return NextResponse.json({ error: 'Pedido no encontrado' }, { status: 404 })
 
     const { data: items, error: itemsError } = await supabaseAdmin
-      .from('order_items').select('seller_id, status').eq('order_id', orderId)
+      .from('order_items').select('seller_id, status, product_name').eq('order_id', orderId)
     if (itemsError) throw itemsError
     if (!items?.length) return NextResponse.json({ error: 'El pedido no tiene productos' }, { status: 400 })
     const sellerIds = [...new Set(items.map((item) => item.seller_id).filter(Boolean))]
@@ -54,7 +68,7 @@ export async function POST(request) {
 
     const { data: payouts, error: payoutsError } = await supabaseAdmin
       .from('seller_paypal_payouts')
-      .select('id, seller_id, paypal_capture_id, status')
+      .select('id, seller_id, seller_amount, paypal_capture_id, status')
       .eq('order_id', orderId)
     if (payoutsError) throw payoutsError
     const releasable = (payouts || []).filter((payout) => ['held', 'failed'].includes(payout.status))
@@ -89,6 +103,9 @@ export async function POST(request) {
         const { error: updateError } = await supabaseAdmin.from('seller_paypal_payouts')
           .update({ status: 'paid' }).eq('id', payout.id).in('status', ['held', 'failed'])
         if (updateError) throw updateError
+        if (isCustomer) {
+          await notifyReleasedPayment(payout.seller_id, order.order_number || orderId, payout.seller_amount, items.filter((item) => item.seller_id === payout.seller_id).map((item) => item.product_name).join(', '))
+        }
         results.push({ payoutId: payout.id, sellerId: payout.seller_id, payoutItemId: response.payout_item_id || response.id || null, status: 'paid' })
       } catch (error) {
         await supabaseAdmin.from('seller_paypal_payouts').update({ status: 'failed' }).eq('id', payout.id).in('status', ['held', 'failed'])
