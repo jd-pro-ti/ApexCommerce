@@ -48,9 +48,10 @@ function loadPaypalSdk(merchantIds) {
   })
 }
 
-export default function PayPalCheckout({ cartItems, onSuccess, onCancel, onError }) {
+export default function PayPalCheckout({ cartItems, onSuccess, onCancel, onError, onProcessing }) {
   const containerRef = useRef(null)
   const renderedRef = useRef(false)
+  const processingRef = useRef(false)
   const [loading, setLoading] = useState(true)
   const [status, setStatus] = useState({ variant: 'info', message: 'Conectando con PayPal Sandbox...' })
 
@@ -65,6 +66,8 @@ export default function PayPalCheckout({ cartItems, onSuccess, onCancel, onError
         await paypal.Buttons({
           style: { layout: 'vertical', shape: 'rect', label: 'paypal', height: 48 },
           createOrder: async () => {
+            if (processingRef.current) throw new Error('El pago ya está siendo procesado')
+            processingRef.current = true
             setStatus({ variant: 'info', message: 'Preparando tu pedido y verificando el stock...' })
             const { data: { session } } = await supabase.auth.getSession()
             if (!session?.access_token) throw new Error('Sesión no válida')
@@ -79,6 +82,8 @@ export default function PayPalCheckout({ cartItems, onSuccess, onCancel, onError
             return result.id
           },
           onApprove: async data => {
+            processingRef.current = true
+            onProcessing?.(true)
             setStatus({ variant: 'info', message: 'Pago recibido. Confirmando el pedido y descontando el stock...' })
             const { data: { session } } = await supabase.auth.getSession()
             const response = await fetch(`/api/paypal/orders/${data.orderID}/capture`, {
@@ -94,14 +99,22 @@ export default function PayPalCheckout({ cartItems, onSuccess, onCancel, onError
             onSuccess(result)
           },
           onCancel: () => {
+            processingRef.current = false
+            onProcessing?.(false)
             setStatus({ variant: 'info', message: 'Pago cancelado. No se descontó el stock.' })
             onCancel()
           },
-          onError: error => onError(error?.message || 'PayPal canceló el pago')
+          onError: error => {
+            processingRef.current = false
+            onProcessing?.(false)
+            onError(error?.message || 'PayPal canceló el pago')
+          }
         }).render(containerRef.current)
         if (!cancelled) setLoading(false)
       } catch (error) {
         if (!cancelled) {
+          processingRef.current = false
+          onProcessing?.(false)
           setLoading(false)
           setStatus({ variant: 'error', message: error.message })
           onError(error.message)
@@ -110,9 +123,9 @@ export default function PayPalCheckout({ cartItems, onSuccess, onCancel, onError
     }
     renderButtons()
     return () => { cancelled = true }
-  }, [cartItems, onCancel, onError, onSuccess])
+  }, [cartItems, onCancel, onError, onProcessing, onSuccess])
 
-  return <div className="min-h-24">
+  return <div className="relative min-h-24">
     <Alert variant={status.variant} className="mb-4">{status.message}</Alert>
     <div ref={containerRef} />
     {loading && <p className="text-center text-sm text-slate-500">Cargando checkout seguro...</p>}

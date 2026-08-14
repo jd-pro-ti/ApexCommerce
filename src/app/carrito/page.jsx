@@ -20,6 +20,8 @@ export default function CartPage() {
   const [paymentAlert, setPaymentAlert] = useState(null);
   const [showCheckout, setShowCheckout] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   
   const subtotal = total;
   const shipping = 0;
@@ -57,18 +59,25 @@ export default function CartPage() {
   })), [cart]);
 
   const handlePaymentSuccess = useCallback(async result => {
+    setIsPaymentProcessing(false);
+    setIsRedirecting(true);
     setPaymentAlert({ variant: 'success', message: 'Pago realizado correctamente. Tu pedido fue confirmado y el stock fue actualizado.' });
     setShowConfirmModal(false);
     await clearCart();
     await orderService.notifyOrder('created', { orderId: result.orderId });
     toast.success('Pago confirmado. Tu pedido ya está siendo procesado.');
-    setShowCheckout(true);
-    setTimeout(() => router.push('/perfil?tab=orders'), 1000);
+    router.push('/perfil?tab=orders');
   }, [clearCart, router]);
 
   const handlePaymentError = useCallback(message => {
+    setIsPaymentProcessing(false);
     setPaymentAlert({ variant: 'error', message: message || 'El pago no pudo completarse. No se descontó el stock.' });
     setError(message || 'No se pudo procesar el pago');
+  }, []);
+
+  const handlePaymentCancel = useCallback(() => {
+    setIsPaymentProcessing(false);
+    setShowConfirmModal(false);
   }, []);
 
   const handleConfirmCheckout = async () => {
@@ -175,6 +184,10 @@ export default function CartPage() {
       },
     });
   };
+
+  if (isRedirecting) {
+    return <div className="min-h-screen bg-surface pt-28 flex items-center justify-center px-4"><div className="w-full max-w-md rounded-2xl border border-surface-container bg-surface-container-lowest p-10 text-center shadow-sm"><div className="mx-auto mb-5 h-12 w-12 animate-spin rounded-full border-4 border-primary-container border-t-primary" /><h2 className="text-xl font-bold text-on-surface">Preparando tu historial de pedidos</h2><p className="mt-2 text-sm text-on-surface-variant/80">El pago fue confirmado. Estamos actualizando tu carrito y tu perfil...</p></div></div>;
+  }
 
   if (cart.length === 0) {
     return (
@@ -409,7 +422,7 @@ export default function CartPage() {
       {/* Tarjeta flotante / Alerta de confirmación con fondo opaco */}
       {showConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-inverse-surface/60 backdrop-blur-xs p-4 animate-fadeIn">
-          <div className="bg-surface-container-lowest border border-surface-container rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto overscroll-contain p-8 text-center space-y-6">
+          <div className="relative bg-surface-container-lowest border border-surface-container rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto overscroll-contain p-8 text-center space-y-6">
             <div className="w-14 h-14 bg-primary-container/20 text-primary rounded-full flex items-center justify-center mx-auto border border-primary/10 shadow-xs">
               <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
@@ -429,8 +442,9 @@ export default function CartPage() {
               <PayPalCheckout
                 cartItems={paypalCartItems}
                 onSuccess={handlePaymentSuccess}
-                onCancel={() => setShowConfirmModal(false)}
+                onCancel={handlePaymentCancel}
                 onError={handlePaymentError}
+                onProcessing={setIsPaymentProcessing}
               />
               <p className="mt-3 text-center text-xs text-outline">Pago de prueba en PayPal Sandbox. Usa la cuenta personal sandbox como comprador.</p>
             </div>
@@ -438,7 +452,7 @@ export default function CartPage() {
             <div className="grid grid-cols-2 gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => setShowConfirmModal(false)}
+                onClick={handlePaymentCancel}
                 className="w-full border border-outline-variant text-on-surface-variant text-sm font-semibold py-3.5 rounded-lg transition-colors hover:bg-surface-container"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
@@ -447,12 +461,24 @@ export default function CartPage() {
               <Button
                 type="button"
                 onClick={() => setShowConfirmModal(false)}
+                disabled={isPaymentProcessing}
                 className="w-full !bg-primary hover:!bg-primary-container !text-on-primary text-sm font-bold py-3.5 rounded-lg shadow-sm"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
                 Sí, Confirmar
               </Button>
             </div>
+
+            {isPaymentProcessing && (
+              <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/65 p-4 backdrop-blur-sm" role="status" aria-live="polite">
+                <div className="w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-2xl">
+                  <div className="mx-auto mb-5 h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-slate-900" />
+                  <h3 className="text-lg font-bold text-slate-900">Procesando tu pago</h3>
+                  <p className="mt-2 text-sm text-slate-500">Estamos confirmando el pago y preparando tu pedido. Si deseas detener la operación, puedes cancelarla.</p>
+                  <button type="button" onClick={handlePaymentCancel} className="mt-5 w-full rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 transition hover:bg-rose-100">Cancelar operación</button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
