@@ -5,7 +5,7 @@ import { WishlistProvider } from '@/context/WishlistContext'; // Importa el Wish
 import { OrderProvider } from '@/context/OrderContext';
 import AppWrapper from '@/components/common/AppWrapper'; // Importa el envoltorio
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://apex-commerce.com';
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://apex-comerce.com';
 
 export const metadata = {
   metadataBase: new URL(siteUrl),

@@ -9,4 +9,4 @@ Disallow: /perfil
 Disallow: /carrito
 Disallow: /favorito
 
-Sitemap: https://apex-commerce.com/sitemap.xml
+Sitemap: https://apex-comerce.com/sitemap.xml
