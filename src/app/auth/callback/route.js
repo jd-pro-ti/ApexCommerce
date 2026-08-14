@@ -6,8 +6,6 @@ export async function GET(request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
   
-  console.log('🚀 Callback recibido')
-  console.log('📝 Código:', code ? '✅ Presente' : '❌ No presente')
   
   if (!code) {
     console.error('❌ No hay código en la URL')
@@ -42,11 +40,9 @@ export async function GET(request) {
       return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(error.message)}`, request.url))
     }
     
-    console.log('✅ Sesión obtenida:', data.user?.email)
     
     if (data.user) {
       // Obtener perfil con logs
-      console.log('🔍 Buscando perfil para usuario:', data.user.id)
       
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -54,12 +50,9 @@ export async function GET(request) {
         .eq('id', data.user.id)
         .single()
       
-      console.log('📊 Perfil encontrado:', profile)
-      console.log('📊 Error de perfil:', profileError)
       
       // Si no existe el perfil, crearlo
       if (profileError && profileError.code === 'PGRST116') {
-        console.log('🔄 Creando perfil para:', data.user.email)
         
         const { count } = await supabase
           .from('profiles')
@@ -78,8 +71,6 @@ export async function GET(request) {
             role: role
           })
         
-        console.log('✅ Perfil creado con rol:', role)
-        console.log(`✅ Redirigiendo a la pantalla principal (rol: ${role})`)
         return NextResponse.redirect(new URL(role === 'admin' ? '/dashboard/admin' : role === 'vendedor' ? '/dashboard/vendedor' : '/', request.url))
       }
       
@@ -91,14 +82,11 @@ export async function GET(request) {
       
       // Determinar redirección según el rol del perfil
       const role = profile?.role || 'cliente'
-      console.log('🎯 Rol del usuario:', role)
       
-      console.log(`✅ Redirigiendo a la pantalla principal (rol: ${role})`)
       return NextResponse.redirect(new URL(role === 'admin' ? '/dashboard/admin' : role === 'vendedor' ? '/dashboard/vendedor' : '/', request.url))
     }
     
     // Fallback
-    console.log('⚠️ No hay usuario, redirigiendo a la pantalla principal')
     return NextResponse.redirect(new URL('/', request.url))
     
   } catch (error) {

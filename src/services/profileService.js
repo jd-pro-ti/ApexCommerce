@@ -174,8 +174,6 @@ export const profileService = {
         throw new Error('La imagen no debe superar los 5MB')
       }
 
-      console.log('📤 Subiendo avatar para usuario:', userId)
-      console.log('📄 Archivo:', file.name, file.type, (file.size / 1024).toFixed(2) + 'KB')
 
       const fileExt = file.name.split('.').pop()
       const fileName = `avatar.${fileExt}`
@@ -203,15 +201,12 @@ export const profileService = {
             await supabase.storage
               .from('profiles')
               .remove([oldPath])
-            console.log('🗑️ Avatar anterior eliminado')
           }
         }
       } catch (e) {
-        console.log('ℹ️ No se encontró avatar anterior para eliminar')
       }
 
       // Subir nuevo avatar
-      console.log('📤 Subiendo archivo a:', filePath)
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('profiles')
         .upload(filePath, file, {
@@ -224,14 +219,12 @@ export const profileService = {
         throw new Error(uploadError.message || 'Error al subir archivo')
       }
 
-      console.log('✅ Archivo subido:', uploadData)
 
       // Obtener URL pública
       const { data: { publicUrl } } = supabase.storage
         .from('profiles')
         .getPublicUrl(filePath)
 
-      console.log('🔗 URL pública:', publicUrl)
 
       // Actualizar perfil con nueva URL
       const { data: profileData, error: updateError } = await supabase
@@ -249,7 +242,6 @@ export const profileService = {
         throw new Error('Error al actualizar perfil con el avatar')
       }
 
-      console.log('✅ Perfil actualizado con nuevo avatar')
 
       return {
         success: true,

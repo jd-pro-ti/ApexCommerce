@@ -257,7 +257,7 @@ create table if not exists public.order_status_history (
   order_id uuid not null references public.orders(id) on delete cascade,
   status text not null,
   notes text,
-  changed_by uuid references public.profiles(id) on delete set null,
+  changed_by uuid references public.profiles(id) on delete cascade,
   created_at timestamptz not null default now()
 );
 

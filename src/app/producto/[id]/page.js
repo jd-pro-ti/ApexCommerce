@@ -152,7 +152,6 @@ export default function ProductDetail() {
         await addToCart(product);
       }
     } catch (err) {
-      console.log("Redirigiendo al carrito directamente por restricción existente.");
     }
     
     // Redirige de inmediato al carrito para finalizar la compra

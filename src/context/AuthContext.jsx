@@ -22,14 +22,11 @@ export function AuthProvider({ children }) {
 
         const response = await fetch('/api/auth/session', { cache: 'no-store' });
         const result = await response.json();
-        console.log('📊 Resultado de sesión:', result)
         
         if (result.success && result.user) {
           setUser(result.user);
           setRole(result.user.role || 'cliente');
-          console.log('✅ Sesión activa:', result.user.email, 'Rol:', result.user.role)
         } else {
-          console.log('ℹ️ No hay sesión activa')
         }
       } catch (error) {
         console.error('Error al verificar sesión:', error);
@@ -44,7 +41,6 @@ export function AuthProvider({ children }) {
     if (supabase) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event, session) => {
-          console.log('🔐 Auth event:', event)
           
           if (event === 'SIGNED_IN' && session) {
             setTimeout(async () => {
@@ -52,13 +48,11 @@ export function AuthProvider({ children }) {
               if (result.success && result.user) {
                 setUser(result.user);
                 setRole(result.user.role || 'cliente');
-                console.log('✅ Usuario autenticado con rol:', result.user.role)
               }
             }, 1000)
           } else if (event === 'SIGNED_OUT') {
             setUser(null);
             setRole(null);
-            console.log('👋 Sesión cerrada')
           }
           // La sesión inicial ya se está resolviendo en checkSession.
           // No marcar loading como false aquí: INITIAL_SESSION puede llegar

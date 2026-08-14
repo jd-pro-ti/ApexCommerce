@@ -18,7 +18,6 @@ transporter.verify((error, success) => {
   if (error) {
     console.error('❌ Error al conectar con Gmail SMTP:', error)
   } else {
-    console.log('✅ Conexión con Gmail SMTP establecida correctamente')
   }
 })
 
@@ -41,7 +40,6 @@ export async function POST(request) {
     }
 
     const info = await transporter.sendMail(mailOptions)
-    console.log('✅ Email enviado:', info.messageId)
 
     return NextResponse.json({
       success: true,

@@ -75,7 +75,6 @@ const ProductCard = ({ product }) => {
     try {
       await addToCart(product);
     } catch (error) {
-      console.log("Redirigiendo al carrito...");
     }
     router.push('/carrito');
   };

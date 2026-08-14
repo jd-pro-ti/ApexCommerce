@@ -373,7 +373,6 @@ export const emailService = {
       // 2. RESCATE DIRECTO: Si falta el email de algún vendedor, consultarlo directamente a Supabase
       if (missingSellerIds.length > 0) {
         const uniqueIds = [...new Set(missingSellerIds)]
-        console.log('🔄 Buscando datos de vendedores faltantes en Supabase para IDs:', uniqueIds)
 
         // Importación dinámica para evitar ciclos
         const { supabase } = await import('@/lib/supabase')
@@ -406,7 +405,6 @@ export const emailService = {
         return { success: true, total: 0 }
       }
 
-      console.log(`📧 Notificando exitosamente a ${sellers.length} vendedor(es):`, sellers.map(s => s.email))
 
       const results = []
 

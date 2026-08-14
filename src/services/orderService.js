@@ -124,7 +124,6 @@ export const orderService = {
         throw new Error('Supabase no está configurado')
       }
 
-      console.log('🔄 Creando pedido:', orderData)
 
       const { data, error } = await supabase.rpc('create_order', {
         p_user_id: orderData.user_id,
@@ -147,7 +146,6 @@ export const orderService = {
         throw error
       }
 
-      console.log('✅ Pedido creado ID:', data)
 
       const orderResult = await this.getOrderById(data)
 

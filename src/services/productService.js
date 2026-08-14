@@ -785,7 +785,6 @@ export const productService = {
         throw new Error('Usuario no especificado')
       }
 
-      console.log('🔄 Obteniendo carrito para usuario:', userId)
 
       const { data, error } = await supabase
         .from('cart_items')
@@ -814,7 +813,6 @@ export const productService = {
       throw error
     }
 
-    console.log('📦 Datos crudos del carrito:', data)
 
     // Transformar datos para el frontend
     const cartItems = data?.map(item => ({
@@ -831,7 +829,6 @@ export const productService = {
       quantity: item.quantity || 1
     })) || []
 
-    console.log('✅ Carrito transformado:', cartItems.length, 'items')
 
     return {
       success: true,
@@ -865,7 +862,6 @@ async addToCart(userId, productId, quantity = 1) {
       throw new Error('La cantidad debe ser mayor a 0')
     }
 
-    console.log('🔄 Agregando al carrito:', { userId, productId, quantity })
 
     // OBTENER EL STOCK DEL PRODUCTO
     const { data: productData, error: productError } = await supabase
@@ -908,12 +904,6 @@ async addToCart(userId, productId, quantity = 1) {
 
     if (existing) {
       // Actualizar cantidad del item existente
-      console.log('🔄 Actualizando cantidad existente:', { 
-        existingId: existing.id, 
-        currentQuantity: existing.quantity,
-        newQuantity: newTotalQuantity 
-      })
-      
       const { data, error } = await supabase
         .from('cart_items')
         .update({ 
@@ -929,10 +919,8 @@ async addToCart(userId, productId, quantity = 1) {
         throw error
       }
       result = data
-      console.log('✅ Cantidad actualizada:', result)
     } else {
       // Insertar nuevo item (no existe previamente)
-      console.log('🔄 Insertando nuevo item en carrito')
       
       const { data, error } = await supabase
         .from('cart_items')
@@ -949,7 +937,6 @@ async addToCart(userId, productId, quantity = 1) {
         throw error
       }
       result = data
-      console.log('✅ Item insertado:', result)
     }
 
     return {
@@ -1098,7 +1085,6 @@ async addToCart(userId, productId, quantity = 1) {
         throw new Error('Supabase no está configurado')
       }
 
-      console.log('🔄 Sincronizando carrito completo para usuario:', userId)
       
       // Primero vaciar el carrito
       const { error: clearError } = await supabase
@@ -1112,7 +1098,6 @@ async addToCart(userId, productId, quantity = 1) {
       }
 
       if (!items || items.length === 0) {
-        console.log('✅ Carrito vaciado correctamente')
         return { success: true }
       }
 
@@ -1133,7 +1118,6 @@ async addToCart(userId, productId, quantity = 1) {
         throw error
       }
 
-      console.log('✅ Carrito sincronizado:', data?.length || 0, 'items')
       return {
         success: true,
         data

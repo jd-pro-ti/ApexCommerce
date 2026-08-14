@@ -38,6 +38,36 @@ const deleteOptionalRows = async (table, column, values) => {
   }
 }
 
+const isMissingColumnError = (error) => (
+  error?.code === '42703' ||
+  error?.message?.toLowerCase?.().includes('column') && error?.message?.toLowerCase?.().includes('does not exist')
+)
+
+// Compatibilidad con bases creadas con ambos nombres de columna.
+// Los historiales creados por el usuario deben eliminarse antes del perfil.
+const deleteUserOrderHistory = async (userId) => {
+  let foundColumn = false
+
+  for (const column of ['created_by', 'changed_by']) {
+    const { error } = await supabaseAdmin
+      .from('order_status_history')
+      .delete()
+      .eq(column, userId)
+
+    if (!error) {
+      foundColumn = true
+      continue
+    }
+
+    if (!isMissingColumnError(error)) {
+      const detail = [error.message, error.details, error.hint].filter(Boolean).join(' | ')
+      throw new Error(`No se pudo limpiar order_status_history: ${detail || JSON.stringify(error)}`)
+    }
+  }
+
+  return foundColumn
+}
+
 const removeStorageFolder = async (bucket, folder) => {
   try {
     const { data: files } = await supabaseAdmin.storage.from(bucket).list(folder, { limit: 1000 })
@@ -131,6 +161,8 @@ export async function DELETE(request) {
 
     step = 'eliminar historial de pedidos'
     await deleteRows('order_status_history', 'order_id', orderIds)
+    step = 'eliminar historial creado por el usuario'
+    await deleteUserOrderHistory(userId)
     step = 'eliminar productos de pedidos'
     await deleteRows('order_items', 'seller_id', [userId])
     await deleteRows('order_items', 'order_id', orderIds)

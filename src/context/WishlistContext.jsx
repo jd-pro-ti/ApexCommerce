@@ -22,11 +22,9 @@ export function WishlistProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      console.log('🔄 Cargando favoritos para usuario:', user.id);
       const result = await productService.getWishlist(user.id);
       if (result.success) {
         setWishlist(result.wishlist || []);
-        console.log('✅ Favoritos cargados:', result.wishlist?.length || 0, 'items');
       } else {
         console.error('Error al cargar favoritos:', result.error);
         setError(result.error);
@@ -76,7 +74,6 @@ export function WishlistProvider({ children }) {
         return { success: false, error: result.error };
       }
 
-      console.log('✅ Producto agregado a favoritos:', product.name);
       return { success: true };
     } catch (error) {
       // Revertir en caso de error
@@ -112,7 +109,6 @@ export function WishlistProvider({ children }) {
         return { success: false, error: result.error };
       }
 
-      console.log('✅ Producto eliminado de favoritos');
       return { success: true };
     } catch (error) {
       setError(error.message || 'Error al eliminar de favoritos');

@@ -24,12 +24,10 @@ export function CartProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      console.log('🔄 Cargando carrito desde BD para usuario:', user.id)
       const result = await productService.getCart(user.id);
       if (result.success) {
         setCart(result.cart || []);
         localStorage.setItem('apex_cart', JSON.stringify(result.cart || []));
-        console.log('✅ Carrito cargado desde BD:', result.cart?.length || 0, 'items')
       } else {
         console.error('Error al cargar carrito:', result.error);
         loadCartFromLocalStorage();
@@ -66,12 +64,10 @@ export function CartProvider({ children }) {
 
     setSyncing(true);
     try {
-      console.log('🔄 Sincronizando carrito con BD:', cartItems.length, 'items')
       
       const result = await productService.syncCart(user.id, cartItems);
       
       if (result.success) {
-        console.log('✅ Carrito sincronizado con la base de datos');
       } else {
         console.error('❌ Error al sincronizar carrito:', result.error);
       }
@@ -184,7 +180,6 @@ export function CartProvider({ children }) {
                 loadCart();
               }
             } else {
-              console.log('✅ Producto guardado en BD correctamente');
             }
           })
           .catch(error => {

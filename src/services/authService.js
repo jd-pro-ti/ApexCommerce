@@ -262,7 +262,6 @@ export const authService = {
         return null
       }
 
-      console.log('🔍 Buscando perfil para:', userId)
       
       const { data, error } = await supabase
         .from('profiles')
@@ -275,7 +274,6 @@ export const authService = {
         
         // Si el error es que no existe, crear el perfil
         if (error.code === 'PGRST116') {
-          console.log('🔄 Perfil no encontrado, creando...')
           
           // Obtener datos del usuario
           const { data: userData } = await supabase.auth.getUser()
@@ -289,7 +287,6 @@ export const authService = {
             const isFirstUser = count === 0
             const role = isFirstUser ? 'admin' : 'cliente'
             
-            console.log('📝 Creando perfil con rol:', role)
             
             const { data: newProfile, error: insertError } = await supabase
               .from('profiles')
@@ -308,7 +305,6 @@ export const authService = {
               return null
             }
             
-            console.log('✅ Perfil creado exitosamente:', newProfile)
             return newProfile
           }
         }
@@ -316,7 +312,6 @@ export const authService = {
         return null
       }
       
-      console.log('✅ Perfil encontrado:', data)
       return data
     } catch (error) {
       console.error('❌ Error en getProfile:', error)
