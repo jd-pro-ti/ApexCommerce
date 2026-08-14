@@ -1,7 +1,14 @@
-'use client';
 import { Suspense } from 'react';
 import CatalogoContent from './CatalogoContent';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+
+export const metadata = {
+  title: 'Catálogo de productos',
+  description: 'Explora productos premium de tecnología, hogar y estilo de vida en Apex Commerce.',
+  alternates: {
+    canonical: '/catalogo',
+  },
+};
 
 export default function CatalogoPage() {
   return (

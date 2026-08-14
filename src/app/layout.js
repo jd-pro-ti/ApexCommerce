@@ -16,9 +16,6 @@ export const metadata = {
   description: 'Descubre productos premium de tecnología, hogar y estilo de vida en Apex Commerce.',
   applicationName: 'Apex Commerce',
   keywords: ['tienda en línea', 'productos premium', 'tecnología', 'hogar', 'Apex Commerce'],
-  alternates: {
-    canonical: '/',
-  },
   openGraph: {
     type: 'website',
     locale: 'es_MX',
