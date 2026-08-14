@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import Button from '@/components/ui/Button';
+import Alert from '@/components/ui/Alert';
+import { validateEmail, validatePassword } from '@/utils/validation';
 import { ShoppingBag, Package, Gift, Tag, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 export default function LoginPage() {
@@ -35,6 +37,14 @@ export default function LoginPage() {
 
     if (!formData.email.trim() || !formData.password) {
       setError('Por favor completa todos los campos.');
+      return;
+    }
+    if (!validateEmail(formData.email)) {
+      setError('Escribe un correo electrónico válido.');
+      return;
+    }
+    if (!validatePassword(formData.password)) {
+      setError('La contraseña debe tener mínimo 8 caracteres, mayúscula, minúscula, número y símbolo.');
       return;
     }
 
@@ -108,11 +118,7 @@ export default function LoginPage() {
             </div>
 
             {/* Alerta de Error */}
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-xl text-center" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                {error}
-              </div>
-            )}
+            {error && <Alert variant="error" className="mb-4">{error}</Alert>}
 
             {/* Inicio de sesión con Google */}
             <div className="mb-4 w-full">

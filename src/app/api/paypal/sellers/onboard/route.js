@@ -116,3 +116,44 @@ export async function POST(request) {
     return NextResponse.json({ error: error.message || 'No se pudo iniciar el onboarding de PayPal' }, { status: error.status || 500 })
   }
 }
+
+export async function DELETE(request) {
+  try {
+    const authenticated = await getUserFromRequest(request)
+    if (!authenticated) return NextResponse.json({ error: 'SesiÃ³n no vÃ¡lida' }, { status: 401 })
+    if (String(authenticated.profile.role || '').trim().toLowerCase() !== 'vendedor') {
+      return NextResponse.json({ error: 'Solo los vendedores pueden desconectar PayPal' }, { status: 403 })
+    }
+
+    const { data: pendingPayouts, error: payoutsError } = await supabaseAdmin
+      .from('seller_paypal_payouts')
+      .select('id')
+      .eq('seller_id', authenticated.user.id)
+      .in('status', ['held', 'pending', 'failed'])
+      .limit(1)
+    if (payoutsError) throw payoutsError
+    if (pendingPayouts?.length) {
+      return NextResponse.json({ error: 'No puedes desconectar PayPal mientras tengas pagos pendientes de liberar. Libera esos pagos primero.' }, { status: 409 })
+    }
+
+    const { error } = await supabaseAdmin
+      .from('seller_paypal_accounts')
+      .update({
+        paypal_merchant_id: null,
+        tracking_id: null,
+        partner_referral_id: null,
+        onboarding_status: 'revoked',
+        payments_receivable: false,
+        permissions_granted: false,
+        consent_status: false,
+        last_error: null
+      })
+      .eq('seller_id', authenticated.user.id)
+    if (error) throw error
+
+    return NextResponse.json({ success: true, account: null })
+  } catch (error) {
+    console.error('PayPal seller disconnect failed:', error)
+    return NextResponse.json({ error: error.message || 'No se pudo desconectar PayPal' }, { status: error.status || 500 })
+  }
+}

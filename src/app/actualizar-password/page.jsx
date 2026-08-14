@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, KeyRound, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, KeyRound, ShoppingBag, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { authService } from '@/services/authService';
 import Button from '@/components/ui/Button';
+import { validatePassword } from '@/utils/validation';
 
 export default function UpdatePasswordPage() {
   const { verifyRecoveryCode, updatePassword, isAuthenticated, loading: authLoading } = useAuth();
@@ -20,6 +21,8 @@ export default function UpdatePasswordPage() {
   const [confirmation, setConfirmation] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const step = authLoading ? null : isAuthenticated ? 2 : recoveryStep;
 
@@ -37,6 +40,7 @@ export default function UpdatePasswordPage() {
   const savePassword = async (event) => {
     event.preventDefault();
     setError('');
+    if (!validatePassword(password)) return setError('La contraseña debe tener mínimo 8 caracteres, mayúscula, minúscula, número y símbolo.');
     if (password.length < 6) return setError('La contraseña debe tener al menos 6 caracteres.');
     if (password !== confirmation) return setError('Las contraseñas no coinciden.');
     setLoading(true);
@@ -73,8 +77,18 @@ export default function UpdatePasswordPage() {
           <input inputMode="numeric" autoComplete="one-time-code" maxLength={8} value={token} onChange={(event) => setToken(event.target.value.replace(/\D/g, '').slice(0, 8))} placeholder="Código de verificación" required className="w-full px-4 py-3 rounded-xl border border-[#efedef] text-sm tracking-[0.35em] text-center focus:outline-none focus:border-[#010f20] bg-[#fdfdfd] text-[#010f20]" />
           <Button type="submit" loading={loading} className="w-full py-3 bg-[#010f20] text-white rounded-xl text-xs font-bold uppercase tracking-widest shadow-md">Verificar código</Button>
         </form> : <form onSubmit={savePassword} className="space-y-4">
-          <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Nueva contraseña" required className="w-full px-4 py-3 rounded-xl border border-[#efedef] text-sm focus:outline-none focus:border-[#010f20] bg-[#fdfdfd] text-[#010f20]" />
-          <input type="password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Repite la contraseña" required className="w-full px-4 py-3 rounded-xl border border-[#efedef] text-sm focus:outline-none focus:border-[#010f20] bg-[#fdfdfd] text-[#010f20]" />
+          <div className="relative">
+            <input type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Nueva contraseña" required className="w-full px-4 py-3 pr-12 rounded-xl border border-[#efedef] text-sm focus:outline-none focus:border-[#010f20] bg-[#fdfdfd] text-[#010f20]" />
+            <button type="button" onClick={() => setShowPassword((visible) => !visible)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#44474c]" aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+          <div className="relative">
+            <input type={showConfirmation ? 'text' : 'password'} value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Repite la contraseña" required className="w-full px-4 py-3 pr-12 rounded-xl border border-[#efedef] text-sm focus:outline-none focus:border-[#010f20] bg-[#fdfdfd] text-[#010f20]" />
+            <button type="button" onClick={() => setShowConfirmation((visible) => !visible)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#44474c]" aria-label={showConfirmation ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
+              {showConfirmation ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
           <Button type="submit" loading={loading} className="w-full py-3 bg-[#010f20] text-white rounded-xl text-xs font-bold uppercase tracking-widest shadow-md">Guardar contraseña</Button>
         </form>}
         <Link href="/login" className="mt-6 inline-flex items-center gap-1.5 text-xs font-semibold text-[#44474c] hover:text-[#010f20]"><ArrowLeft className="w-3.5 h-3.5" />Volver al inicio de sesión</Link>

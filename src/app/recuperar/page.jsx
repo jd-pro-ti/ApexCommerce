@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, CheckCircle, Mail, ShoppingBag } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import Button from '@/components/ui/Button';
+import { validateEmail } from '@/utils/validation';
 
 export default function RecoverPasswordPage() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function RecoverPasswordPage() {
     setError('');
     setMessage('');
 
-    if (!email.trim()) {
+    if (!validateEmail(email)) {
       setError('Escribe tu correo electrónico.');
       return;
     }

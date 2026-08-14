@@ -44,6 +44,7 @@ export default function SpecificationsInput({ value = {}, onChange, label = 'Esp
       <label className="block text-xs font-bold text-[#010f20] uppercase tracking-wider mb-2">
         {label}
       </label>
+      <p className="mb-3 text-xs text-slate-500">Agrega al menos 2 características o detalles del producto.</p>
 
       {/* Lista de especificaciones existentes */}
       {Object.keys(specs).length > 0 && (

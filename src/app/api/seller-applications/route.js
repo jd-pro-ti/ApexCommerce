@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerAuth } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { sendSellerEmail } from '@/lib/seller-application-email'
+import { validateSellerApplication } from '@/utils/validation'
 
 const required = ['full_name', 'curp', 'phone', 'address', 'city', 'state', 'postal_code']
 
@@ -21,6 +22,9 @@ export async function POST(request) {
     const body = await request.json()
     const missing = required.find((field) => !String(body[field] || '').trim())
     if (missing) return NextResponse.json({ error: `El campo ${missing} es obligatorio` }, { status: 400 })
+    const validationErrors = validateSellerApplication(body)
+    const firstValidationError = Object.values(validationErrors)[0]
+    if (firstValidationError) return NextResponse.json({ error: firstValidationError, fields: validationErrors }, { status: 400 })
     const { data: pending } = await supabaseAdmin.from('seller_applications').select('id').eq('user_id', user.id).eq('status', 'pending').maybeSingle()
     if (pending) return NextResponse.json({ error: 'Ya tienes una solicitud pendiente' }, { status: 409 })
     const payload = { user_id: user.id, ...Object.fromEntries(['full_name','curp','rfc','phone','birth_date','id_type','id_number','address','city','state','postal_code','country','notes'].map((key) => [key, body[key] || null])) }

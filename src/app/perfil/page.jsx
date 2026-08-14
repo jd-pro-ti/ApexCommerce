@@ -16,6 +16,7 @@ import OrdersPanel from '@/components/profile/OrdersPanel';
 import WishlistPanel from '@/components/profile/WishlistPanel';
 import PaymentHistoryPanel from '@/components/profile/PaymentHistoryPanel';
 import DeleteAccountModal from '@/components/profile/DeleteAccountModal';
+import { getAge, validateName, validatePhone, validatePostalCode } from '@/utils/validation';
 
 const initialProfile = {
   id: '', name: '', email: '', avatar_url: '', role: '', status: '',
@@ -111,6 +112,12 @@ function PerfilPageContent() {
   const handleSubmit = async (event) => {
     event.preventDefault(); setSaving(true);
     try {
+      const age = getAge(formData.details?.birth_date);
+      if (age === null || age < 12) throw new Error('Debes tener una fecha de nacimiento válida y al menos 12 años.');
+      if (!validateName(formData.name)) throw new Error('Escribe un nombre válido de 2 a 100 caracteres.');
+      if (formData.details?.phone && !validatePhone(formData.details.phone)) throw new Error('Escribe un número de teléfono válido.');
+      if (formData.details?.postal_code && !validatePostalCode(formData.details.postal_code)) throw new Error('El código postal debe tener exactamente 5 números.');
+      if (String(formData.details?.address || '').length > 180 || String(formData.details?.city || '').length > 80 || String(formData.details?.state || '').length > 80) throw new Error('Revisa la longitud de los datos de tu ubicación.');
       const profileResult = await profileService.updateProfile(user.id, { name: formData.name, avatar_url: formData.avatar_url });
       if (!profileResult.success) throw new Error(profileResult.error);
       const detailsResult = await profileService.updateProfileDetails(user.id, { ...formData.details, country: formData.details.country || 'México' });

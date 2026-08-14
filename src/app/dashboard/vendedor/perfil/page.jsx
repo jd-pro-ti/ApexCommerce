@@ -1,15 +1,16 @@
 'use client';
-/* eslint-disable react-hooks/static-components */
 /* eslint-disable react-hooks/preserve-manual-memoization */
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { profileService } from '@/services/profileService';
 import { supabase } from '@/lib/supabase';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Alert from '@/components/ui/Alert';
+import SellerProfileAlert from '@/components/ui/SellerProfileAlert';
+import { getAge, validateName, validatePhone, validatePostalCode } from '@/utils/validation';
 import { Camera, Edit3, LogOut, Save, User, MapPin, BriefcaseBusiness, Bell, Globe, Trash2 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -72,8 +73,18 @@ function mergeProfile(profile) {
   };
 }
 
-export default function VendedorPerfilPage() {
+function ProfileField({ label, name, value, onChange, type = 'text', placeholder = '', disabled = false, inputClass }) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-xs font-semibold text-slate-600">{label}</span>
+      <input name={name} type={type} value={value || ''} onChange={onChange} placeholder={placeholder} disabled={disabled} className={inputClass} />
+    </label>
+  );
+}
+
+function VendedorPerfilPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const fileInputRef = useRef(null);
   const { user, isAuthenticated, loading: authLoading, updateProfile: updateAuthProfile, logout } = useAuth();
   const [profile, setProfile] = useState(defaultProfile);
@@ -91,6 +102,19 @@ export default function VendedorPerfilPage() {
   const [deleteReason, setDeleteReason] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteAccountError, setDeleteAccountError] = useState('');
+  const [profileRequirements, setProfileRequirements] = useState([]);
+
+  useEffect(() => {
+    if (searchParams.get('required') !== '1') return;
+    const validRequirements = ['paypal', 'phone', 'location'];
+    const missing = (searchParams.get('missing') || '').split(',').filter((item) => validRequirements.includes(item));
+    setProfileRequirements(missing.length ? missing : validRequirements);
+  }, [searchParams]);
+
+  const closeProfileRequirements = () => {
+    setProfileRequirements([]);
+    router.replace('/dashboard/vendedor/perfil', { scroll: false });
+  };
 
   const loadProfile = useCallback(async () => {
     setLoading(true);
@@ -142,6 +166,27 @@ export default function VendedorPerfilPage() {
       window.location.href = result.actionUrl;
     } catch (error) {
       setPaypalError(error.message);
+      setPaypalLoading(false);
+    }
+  };
+
+  const disconnectPaypal = async () => {
+    if (!window.confirm('¿Quieres desconectar esta cuenta de PayPal? Después podrás conectar otra cuenta Sandbox.')) return;
+    setPaypalLoading(true);
+    setPaypalError('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch('/api/paypal/sellers/onboard', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${session?.access_token || ''}` },
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'No se pudo desconectar PayPal');
+      setPaypalAccount(null);
+      toast.success('Cuenta PayPal desconectada. Ya puedes conectar otra cuenta.');
+    } catch (error) {
+      setPaypalError(error.message);
+    } finally {
       setPaypalLoading(false);
     }
   };
@@ -213,6 +258,12 @@ export default function VendedorPerfilPage() {
     event.preventDefault();
     setSaving(true);
     try {
+      const age = getAge(formData.details?.birth_date);
+      if (age === null || age < 18) throw new Error('Debes tener una fecha de nacimiento válida y ser mayor de 18 años para vender.');
+      if (!validateName(formData.name)) throw new Error('Escribe un nombre válido de 2 a 100 caracteres.');
+      if (formData.details?.phone && !validatePhone(formData.details.phone)) throw new Error('Escribe un número de teléfono válido.');
+      if (formData.details?.postal_code && !validatePostalCode(formData.details.postal_code)) throw new Error('El código postal debe tener exactamente 5 números.');
+      if (String(formData.details?.address || '').length > 180 || String(formData.details?.city || '').length > 80 || String(formData.details?.state || '').length > 80) throw new Error('Revisa la longitud de los datos de tu ubicación.');
       const basicResult = await profileService.updateProfile(user.id, {
         name: formData.name,
         avatar_url: formData.avatar_url,
@@ -277,13 +328,6 @@ export default function VendedorPerfilPage() {
       : 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-600'
   }`;
 
-  const Field = ({ label, name, value, onChange, type = 'text', placeholder = '', disabled = !isEditing }) => (
-    <label className="block">
-      <span className="mb-1.5 block text-xs font-semibold text-slate-600">{label}</span>
-      <input name={name} type={type} value={value || ''} onChange={onChange} placeholder={placeholder} disabled={disabled} className={inputClass} />
-    </label>
-  );
-
   if (loading || authLoading) {
     return <div className="flex min-h-screen items-center justify-center bg-slate-50"><LoadingSpinner size="lg" /></div>;
   }
@@ -291,6 +335,7 @@ export default function VendedorPerfilPage() {
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-10 text-slate-800 sm:px-6 lg:px-10" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
       <Toaster position="top-center" />
+      {profileRequirements.length > 0 && <SellerProfileAlert missing={profileRequirements} onClose={closeProfileRequirements} />}
       <div className="mx-auto max-w-7xl">
         <div className="mb-8">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-600">Cuenta del vendedor</p>
@@ -339,9 +384,12 @@ export default function VendedorPerfilPage() {
                   {paypalAccount?.onboarding_status === 'connected' && <p className="mt-2 text-xs font-semibold text-emerald-600">Cuenta PayPal conectada correctamente.</p>}
                   {paypalError && <Alert variant="error" className="mt-3">{paypalError}</Alert>}
                 </div>
-                <button type="button" onClick={connectPaypal} disabled={paypalLoading || paypalAccount?.onboarding_status === 'connected'} className="shrink-0 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
-                  {paypalLoading ? 'Conectando...' : paypalAccount?.onboarding_status === 'connected' ? 'PayPal conectado' : paypalAccount?.onboarding_status === 'pending' ? 'Continuar con PayPal' : 'Conectar PayPal'}
-                </button>
+                <div className="flex shrink-0 flex-wrap justify-end gap-2">
+                  {paypalAccount?.onboarding_status === 'connected' && <button type="button" onClick={disconnectPaypal} disabled={paypalLoading} className="rounded-xl border border-rose-200 bg-rose-50 px-5 py-3 text-sm font-bold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60">{paypalLoading ? 'Desconectando...' : 'Desconectar PayPal'}</button>}
+                  <button type="button" onClick={connectPaypal} disabled={paypalLoading || paypalAccount?.onboarding_status === 'connected'} className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
+                    {paypalLoading ? 'Procesando...' : paypalAccount?.onboarding_status === 'connected' ? 'PayPal conectado' : paypalAccount?.onboarding_status === 'pending' ? 'Continuar con PayPal' : 'Conectar PayPal'}
+                  </button>
+                </div>
               </div>
             </div>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -351,11 +399,11 @@ export default function VendedorPerfilPage() {
                   {!isEditing && <button type="button" onClick={() => setIsEditing(true)} className="flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-200"><Edit3 className="h-4 w-4" />Editar</button>}
                 </div>
 
-                {activeTab === 'profile' && <div className="grid gap-5 md:grid-cols-2"><Field label="Nombre completo" name="name" value={formData.name} onChange={handleProfileChange} /><Field label="Correo electrónico" name="email" value={formData.email} disabled /><Field label="Teléfono" name="phone" value={formData.details.phone} onChange={handleDetailsChange} placeholder="+52 55 0000 0000" /><Field label="Fecha de nacimiento" name="birth_date" type="date" value={formData.details.birth_date} onChange={handleDetailsChange} /><label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Género</span><select name="gender" value={formData.details.gender || 'prefer_not_to_say'} onChange={handleDetailsChange} disabled={!isEditing} className={inputClass}><option value="prefer_not_to_say">Prefiero no decirlo</option><option value="female">Mujer</option><option value="male">Hombre</option><option value="non_binary">No binario</option></select></label><div className="md:col-span-2"><label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Biografía</span><textarea name="bio" rows="4" value={formData.details.bio || ''} onChange={handleDetailsChange} disabled={!isEditing} placeholder="Cuéntale a tus clientes sobre ti..." className={`${inputClass} resize-none`} /></label></div></div>}
+                {activeTab === 'profile' && <div className="grid gap-5 md:grid-cols-2"><ProfileField inputClass={inputClass} disabled={!isEditing} label="Nombre completo" name="name" value={formData.name} onChange={handleProfileChange} /><ProfileField inputClass={inputClass} disabled label="Correo electrónico" name="email" value={formData.email} /><ProfileField inputClass={inputClass} disabled={!isEditing} label="Teléfono" name="phone" value={formData.details.phone} onChange={handleDetailsChange} placeholder="+52 55 0000 0000" /><ProfileField inputClass={inputClass} disabled={!isEditing} label="Fecha de nacimiento" name="birth_date" type="date" value={formData.details.birth_date} onChange={handleDetailsChange} /><label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Género</span><select name="gender" value={formData.details.gender || 'prefer_not_to_say'} onChange={handleDetailsChange} disabled={!isEditing} className={inputClass}><option value="prefer_not_to_say">Prefiero no decirlo</option><option value="female">Mujer</option><option value="male">Hombre</option><option value="non_binary">No binario</option></select></label><div className="md:col-span-2"><label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Biografía</span><textarea name="bio" rows="4" value={formData.details.bio || ''} onChange={handleDetailsChange} disabled={!isEditing} placeholder="Cuéntale a tus clientes sobre ti..." className={`${inputClass} resize-none`} /></label></div></div>}
 
-                {activeTab === 'address' && <div className="grid gap-5 md:grid-cols-2"><div className="md:col-span-2"><Field label="Dirección" name="address" value={formData.details.address} onChange={handleDetailsChange} placeholder="Calle y avenida" /></div><Field label="Número de casa o local" name="house_number" value={formData.details.house_number} onChange={handleDetailsChange} /><Field label="Dirección adicional" name="address_line2" value={formData.details.address_line2} onChange={handleDetailsChange} placeholder="Interior, oficina, piso..." /><Field label="Colonia / barrio" name="neighborhood" value={formData.details.neighborhood} onChange={handleDetailsChange} /><Field label="Ciudad" name="city" value={formData.details.city} onChange={handleDetailsChange} /><Field label="Estado" name="state" value={formData.details.state} onChange={handleDetailsChange} /><Field label="Código postal" name="postal_code" value={formData.details.postal_code} onChange={handleDetailsChange} /><Field label="País" name="country" value={formData.details.country} onChange={handleDetailsChange} /><div className="md:col-span-2"><Field label="Referencia" name="reference" value={formData.details.reference} onChange={handleDetailsChange} placeholder="Punto de referencia para ubicarte" /></div></div>}
+                {activeTab === 'address' && <><div className="grid gap-5 md:grid-cols-2"><div className="md:col-span-2"><ProfileField inputClass={inputClass} disabled={!isEditing} label="Dirección" name="address" value={formData.details.address} onChange={handleDetailsChange} placeholder="Calle y avenida" /></div><ProfileField inputClass={inputClass} disabled={!isEditing} label="Número de casa o local" name="house_number" value={formData.details.house_number} onChange={handleDetailsChange} /><ProfileField inputClass={inputClass} disabled={!isEditing} label="Dirección adicional" name="address_line2" value={formData.details.address_line2} onChange={handleDetailsChange} placeholder="Interior, oficina, piso..." /><ProfileField inputClass={inputClass} disabled={!isEditing} label="Colonia / barrio" name="neighborhood" value={formData.details.neighborhood} onChange={handleDetailsChange} /><ProfileField inputClass={inputClass} disabled={!isEditing} label="Ciudad" name="city" value={formData.details.city} onChange={handleDetailsChange} /><ProfileField inputClass={inputClass} disabled={!isEditing} label="Estado" name="state" value={formData.details.state} onChange={handleDetailsChange} /><ProfileField inputClass={inputClass} disabled={!isEditing} label="Código postal" name="postal_code" value={formData.details.postal_code} onChange={handleDetailsChange} /><ProfileField inputClass={inputClass} disabled={!isEditing} label="País" name="country" value={formData.details.country} onChange={handleDetailsChange} /><div className="md:col-span-2"><ProfileField inputClass={inputClass} disabled={!isEditing} label="Referencia" name="reference" value={formData.details.reference} onChange={handleDetailsChange} placeholder="Punto de referencia para ubicarte" /></div></div><Alert variant="info" className="mt-5">Es necesario completar correctamente toda tu ubicación. Si está incompleta, tus pagos podrían no llegar correctamente.</Alert></>}
 
-                {activeTab === 'business' && <div className="space-y-5"><label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Descripción de tu tienda o actividad</span><textarea name="bio" rows="5" value={formData.details.bio || ''} onChange={handleDetailsChange} disabled={!isEditing} placeholder="Describe tus productos, experiencia o marca..." className={`${inputClass} resize-none`} /></label><label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Sitio web</span><div className="relative"><Globe className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" /><input name="website" type="url" value={formData.details.website || ''} onChange={handleDetailsChange} disabled={!isEditing} placeholder="https://tusitio.com" className={`${inputClass} pl-11`} /></div></label><div className="grid gap-5 md:grid-cols-3"><Field label="Instagram" name="instagram" value={formData.details.social_media.instagram} onChange={handleSocialChange} placeholder="@usuario" /><Field label="Facebook" name="facebook" value={formData.details.social_media.facebook} onChange={handleSocialChange} placeholder="Página o usuario" /><Field label="TikTok" name="tiktok" value={formData.details.social_media.tiktok} onChange={handleSocialChange} /></div></div>}
+                {activeTab === 'business' && <div className="space-y-5"><label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Descripción de tu tienda o actividad</span><textarea name="bio" rows="5" value={formData.details.bio || ''} onChange={handleDetailsChange} disabled={!isEditing} placeholder="Describe tus productos, experiencia o marca..." className={`${inputClass} resize-none`} /></label><label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Sitio web</span><div className="relative"><Globe className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" /><input name="website" type="url" value={formData.details.website || ''} onChange={handleDetailsChange} disabled={!isEditing} placeholder="https://tusitio.com" className={`${inputClass} pl-11`} /></div></label><div className="grid gap-5 md:grid-cols-3"><ProfileField inputClass={inputClass} disabled={!isEditing} label="Instagram" name="instagram" value={formData.details.social_media.instagram} onChange={handleSocialChange} placeholder="@usuario" /><ProfileField inputClass={inputClass} disabled={!isEditing} label="Facebook" name="facebook" value={formData.details.social_media.facebook} onChange={handleSocialChange} placeholder="Página o usuario" /><ProfileField inputClass={inputClass} disabled={!isEditing} label="TikTok" name="tiktok" value={formData.details.social_media.tiktok} onChange={handleSocialChange} /></div></div>}
 
                 {activeTab === 'notifications' && <div className="space-y-4"><Preference label="Notificaciones por correo" description="Pedidos, actualizaciones de cuenta y actividad de tu tienda." enabled={formData.details.preferences.email_notifications} onClick={() => handleToggle('preferences', 'email_notifications')} /><Preference label="Alertas por SMS" description="Avisos importantes sobre pedidos y entregas." enabled={formData.details.preferences.sms_alerts} onClick={() => handleToggle('preferences', 'sms_alerts')} /><Preference label="Nuevos pedidos" description="Recibe avisos cuando un cliente compre tus productos." enabled={formData.details.notifications.new_orders !== false} onClick={() => handleToggle('notifications', 'new_orders')} /><Preference label="Cambios de estado" description="Notificaciones sobre el estado de tus pedidos." enabled={formData.details.notifications.order_updates !== false} onClick={() => handleToggle('notifications', 'order_updates')} /></div>}
 
@@ -388,6 +436,14 @@ export default function VendedorPerfilPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function VendedorPerfilPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-slate-50"><LoadingSpinner size="lg" /></div>}>
+      <VendedorPerfilPageContent />
+    </Suspense>
   );
 }
 

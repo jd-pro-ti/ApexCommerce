@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { validateEmail, validatePassword } from '@/utils/validation'
 
 export async function POST(request) {
   try {
@@ -11,6 +12,10 @@ export async function POST(request) {
         { success: false, error: 'Email y contraseña son requeridos' },
         { status: 400 }
       )
+    }
+
+    if (!validateEmail(email) || !validatePassword(password)) {
+      return NextResponse.json({ success: false, error: 'El correo o la contraseña no tienen un formato válido' }, { status: 400 })
     }
 
     const cookieStore = await cookies()

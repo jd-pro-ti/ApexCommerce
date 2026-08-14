@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { getAge, validateEmail, validatePassword } from '@/utils/validation'
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase-admin'
 
 export const authService = {
@@ -71,6 +72,8 @@ export const authService = {
   // Iniciar sesión con email y contraseña
   async login(email, password) {
     try {
+      if (!validateEmail(email)) throw new Error('El correo electrónico no tiene un formato válido')
+      if (!validatePassword(password)) throw new Error('El correo o la contraseña no tienen un formato válido')
       if (!isSupabaseConfigured()) {
         throw new Error('Supabase no está configurado')
       }
@@ -104,6 +107,12 @@ export const authService = {
   // Registrar usuario con email y contraseña
   async register(email, password, userData = {}) {
     try {
+      if (!validateEmail(email)) throw new Error('El correo electrónico no tiene un formato válido')
+      if (!validatePassword(password)) throw new Error('La contraseña debe tener mínimo 8 caracteres, mayúscula, minúscula, número y símbolo')
+      if (userData.birth_date) {
+        const age = getAge(userData.birth_date)
+        if (age === null || age < 12) throw new Error('Debes tener al menos 12 años para crear una cuenta')
+      }
       if (!isSupabaseConfigured()) {
         throw new Error('Supabase no está configurado')
       }
@@ -115,7 +124,8 @@ export const authService = {
           data: {
             full_name: userData.name,
             name: userData.name,
-            role: userData.role || 'cliente'
+            role: userData.role || 'cliente',
+            birth_date: userData.birth_date || null
           }
         }
       })
@@ -127,6 +137,10 @@ export const authService = {
       
       // Obtener el perfil creado
       const profile = await this.getProfile(data.user.id)
+
+      if (userData.birth_date) {
+        await supabase.from('profile_details').update({ birth_date: userData.birth_date }).eq('user_id', data.user.id)
+      }
       
       return {
         success: true,

@@ -120,6 +120,17 @@ export const productService = {
         throw new Error('Supabase no está configurado')
       }
 
+      const descriptionWords = String(productData.description || '').trim().split(/\s+/).filter(Boolean).length
+      if (descriptionWords < 20) {
+        throw new Error('La descripción debe tener al menos 20 palabras')
+      }
+
+      const validSpecifications = Object.entries(productData.specifications || {})
+        .filter(([key, value]) => key.trim() && String(value).trim())
+      if (validSpecifications.length < 2) {
+        throw new Error('Agrega al menos 2 características o detalles del producto')
+      }
+
       const dbData = {
         seller_id: productData.seller_id,
         name: productData.name,
@@ -170,6 +181,17 @@ export const productService = {
     try {
       if (!isSupabaseConfigured()) {
         throw new Error('Supabase no está configurado')
+      }
+
+      const descriptionWords = String(updates.description || '').trim().split(/\s+/).filter(Boolean).length
+      if (descriptionWords < 20) {
+        throw new Error('La descripción debe tener al menos 20 palabras')
+      }
+
+      const validSpecifications = Object.entries(updates.specifications || {})
+        .filter(([key, value]) => key.trim() && String(value).trim())
+      if (validSpecifications.length < 2) {
+        throw new Error('Agrega al menos 2 características o detalles del producto')
       }
 
       const dbData = {

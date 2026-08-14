@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { productService } from '@/services/productService';
+import { profileService } from '@/services/profileService';
+import { supabase } from '@/lib/supabase';
 import SpecificationsInput from '@/components/dashboard/SpecificationsInput';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
@@ -25,6 +27,8 @@ export default function NewProduct() {
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [specifications, setSpecifications] = useState({});
+  const [profileValidation, setProfileValidation] = useState({ loading: true, valid: false });
+  const [missingRequirements, setMissingRequirements] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -36,8 +40,50 @@ export default function NewProduct() {
   });
 
   useEffect(() => {
-    loadCategories();
-  }, []);
+    let redirectTimer;
+
+    const validateSellerProfile = async () => {
+      if (!user?.id) return;
+
+      try {
+        const [{ data: { session } }, profileResult] = await Promise.all([
+          supabase.auth.getSession(),
+          profileService.getProfile(user.id),
+        ]);
+
+        const paypalResponse = await fetch('/api/paypal/sellers/onboard', {
+          headers: { Authorization: `Bearer ${session?.access_token || ''}` },
+        });
+        const paypalResult = await paypalResponse.json();
+        const details = profileResult.success ? profileResult.profile?.details || {} : {};
+        const paypalConnected = paypalResult.account?.onboarding_status === 'connected'
+          && Boolean(paypalResult.account?.paypal_merchant_id);
+        const hasPhone = Boolean(details.phone?.trim());
+        const hasLocation = Boolean(details.address?.trim());
+        const valid = paypalConnected && hasPhone && hasLocation;
+        const missing = [
+          !paypalConnected && 'paypal',
+          !hasPhone && 'phone',
+          !hasLocation && 'location',
+        ].filter(Boolean);
+
+        setProfileValidation({ loading: false, valid });
+        setMissingRequirements(missing);
+
+        if (!valid) {
+          redirectTimer = setTimeout(() => router.push(`/dashboard/vendedor/perfil?required=1&missing=${missing.join(',')}`), 300);
+        }
+      } catch (validationError) {
+        console.error('No se pudo validar el perfil del vendedor:', validationError);
+        setProfileValidation({ loading: false, valid: false });
+        setMissingRequirements(['paypal', 'phone', 'location']);
+        redirectTimer = setTimeout(() => router.push('/dashboard/vendedor/perfil?required=1&missing=paypal,phone,location'), 300);
+      }
+    };
+
+    validateSellerProfile();
+    return () => clearTimeout(redirectTimer);
+  }, [router, user?.id]);
 
   const loadCategories = async () => {
     setLoadingCategories(true);
@@ -52,6 +98,11 @@ export default function NewProduct() {
       setLoadingCategories(false);
     }
   };
+
+  useEffect(() => {
+    const timer = setTimeout(loadCategories, 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -96,10 +147,23 @@ export default function NewProduct() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!profileValidation.valid) {
+      router.push(`/dashboard/vendedor/perfil?required=1&missing=${missingRequirements.join(',')}`);
+      return;
+    }
+
     setLoading(true);
 
     if (!formData.name.trim()) {
       setError('El nombre del producto es requerido');
+      setLoading(false);
+      return;
+    }
+
+    const descriptionWords = formData.description.trim().split(/\s+/).filter(Boolean).length;
+    if (descriptionWords < 20) {
+      setError('La descripción debe tener al menos 20 palabras');
       setLoading(false);
       return;
     }
@@ -118,6 +182,13 @@ export default function NewProduct() {
 
     if (!formData.stock || parseInt(formData.stock) < 0) {
       setError('El stock debe ser un número válido');
+      setLoading(false);
+      return;
+    }
+
+    const validSpecifications = Object.entries(specifications || {}).filter(([key, value]) => key.trim() && String(value).trim());
+    if (validSpecifications.length < 2) {
+      setError('Agrega al menos 2 características o detalles del producto');
       setLoading(false);
       return;
     }
@@ -150,7 +221,7 @@ export default function NewProduct() {
     }
   };
 
-  if (loading && !formData.name) {
+  if (profileValidation.loading || (loading && !formData.name)) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center bg-[#f8f9fa]">
         <LoadingSpinner size="lg" />
@@ -232,6 +303,7 @@ export default function NewProduct() {
                       className="w-full px-4 py-3.5 rounded-xl border border-gray-300 focus:ring-1 focus:ring-slate-800 focus:border-slate-800 bg-white text-sm text-slate-800 shadow-sm"
                       style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                     />
+                    <p className="mt-1 text-xs text-slate-400">La descripción debe tener al menos 20 palabras.</p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

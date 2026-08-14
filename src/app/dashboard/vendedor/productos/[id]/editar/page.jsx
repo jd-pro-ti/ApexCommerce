@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/immutability, react-hooks/exhaustive-deps */
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
@@ -148,6 +149,21 @@ export default function EditProduct() {
       return;
     }
 
+    const descriptionWords = formData.description.trim().split(/\s+/).filter(Boolean).length;
+    if (descriptionWords < 20) {
+      setError('La descripción debe tener al menos 20 palabras');
+      setSaving(false);
+      return;
+    }
+
+    const validSpecifications = Object.entries(specifications || {})
+      .filter(([key, value]) => key.trim() && String(value).trim());
+    if (validSpecifications.length < 2) {
+      setError('Agrega al menos 2 características o detalles del producto');
+      setSaving(false);
+      return;
+    }
+
     if (!formData.price || parseFloat(formData.price) <= 0) {
       setError('El precio debe ser mayor a 0');
       setSaving(false);
@@ -284,6 +300,7 @@ export default function EditProduct() {
                       className="w-full px-4 py-3.5 rounded-xl border border-gray-300 focus:ring-1 focus:ring-slate-800 focus:border-slate-800 bg-white text-sm text-slate-800 shadow-sm"
                       style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                     />
+                    <p className="mt-2 text-xs text-slate-500">La descripción debe tener al menos 20 palabras.</p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

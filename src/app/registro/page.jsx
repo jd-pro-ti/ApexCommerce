@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import Button from '@/components/ui/Button';
-import { Package, Gift, Tag, UserPlus } from 'lucide-react';
+import { Package, Gift, Tag, UserPlus, Eye, EyeOff, CheckCircle2, Circle } from 'lucide-react';
+import Alert from '@/components/ui/Alert';
+import { validateEmail, validatePassword } from '@/utils/validation';
 
 export default function RegistroPage() {
   const router = useRouter();
@@ -19,6 +21,16 @@ export default function RegistroPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const passwordChecks = [
+    ['Mayúscula', /[A-Z]/.test(formData.password)],
+    ['Minúscula', /[a-z]/.test(formData.password)],
+    ['Número', /\d/.test(formData.password)],
+    ['Símbolo', /[^A-Za-z\d]/.test(formData.password)],
+    ['8 caracteres', formData.password.length >= 8],
+  ];
 
   const validateForm = () => {
     if (!formData.name.trim()) {
@@ -29,7 +41,7 @@ export default function RegistroPage() {
       setError('El correo electrónico es requerido');
       return false;
     }
-    if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    if (!validateEmail(formData.email)) {
       setError('El formato del correo electrónico es inválido');
       return false;
     }
@@ -37,7 +49,9 @@ export default function RegistroPage() {
       setError('La contraseña es requerida');
       return false;
     }
-    if (formData.password.length < 6) {
+    if (!validatePassword(formData.password)) {
+      setError('La contraseña debe tener mínimo 8 caracteres, mayúscula, minúscula, número y símbolo');
+      return false;
       setError('La contraseña debe contener al menos 6 caracteres');
       return false;
     }
@@ -221,19 +235,21 @@ export default function RegistroPage() {
               <div>
                 <label className="block text-[11px] font-bold text-[#010f20] mb-1 uppercase tracking-wider" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Contraseña</label>
                 <input 
-                  type="password" 
-                  placeholder="Mínimo 6 carac." 
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Mínimo 8 caracteres"
                   value={formData.password} 
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })} 
                   required 
                   className="w-full px-4 py-2.5 rounded-xl border border-[#efedef] text-sm focus:outline-none focus:border-[#010f20] transition-colors bg-[#fdfdfd] text-[#010f20]" 
                   style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }} 
                 />
+                <button type="button" onClick={() => setShowPassword((current) => !current)} className="mt-1 text-[10px] font-bold text-slate-500 hover:text-slate-900">{showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}</button>
+                <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1 text-[10px] text-slate-500">{passwordChecks.map(([label, valid]) => <span key={label} className={`flex items-center gap-1 ${valid ? 'text-emerald-600' : ''}`}>{valid ? <CheckCircle2 className="h-3 w-3" /> : <Circle className="h-3 w-3" />}{label}</span>)}</div>
               </div>
               <div>
                 <label className="block text-[11px] font-bold text-[#010f20] mb-1 uppercase tracking-wider" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Confirmar</label>
                 <input 
-                  type="password" 
+                  type={showConfirmPassword ? 'text' : 'password'}
                   placeholder="Repite contraseña" 
                   value={formData.confirmPassword} 
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} 
@@ -241,6 +257,7 @@ export default function RegistroPage() {
                   className="w-full px-4 py-2.5 rounded-xl border border-[#efedef] text-sm focus:outline-none focus:border-[#010f20] transition-colors bg-[#fdfdfd] text-[#010f20]" 
                   style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }} 
                 />
+                <button type="button" onClick={() => setShowConfirmPassword((current) => !current)} className="mt-1 text-[10px] font-bold text-slate-500 hover:text-slate-900">{showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}</button>
               </div>
             </div>
 
