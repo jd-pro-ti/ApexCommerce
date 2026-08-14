@@ -61,7 +61,6 @@ export default function Sidebar() {
 
   const adminMenu = [
     { name: 'Dashboard', href: '/dashboard/admin', icon: FiGrid },
-    { name: 'Perfil', href: '/perfil', icon: FiUserCheck },
     { name: 'Gestión de usuarios', href: '/dashboard/admin/usuarios', icon: FiUsers },
     { name: 'Analíticas', href: '/dashboard/admin/analiticas', icon: FiBarChart2 },
     { name: 'Solicitudes', href: '/dashboard/admin/vendedores-solicitudes', icon: FiUserCheck },
