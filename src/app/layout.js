@@ -15,11 +15,6 @@ export const metadata = {
   },
   description: 'Descubre productos premium de tecnología, hogar y estilo de vida en Apex Commerce.',
   applicationName: 'Apex Commerce',
-  icons: {
-    icon: [{ url: '/logo.png', type: 'image/png' }],
-    shortcut: ['/logo.png'],
-    apple: [{ url: '/logo.png', type: 'image/png' }],
-  },
   keywords: ['tienda en línea', 'productos premium', 'tecnología', 'hogar', 'Apex Commerce'],
   openGraph: {
     type: 'website',
