@@ -13,7 +13,6 @@ import {
   Package, 
   ShoppingBag, 
   AlertTriangle, 
-  FolderTree, 
   BarChart3, 
   Sparkles,
   ArrowUpRight,
@@ -306,20 +305,6 @@ export default function AdminDashboard() {
                 <Users className="w-5 h-5" />
               </div>
               <span className="text-xs font-bold text-slate-800 group-hover:text-white transition-colors">Gestionar usuarios</span>
-            </Link>
-
-            <Link href="/dashboard/admin/productos" className="p-5 rounded-2xl border border-slate-100 bg-gradient-to-br from-slate-50 to-slate-100/50 hover:from-slate-900 hover:to-slate-800 hover:text-white transition-all duration-300 group flex flex-col items-center text-center shadow-sm hover:shadow-lg">
-              <div className="p-3 rounded-2xl bg-white shadow-md text-slate-800 group-hover:bg-white/10 group-hover:text-white mb-3 transition-colors">
-                <Package className="w-5 h-5" />
-              </div>
-              <span className="text-xs font-bold text-slate-800 group-hover:text-white transition-colors">Gestionar productos</span>
-            </Link>
-
-            <Link href="/dashboard/admin/categorias" className="p-5 rounded-2xl border border-slate-100 bg-gradient-to-br from-slate-50 to-slate-100/50 hover:from-slate-900 hover:to-slate-800 hover:text-white transition-all duration-300 group flex flex-col items-center text-center shadow-sm hover:shadow-lg">
-              <div className="p-3 rounded-2xl bg-white shadow-md text-slate-800 group-hover:bg-white/10 group-hover:text-white mb-3 transition-colors">
-                <FolderTree className="w-5 h-5" />
-              </div>
-              <span className="text-xs font-bold text-slate-800 group-hover:text-white transition-colors">Categorías</span>
             </Link>
 
             <Link href="/dashboard/admin/reportes" className="p-5 rounded-2xl border border-slate-100 bg-gradient-to-br from-slate-50 to-slate-100/50 hover:from-slate-900 hover:to-slate-800 hover:text-white transition-all duration-300 group flex flex-col items-center text-center shadow-sm hover:shadow-lg">
