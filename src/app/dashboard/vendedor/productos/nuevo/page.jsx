@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { productService } from '@/services/productService';
@@ -27,6 +27,7 @@ export default function NewProduct() {
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [specifications, setSpecifications] = useState({});
+  const pendingSpecificationRef = useRef({ key: '', value: '' });
   const [profileValidation, setProfileValidation] = useState({ loading: true, valid: false });
   const [missingRequirements, setMissingRequirements] = useState([]);
   const [formData, setFormData] = useState({
@@ -186,7 +187,13 @@ export default function NewProduct() {
       return;
     }
 
-    const validSpecifications = Object.entries(specifications || {}).filter(([key, value]) => key.trim() && String(value).trim());
+    const specificationsToSave = { ...specifications };
+    const latestPendingSpecification = pendingSpecificationRef.current;
+    if (latestPendingSpecification.key.trim() && latestPendingSpecification.value.trim()) {
+      specificationsToSave[latestPendingSpecification.key.trim()] = latestPendingSpecification.value.trim();
+    }
+
+    const validSpecifications = Object.entries(specificationsToSave).filter(([key, value]) => key.trim() && String(value).trim());
     if (validSpecifications.length < 2) {
       setError('Agrega al menos 2 características o detalles del producto');
       setLoading(false);
@@ -202,7 +209,7 @@ export default function NewProduct() {
         category_id: formData.category_id,
         stock: parseInt(formData.stock),
         images: images,
-        specifications: specifications,
+        specifications: specificationsToSave,
         status: formData.status,
         featured: formData.featured
       };
@@ -387,6 +394,9 @@ export default function NewProduct() {
                     <SpecificationsInput
                       value={specifications}
                       onChange={setSpecifications}
+                      onPendingChange={(pending) => {
+                        pendingSpecificationRef.current = pending;
+                      }}
                       label="Especificaciones técnicas"
                     />
                   </div>

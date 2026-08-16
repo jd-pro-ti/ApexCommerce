@@ -560,17 +560,13 @@ export const productService = {
     try {
       if (!isSupabaseConfigured()) throw new Error('Supabase no está configurado')
 
-      const [profileResult, detailsResult, productsResult, ratingsResult] = await Promise.all([
+      const [profileResult, detailsResponse, productsResult, ratingsResult] = await Promise.all([
         supabase
           .from('profiles')
           .select('id, name, avatar_url, seller_rating_avg, seller_rating_count')
           .eq('id', sellerId)
           .maybeSingle(),
-        supabase
-          .from('profile_details')
-          .select('user_id, city, state, country, bio, website, social_media')
-          .eq('user_id', sellerId)
-          .maybeSingle(),
+        fetch(`/api/sellers/${encodeURIComponent(sellerId)}/profile`, { cache: 'no-store' }),
         supabase
           .from('products')
           .select('id, name, price, images, stock, rating_avg, rating_count, categories(id, name)')
@@ -586,7 +582,8 @@ export const productService = {
       ])
 
       if (profileResult.error) throw profileResult.error
-      if (detailsResult.error) throw detailsResult.error
+      if (!detailsResponse.ok) throw new Error('No se pudo cargar la información del vendedor')
+      const detailsResult = await detailsResponse.json()
       if (productsResult.error) throw productsResult.error
       if (ratingsResult.error) throw ratingsResult.error
 
@@ -599,7 +596,7 @@ export const productService = {
           seller_rating_avg: 0,
           seller_rating_count: 0
         },
-        details: detailsResult.data || {},
+        details: detailsResult.details || {},
         products: productsResult.data?.map(product => ({
           ...product,
           category: product.categories?.name || 'General'

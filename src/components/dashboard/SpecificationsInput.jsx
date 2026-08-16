@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 
-export default function SpecificationsInput({ value = {}, onChange, label = 'Especificaciones' }) {
+export default function SpecificationsInput({ value = {}, onChange, onPendingChange, label = 'Especificaciones' }) {
   const [specs, setSpecs] = useState(value || {});
   const [newKey, setNewKey] = useState('');
   const [newValue, setNewValue] = useState('');
@@ -12,6 +12,7 @@ export default function SpecificationsInput({ value = {}, onChange, label = 'Esp
       const updated = { ...specs, [newKey.trim()]: newValue.trim() };
       setSpecs(updated);
       onChange(updated);
+      onPendingChange?.({ key: '', value: '' });
       setNewKey('');
       setNewValue('');
     }
@@ -88,7 +89,11 @@ export default function SpecificationsInput({ value = {}, onChange, label = 'Esp
         <input
           type="text"
           value={newKey}
-          onChange={(e) => setNewKey(e.target.value)}
+          onChange={(e) => {
+            const key = e.target.value;
+            setNewKey(key);
+            onPendingChange?.({ key, value: newValue });
+          }}
           onKeyPress={handleKeyPress}
           placeholder="Ej: Marca"
           className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-1 focus:ring-slate-800 focus:border-slate-800 bg-white text-sm text-slate-800"
@@ -97,7 +102,11 @@ export default function SpecificationsInput({ value = {}, onChange, label = 'Esp
         <input
           type="text"
           value={newValue}
-          onChange={(e) => setNewValue(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+            setNewValue(value);
+            onPendingChange?.({ key: newKey, value });
+          }}
           onKeyPress={handleKeyPress}
           placeholder="Ej: Samsung"
           className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-1 focus:ring-slate-800 focus:border-slate-800 bg-white text-sm text-slate-800"
