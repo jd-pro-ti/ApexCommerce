@@ -1,7 +1,12 @@
 // src/app/api/gemini/route.js
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-// Función para llamar a Gemini con un modelo específico
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
 async function callGemini(apiKey, contents, model = 'gemini-flash-latest') {
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -21,67 +26,75 @@ async function callGemini(apiKey, contents, model = 'gemini-flash-latest') {
 export async function POST(request) {
   try {
     const body = await request.json();
-    console.log('Body recibido:', JSON.stringify(body, null, 2));
+    const { history, userRole } = body;
 
-    const { history } = body;
     if (!history || !Array.isArray(history)) {
-      return NextResponse.json(
-        { error: 'El historial es requerido y debe ser un array' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'El historial es requerido' }, { status: 400 });
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.error('Falta GEMINI_API_KEY en el entorno');
-      return NextResponse.json(
-        { error: 'Falta la clave de API de Gemini' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Falta la API Key' }, { status: 500 });
     }
 
-    // Construir contents (sin role)
-    const contents = history.map((msg) => ({
-      parts: [{ text: msg.content }],
-    }));
+    // 1. Obtener productos de Supabase (usando 'images' en lugar de 'image_url')
+    const { data: productsFromDB, error: dbError } = await supabaseAdmin
+      .from('products') 
+      .select('id, name, price, stock, images')
+      .limit(30);
 
-    console.log('Enviando a Gemini:', JSON.stringify({ contents }, null, 2));
+    if (dbError) {
+      console.error('Error Supabase:', dbError.message);
+    }
 
-    // Intentar primero con gemini-flash-latest
+    const catalogSummary = productsFromDB && productsFromDB.length > 0
+      ? productsFromDB.map(p => {
+          // Extraer la primera imagen ya sea si es array o string
+          const imgUrl = Array.isArray(p.images) ? p.images[0] : (p.images || 'sin-imagen');
+          return `[ID: ${p.id}] - ${p.name} (Precio: $${p.price}, Stock: ${p.stock}, Imagen: ${imgUrl})`;
+        }).join('\n')
+      : "No hay productos registrados.";
+
+    let scopeInstruction = "El usuario es un CLIENTE buscando productos.";
+    if (userRole === "ADMINISTRADOR") scopeInstruction = "El usuario es un ADMINISTRADOR.";
+    if (userRole === "VENDEDOR") scopeInstruction = "El usuario es un VENDEDOR.";
+
+    const systemPromptContent = `Eres Apex-ito, un asistente amigable y divertido de Apex Commerce.
+Contexto: ${scopeInstruction}
+
+Catálogo real de Supabase:
+${catalogSummary}
+
+Reglas obligatorias:
+- Si recomiendas o mencionas un producto de la lista, debes incluir al final de tu respuesta un bloque especial con este formato exacto para que el sistema dibuje la tarjeta:
+[PRODUCTO:{ "id": "AQUÍ_EL_ID", "name": "NOMBRE", "price": PRECIO, "image": "URL_IMAGEN" }]
+- Puedes incluir varios bloques [PRODUCTO:...] si mencionas varios artículos.
+- Siempre responde en español, tono alegre, con pocos emojis 😊🚀.
+- NO uses formato Markdown (nada de negritas, cursivas o listas con guiones).
+- Frases cortas.`;
+
+    const contents = [
+      { parts: [{ text: systemPromptContent }] },
+      ...history.map((msg) => ({
+        parts: [{ text: msg.content }],
+      }))
+    ];
+
     let { response, data } = await callGemini(apiKey, contents, 'gemini-flash-latest');
 
-    // Si falla por alta demanda, intentar con gemini-pro
     if (!response.ok && data.error?.message?.includes('high demand')) {
-      console.log('⚠️ gemini-flash-latest con alta demanda, probando con gemini-pro...');
       const fallback = await callGemini(apiKey, contents, 'gemini-pro');
       response = fallback.response;
       data = fallback.data;
     }
 
-    console.log('Respuesta Gemini:', JSON.stringify(data, null, 2));
-
     if (!response.ok) {
-      // Si ambos modelos fallan, devolver un mensaje amigable
-      const errorMsg = data.error?.message || 'Error en Gemini';
-      if (errorMsg.includes('high demand')) {
-        return NextResponse.json(
-          { error: '😅 El asistente está muy ocupado ahora mismo. ¡Inténtalo de nuevo en unos segundos!' },
-          { status: 503 }
-        );
-      }
-      return NextResponse.json(
-        { error: errorMsg },
-        { status: response.status }
-      );
+      return NextResponse.json({ error: data.error?.message || 'Error en Gemini' }, { status: response.status });
     }
 
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No se pudo generar respuesta.';
     return NextResponse.json({ reply });
   } catch (error) {
-    console.error('Error en route:', error);
-    return NextResponse.json(
-      { error: 'Error interno del servidor: ' + error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Error interno: ' + error.message }, { status: 500 });
   }
 }

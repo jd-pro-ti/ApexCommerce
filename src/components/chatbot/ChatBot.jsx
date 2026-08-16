@@ -2,8 +2,25 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { FaStore, FaPaperPlane, FaTimes } from 'react-icons/fa'; // Cambio de FaRobot a FaStore
+import { usePathname, useRouter } from 'next/navigation';
+import { FaStore, FaPaperPlane, FaTimes, FaShoppingCart, FaEye, FaCheckCircle } from 'react-icons/fa';
+import toast, { Toaster } from 'react-hot-toast'; // Importación de librería de toasts
 import styles from './ChatBot.module.css';
+import { useCart } from '@/context/CartContext'; // Asegúrate de que la ruta coincida con la ubicación de tu contexto
+
+// --- Estilos en línea para el Toast (para mantenerlo autocontenido) ---
+const toastStyle = {
+  background: '#010f20',
+  color: '#fff',
+  borderRadius: '10px',
+  fontSize: '12px',
+  fontWeight: 'bold',
+  padding: '8px 12px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+};
 
 const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,22 +28,15 @@ const ChatBot = () => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  const { addToCart } = useCart();
 
-  const SYSTEM_PROMPT = {
-    role: 'user',
-    content: `Eres un asistente amigable y divertido.
+  const pathname = usePathname();
+  const router = useRouter();
 
-Reglas importantes:
-- Siempre responde en español.
-- Usa un tono cálido, alegre y cercano.
-- Incluye emojis para hacer la conversación más entretenida 😊.
-- NO uses formato Markdown (nada de **negritas**, *cursivas* o listas con guiones).
-- Usa frases y respuestas cortas.
-- Responde siempre de forma positiva y alentadora.
-- Eres el asistente de una tienda online (Apex commerce). Ayudas a los clientes con dudas sobre productos, envíos, precios y promociones.
-
-Ejemplo de cómo debes responder:
-"¡Hola! 👋 Me alegra que estés aquí. Hoy podemos aprender cosas nuevas y divertirnos. ¿Qué te gustaría saber? 🚀"`
+  const getUserRoleContext = () => {
+    if (pathname?.includes('/admin')) return "ADMINISTRADOR";
+    if (pathname?.includes('/vendedor')) return "VENDEDOR";
+    return "CLIENTE";
   };
 
   useEffect(() => {
@@ -45,30 +55,24 @@ Ejemplo de cómo debes responder:
     setLoading(true);
 
     try {
-      const historyToSend = [SYSTEM_PROMPT, ...messages, userMessage];
-
+      const currentRole = getUserRoleContext();
       const response = await fetch('/api/gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ history: historyToSend }),
+        body: JSON.stringify({
+          history: messages.concat(userMessage),
+          userRole: currentRole
+        }),
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        setMessages((prev) => [...prev, { role: 'assistant', content: `❌ Error ${response.status}: ${errorText}` }]);
-        setLoading(false);
-        return;
-      }
 
       const data = await response.json();
       if (data.error) {
-        setMessages((prev) => [...prev, { role: 'assistant', content: `❌ ${data.error}` }]);
+        setMessages((prev) => [...prev, { role: 'assistant', content: `Error: ${data.error}` }]);
       } else {
         setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
       }
     } catch (error) {
-      console.error('Error:', error);
-      setMessages((prev) => [...prev, { role: 'assistant', content: '❌ Error de conexión' }]);
+      setMessages((prev) => [...prev, { role: 'assistant', content: 'Error de conexión' }]);
     } finally {
       setLoading(false);
     }
@@ -81,94 +85,190 @@ Ejemplo de cómo debes responder:
     }
   };
 
+  // --- LÓGICA CARRITO (Alineada a la derecha y sin emojis) ---
+  const handleAddToCartReal = (productData) => {
+    addToCart({
+      id: productData.id,
+      name: productData.name,
+      price: productData.price,
+      images: [productData.image],
+      stock: productData.stock || 10
+    });
+
+    toast(
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <FaCheckCircle size={16} style={{ color: '#22c55e', flexShrink: 0 }} />
+        <span>
+          Agregado al carrito: <strong style={{ color: '#38bdf8' }}>{productData.name}</strong>
+        </span>
+      </div>,
+      {
+        duration: 3000,
+        position: 'bottom-center',
+        style: {
+          background: '#010f20',
+          color: '#ffffff',
+          borderRadius: '9999px',
+          padding: '12px 20px',
+          fontFamily: "'Montserrat', sans-serif",
+          fontSize: '13px',
+          fontWeight: '700',
+        },
+        iconTheme: {
+          primary: '#10b981',
+          secondary: '#ffffff',
+        },
+      }
+    );
+  };
+
+  // Función para procesar el texto del bot y separar tarjetas de productos
+  const renderMessageContent = (content) => {
+    const productRegex = /\[PRODUCTO:(.*?)\]/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = productRegex.exec(content)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(<span key={lastIndex}>{content.substring(lastIndex, match.index)}</span>);
+      }
+
+      try {
+        const productData = JSON.parse(match[1]);
+        parts.push(
+          <div key={match.index} className="my-2 p-2.5 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center gap-3">
+            <img
+              src={productData.image && productData.image !== 'sin-imagen' ? productData.image : '/placeholder.png'}
+              alt={productData.name}
+              className="w-14 h-14 object-cover rounded-lg border border-gray-100 flex-shrink-0"
+            />
+            <div className="flex-1 min-w-0">
+              <p className="font-extrabold text-xs text-[#010f20] truncate">{productData.name}</p>
+              <p className="text-[11px] font-bold text-emerald-600">${productData.price}</p>
+
+              <div className="flex items-center gap-2 mt-1.5">
+                <button
+                  onClick={() => {
+                    router.push(`/producto/${productData.id}`);
+                  }}
+                  className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-[#010f20] rounded-md text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                >
+                  <FaEye size={10} /> Ver
+                </button>
+                <button
+                  onClick={() => {
+                    handleAddToCartReal(productData);
+                  }}
+                  className="px-2 py-1 bg-[#010f20] hover:bg-[#010f20]/90 text-white rounded-md text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                >
+                  <FaShoppingCart size={10} /> Comprar
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      } catch (e) {
+        console.error("Error parseando producto del bot", e);
+      }
+
+      lastIndex = productRegex.lastIndex;
+    }
+
+    if (lastIndex < content.length) {
+      parts.push(<span key={lastIndex}>{content.substring(lastIndex)}</span>);
+    }
+
+    return parts.length > 0 ? parts : content;
+  };
+
   const quickOptions = [
-    { label: 'Ver productos destacados 📱', value: 'Muéstrame los productos más populares de la tienda' },
-    { label: 'Consultar envíos y devoluciones 📦', value: '¿Cómo funcionan los envíos y las devoluciones?' },
-    { label: 'Ofertas y descuentos 💰', value: '¿Hay alguna oferta o descuento disponible hoy?' },
-    { label: 'Ayuda con mi compra 🛒', value: 'Necesito ayuda para elegir un producto' },
+    { label: 'Ver productos destacados', value: 'Muéstrame los productos más populares de la tienda' },
+    { label: 'Consultar envíos y devoluciones', value: '¿Cómo funcionan los envíos y las devoluciones?' },
   ];
 
   return (
-    <div className={styles.chatbotContainer}>
-      <button className={styles.chatButton} onClick={toggleChat}>
-        {isOpen ? <FaTimes size={24} /> : <FaStore size={24} />} {/* Cambio a FaStore */}
-      </button>
+    <>
+      <div className={styles.chatbotContainer}>
+        <button className={styles.chatButton} onClick={toggleChat}>
+          {isOpen ? <FaTimes size={24} /> : <FaStore size={24} />}
+        </button>
 
-      {isOpen && (
-        <div className={styles.chatWindow}>
-          <div className={styles.chatHeader}>
-            <FaStore size={24} />
-            <span>Apex-ito</span>
-            <button onClick={toggleChat} className={styles.closeButton}>
-              <FaTimes />
-            </button>
-          </div>
+        {isOpen && (
+          <div className={styles.chatWindow}>
+            <div className={styles.chatHeader}>
+              <FaStore size={24} />
+              <span>Apex-ito</span>
+              <button onClick={toggleChat} className={styles.closeButton}>
+                <FaTimes />
+              </button>
+            </div>
 
-          <div className={styles.messagesContainer}>
-            {messages.length === 0 ? (
-              <div className={styles.welcomeWrapper}>
-                <div className={styles.welcomeMessage}>
-                  ¡Hola! 🛍️ Me alegra que estés aquí.<br />
-                  Hoy podemos aprender cosas nuevas y divertirnos. ¿Qué te gustaría hacer?
+            <div className={styles.messagesContainer}>
+              {messages.length === 0 ? (
+                <div className={styles.welcomeWrapper}>
+                  <div className={styles.welcomeMessage}>
+                    ¡Hola! Me alegra que estés aquí.<br />
+                    Hoy podemos explorar cosas nuevas y divertirnos. ¿Qué te gustaría hacer?
+                  </div>
+                  <div className={styles.quickOptions}>
+                    {quickOptions.map((opt) => (
+                      <button
+                        key={opt.label}
+                        className={styles.quickOption}
+                        onClick={() => handleSend(opt.value)}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className={styles.quickOptions}>
-                  {quickOptions.map((opt) => (
-                    <button
-                      key={opt.label}
-                      className={styles.quickOption}
-                      onClick={() => handleSend(opt.value)}
+              ) : (
+                <>
+                  {messages.map((msg, index) => (
+                    <div
+                      key={index}
+                      className={`${styles.message} ${msg.role === 'user' ? styles.userMessage : styles.botMessage
+                        }`}
                     >
-                      {opt.label}
-                    </button>
+                      {renderMessageContent(msg.content)}
+                    </div>
                   ))}
-                </div>
-              </div>
-            ) : (
-              <>
-                {messages.map((msg, index) => (
-                  <div
-                    key={index}
-                    className={`${styles.message} ${
-                      msg.role === 'user' ? styles.userMessage : styles.botMessage
-                    }`}
-                  >
-                    {msg.content}
-                  </div>
-                ))}
-                {loading && (
-                  <div className={`${styles.message} ${styles.botMessage}`}>
-                    <span className={styles.typing}>Escribiendo</span>
-                  </div>
-                )}
-              </>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
+                  {loading && (
+                    <div className={`${styles.message} ${styles.botMessage}`}>
+                      <span className={styles.typing}>Escribiendo</span>
+                    </div>
+                  )}
+                </>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
 
-          <div className={styles.inputContainer}>
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Escribe tu mensaje aquí"
-              rows={1}
-              className={styles.inputField}
-            />
-            <button
-              onClick={() => handleSend()}
-              disabled={loading || !input.trim()}
-              className={styles.sendButton}
-            >
-              <FaPaperPlane />
-            </button>
-          </div>
+            <div className={styles.inputContainer}>
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Escribe tu mensaje aquí"
+                rows={1}
+                className={styles.inputField}
+              />
+              <button
+                onClick={() => handleSend()}
+                disabled={loading || !input.trim()}
+                className={styles.sendButton}
+              >
+                <FaPaperPlane />
+              </button>
+            </div>
 
-          <div className={styles.chatFooter}>
-            Desarrollado por <span>Optima Cart</span>
+            <div className={styles.chatFooter}>
+              Desarrollado por <span>Optima Cart</span>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </>
   );
 };
 
