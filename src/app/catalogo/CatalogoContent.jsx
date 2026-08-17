@@ -31,11 +31,11 @@ export default function CatalogoContent() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      if (user.role === 'admin'){
+      if (user.role === 'admin') {
         router.push('/dashboard/admin?redirect=/catalogo');
         return;
       }
-      if (user.role === 'vendedor'){
+      if (user.role === 'vendedor') {
         router.push('/dashboard/vendedor?redirect=/catalogo');
         return;
       }
@@ -50,14 +50,14 @@ export default function CatalogoContent() {
     const searchParam = searchParams.get('search') || '';
     const categoryParam = searchParams.get('categoria') || searchParams.get('category') || 'all';
 
-    setFilters(prev => ({ 
-      ...prev, 
-      search: searchParam, 
-      category: categoryParam 
+    setFilters(prev => ({
+      ...prev,
+      search: searchParam,
+      category: categoryParam
     }));
-    
+
     setCurrentPage(1);
-    
+
     const timer = setTimeout(() => {
       loadProducts(searchParam, categoryParam, filters.minPrice, filters.maxPrice, filters.sortBy);
     }, 100);
@@ -166,8 +166,8 @@ export default function CatalogoContent() {
           Categoría
         </h3>
         {(filters.category !== 'all' || filters.minPrice || filters.maxPrice || filters.search) && (
-          <button 
-            onClick={resetFilters} 
+          <button
+            onClick={resetFilters}
             className="text-xs font-semibold text-amber-700 hover:underline transition-colors"
           >
             Limpiar
@@ -178,16 +178,14 @@ export default function CatalogoContent() {
       <div className="space-y-1.5 max-h-[300px] overflow-y-auto pr-1">
         <button
           onClick={() => handleCategorySelect('all')}
-          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all text-left ${
-            filters.category === 'all'
+          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all text-left ${filters.category === 'all'
               ? 'bg-slate-900 text-white font-semibold shadow-xs'
               : 'text-slate-600 hover:bg-slate-200/60'
-          }`}
+            }`}
         >
           <span>Todos los productos</span>
-          <span className={`text-[10px] px-2 py-0.5 rounded-md ${
-            filters.category === 'all' ? 'bg-white/20 text-white' : 'bg-slate-200/60 text-slate-500'
-          }`}>
+          <span className={`text-[10px] px-2 py-0.5 rounded-md ${filters.category === 'all' ? 'bg-white/20 text-white' : 'bg-slate-200/60 text-slate-500'
+            }`}>
             {totalProducts}
           </span>
         </button>
@@ -201,16 +199,14 @@ export default function CatalogoContent() {
             <button
               key={cat.name}
               onClick={() => handleCategorySelect(cat.name)}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all capitalize text-left ${
-                filters.category === cat.name
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all capitalize text-left ${filters.category === cat.name
                   ? 'bg-slate-900 text-white font-semibold shadow-xs'
                   : 'text-slate-600 hover:bg-slate-200/60'
-              }`}
+                }`}
             >
               <span className="truncate">{cat.name}</span>
-              <span className={`text-[10px] px-2 py-0.5 rounded-md ${
-                filters.category === cat.name ? 'bg-white/20 text-white' : 'bg-slate-200/60 text-slate-500'
-              }`}>
+              <span className={`text-[10px] px-2 py-0.5 rounded-md ${filters.category === cat.name ? 'bg-white/20 text-white' : 'bg-slate-200/60 text-slate-500'
+                }`}>
                 {cat.count}
               </span>
             </button>
@@ -275,9 +271,6 @@ export default function CatalogoContent() {
           <SlidersHorizontal className="w-4 h-4 text-slate-700" />
           Filtrar y Ordenar
         </button>
-        <p className="text-xs text-slate-500 font-medium">
-          <span className="text-slate-900 font-bold">{products.length}</span> productos
-        </p>
       </div>
 
       {/* Modal / Drawer de Filtros para Móvil */}
@@ -289,7 +282,7 @@ export default function CatalogoContent() {
                 <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 flex items-center gap-2">
                   <SlidersHorizontal className="w-4 h-4" /> Filtros
                 </h2>
-                <button 
+                <button
                   onClick={() => setShowFiltersMobile(false)}
                   className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 cursor-pointer"
                 >
@@ -342,9 +335,6 @@ export default function CatalogoContent() {
           ) : (
             <>
               <div className="hidden lg:flex justify-between items-center">
-                <p className="text-xs text-slate-500">
-                  Mostrando del <span className="font-semibold text-slate-900">{startIndex + 1}</span> al <span className="font-semibold text-slate-900">{Math.min(startIndex + PRODUCTS_PER_PAGE, products.length)}</span> de <span className="font-semibold text-slate-900">{products.length}</span> productos
-                </p>
               </div>
 
               {/* Grilla: 2 columnas en móvil (grid-cols-2) y hasta 4 en desktop */}
@@ -373,11 +363,10 @@ export default function CatalogoContent() {
                           setCurrentPage(page);
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
-                        className={`w-9 h-9 rounded-xl text-xs font-semibold transition-all ${
-                          currentPage === page
+                        className={`w-9 h-9 rounded-xl text-xs font-semibold transition-all ${currentPage === page
                             ? 'bg-slate-900 text-white shadow-xs'
                             : 'text-slate-600 hover:bg-slate-100 border border-slate-200/60'
-                        }`}
+                          }`}
                       >
                         {page}
                       </button>
