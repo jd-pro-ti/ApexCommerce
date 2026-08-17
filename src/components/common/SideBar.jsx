@@ -83,17 +83,37 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Botón superior flotante posicionado en la esquina superior derecha para móviles */}
-      <div className="lg:hidden fixed top-4 right-4 z-40 bg-white border border-slate-200 p-2.5 rounded-xl shadow-md flex items-center gap-2">
+      {/* Botón flotante para abrir el menú en móvil */}
+      {!mobileOpen && (
         <button
           onClick={() => setMobileOpen(true)}
-          className="text-slate-700 hover:text-slate-900 focus:outline-none cursor-pointer flex items-center gap-1.5"
+          className="
+      lg:hidden
+      fixed
+      top-4
+      left-4
+      z-[60]
+      w-11
+      h-11
+      rounded-xl
+      bg-white
+      border
+      border-slate-200
+      shadow-md
+      flex
+      items-center
+      justify-center
+      text-slate-700
+      hover:bg-slate-50
+      active:scale-95
+      transition-all
+      cursor-pointer
+    "
           aria-label="Abrir menú"
         >
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-800">Menú</span>
           <FiMenu className="w-5 h-5" />
         </button>
-      </div>
+      )}
 
       {/* Capa oscura de fondo (Backdrop) cuando el menú móvil está activo */}
       {mobileOpen && (
@@ -105,11 +125,9 @@ export default function Sidebar() {
 
       {/* Estructura del Sidebar */}
       <aside
-        className={`fixed lg:sticky top-0 h-screen bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-50 shadow-sm ${
-          collapsed ? 'w-20' : 'w-64'
-        } ${
-          mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        }`}
+        className={`fixed lg:sticky top-0 h-screen bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-50 shadow-sm ${collapsed ? 'w-20' : 'w-64'
+          } ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          }`}
       >
         {/* Header del Sidebar con Logo y Botón de cierre móvil */}
         <div className="p-5 flex items-center justify-between border-b border-slate-100">
@@ -175,11 +193,10 @@ export default function Sidebar() {
                     key={item.name}
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
-                    className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group relative ${
-                      isActive
-                        ? 'bg-amber-50/80 text-amber-700 font-bold shadow-sm'
-                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                    }`}
+                    className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group relative ${isActive
+                      ? 'bg-amber-50/80 text-amber-700 font-bold shadow-sm'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      }`}
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                   >
                     <div className="flex items-center gap-3">

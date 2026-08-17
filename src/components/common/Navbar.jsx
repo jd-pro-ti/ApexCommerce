@@ -218,9 +218,6 @@ const Navbar = () => {
         {/* Menú Desktop */}
         <div className="hidden md:flex items-center gap-8" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
           <Link href="/catalogo" className="text-white/80 hover:text-[#e0a96d] text-xs font-bold uppercase tracking-wider transition-colors">Catálogo</Link>
-          {isAuthenticated && (
-            <Link href={getDashboardRoute()} className="text-white/80 hover:text-[#e0a96d] text-xs font-bold uppercase tracking-wider transition-colors">Dashboard</Link>
-          )}
         </div>
 
         {/* Iconos y Acciones */}

@@ -118,7 +118,7 @@ export default function Home() {
 
   const scrollCarousel = (direction) => {
     if (scrollContainerRef.current) {
-      const scrollAmount = direction === 'left' ? -320 : 320;
+      const scrollAmount = direction === 'left' ? -300 : 300;
       scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
@@ -154,7 +154,6 @@ export default function Home() {
         if (productsResult.success) {
           const allProducts = productsResult.products || [];
           setProducts(allProducts);
-          // Mostramos más productos en el carrusel (por ejemplo, hasta 10 o todos los recientes)
           setFeaturedProducts(allProducts.slice(0, 10));
         } else {
           setError(productsResult.error || 'Error al cargar productos del servidor');
@@ -377,7 +376,6 @@ export default function Home() {
           </div>
           
           <div className="flex items-center gap-2">
-            {/* Botones de navegación del carrusel */}
             <button
               onClick={() => scrollCarousel('left')}
               className="w-9 h-9 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-[#010f20] hover:bg-[#010f20] hover:text-white transition-all shadow-sm active:scale-95"
@@ -414,17 +412,19 @@ export default function Home() {
             <p className="text-xs text-[#44474c]">No hay productos disponibles en este momento.</p>
           </div>
         ) : (
-          /* Contenedor deslizante con soporte táctil (overflow-x-auto con scrollbar oculto y snap) */
+          /* Contenedor deslizante con anchos responsivos: w-[calc(50%-6px)] en móvil para forzar 2 por vista, y w-[280px] o más en desktop */
           <div 
             ref={scrollContainerRef}
-            className="flex gap-4 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+            className="flex gap-3 sm:gap-5 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           >
             {featuredProducts.map((product) => (
               <div 
                 key={product.id} 
-                className="min-w-[180px] sm:min-w-[210px] md:min-w-[220px] lg:min-w-[200px] xl:min-w-[215px] flex-shrink-0 snap-start"
+                className="w-[calc(50%-6px)] sm:w-[280px] md:w-[300px] flex-shrink-0 snap-start flex"
               >
-                <ProductCard product={product} />
+                <div className="w-full flex flex-col [&>div]:h-full [&>div]:flex [&>div]:flex-col">
+                  <ProductCard product={product} />
+                </div>
               </div>
             ))}
           </div>
