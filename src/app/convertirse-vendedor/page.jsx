@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext'
 
 export default function BecomeSellerPage() {
   const { role } = useAuth()
-  return <main className="min-h-screen bg-gradient-to-br from-[#fffaf5] via-white to-[#f1f5f9] px-5 py-14">
+  return <main className="min-h-screen bg-gradient-to-br from-[#fffaf5] via-white to-[#f1f5f9] px-5 py-28">
     <div className="max-w-5xl mx-auto">
       <div className="max-w-2xl mb-12"><span className="text-xs font-bold tracking-[.2em] uppercase text-amber-600">Apex Commerce</span><h1 className="mt-4 text-4xl md:text-6xl font-bold text-slate-900 tracking-tight">Convierte tu pasión en un negocio.</h1><p className="mt-5 text-lg text-slate-600 leading-relaxed">Únete como vendedor, muestra tus productos a nuestra comunidad y administra tus ventas desde un solo lugar.</p></div>
       <div className="grid md:grid-cols-3 gap-5 mb-12">
