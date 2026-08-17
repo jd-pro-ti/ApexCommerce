@@ -332,7 +332,6 @@ const Navbar = () => {
             <Link href="/catalogo" onClick={() => setIsMobileMenuOpen(false)} className="py-2 hover:text-[#e0a96d]">Catálogo</Link>
             {isAuthenticated && (
               <>
-                <Link href={getDashboardRoute()} onClick={() => setIsMobileMenuOpen(false)} className="py-2 hover:text-[#e0a96d]">Dashboard</Link>
                 <Link href="/perfil" onClick={() => setIsMobileMenuOpen(false)} className="py-2 hover:text-[#e0a96d]">Mi Perfil</Link>
                 <Link href="/configuraciones" onClick={() => setIsMobileMenuOpen(false)} className="py-2 hover:text-[#e0a96d]">Configuraciones</Link>
               </>
