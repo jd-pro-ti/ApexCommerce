@@ -429,31 +429,6 @@ export default function ProductDetail() {
 
         {/* SECCIÓN DE ESPECIFICACIONES TÉCNICAS */}
         {renderSpecifications()}
-
-        <div className="border-t border-slate-200 mt-10">
-          {[
-            { id: 'detalles', title: 'Detalles del producto', content: 'Diseñado bajo los más altos estándares de calidad. Producto original garantizado.' },
-            { id: 'materiales', title: 'Materiales y componentes', content: 'Fabricado con materiales seleccionados de alta durabilidad y rendimiento óptimo.' },
-            { id: 'envio', title: 'Garantía y devoluciones', content: 'Cuentas con 30 días de garantía directa y soporte técnico ante cualquier eventualidad.' }
-          ].map((item) => (
-            <div key={item.id} className="border-b border-slate-200">
-              <button 
-                onClick={() => toggleAccordion(item.id)}
-                className="w-full py-5 flex justify-between items-center text-left hover:text-slate-900 transition-colors cursor-pointer"
-              >
-                <span className="text-sm font-bold uppercase tracking-wider text-slate-900">
-                  {item.title}
-                </span>
-                <ChevronDown className={`w-5 h-5 text-slate-500 transform transition-transform duration-300 ${openAccordion === item.id ? 'rotate-180 text-slate-900' : ''}`} />
-              </button>
-              {openAccordion === item.id && (
-                <div className="pb-5 text-sm text-slate-600 leading-relaxed font-normal">
-                  {item.content}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* RESEÑAS DEL PRODUCTO */}
