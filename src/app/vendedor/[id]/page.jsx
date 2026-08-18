@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Globe, MapPin, Package, Star, UserRound, Flag, Send } from 'lucide-react';
 import { productService } from '@/services/productService';
 import ProductCard from '@/components/ui/ProductCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
+import { slugify } from '@/utils/helpers';
 
 function Stars({ value }) {
   return (
@@ -21,6 +22,7 @@ function Stars({ value }) {
 
 export default function SellerPage() {
   const { id } = useParams();
+  const router = useRouter();
   const { user, isAuthenticated } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,11 +38,15 @@ export default function SellerPage() {
   useEffect(() => {
     if (!id) return;
     productService.getPublicSellerProfile(id).then(result => {
-      if (result.success) setData(result);
+      if (result.success) {
+        setData(result);
+        const canonicalSlug = slugify(result.profile.name);
+        if (id !== canonicalSlug) router.replace(`/vendedor/${canonicalSlug}`);
+      }
       else setError(result.error || 'No se pudo cargar el vendedor');
       setLoading(false);
     });
-  }, [id]);
+  }, [id, router]);
 
   const requireLogin = () => {
     if (!isAuthenticated) {
@@ -54,7 +60,7 @@ export default function SellerPage() {
     event.preventDefault();
     if (!requireLogin()) return;
     setSubmitting(true);
-    const result = await productService.createSellerRating({ seller_id: id, user_id: user.id, rating: ratingForm.rating, comment: ratingForm.comment });
+    const result = await productService.createSellerRating({ seller_id: data.profile.id, user_id: user.id, rating: ratingForm.rating, comment: ratingForm.comment });
     if (result.success) {
       const count = Number(data.profile.seller_rating_count || 0);
       const average = Number(data.profile.seller_rating_avg || 0);
@@ -71,7 +77,7 @@ export default function SellerPage() {
     event.preventDefault();
     if (!requireLogin()) return;
     setSubmitting(true);
-    const result = await productService.createSellerReport({ seller_id: id, user_id: user.id, ...reportForm });
+    const result = await productService.createSellerReport({ seller_id: data.profile.id, user_id: user.id, ...reportForm });
     if (result.success) {
       setReportForm({ reason: 'other', reason_details: '', description: '' });
       setShowReportForm(false);

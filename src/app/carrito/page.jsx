@@ -9,6 +9,7 @@ import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
 import PayPalCheckout from '@/components/payments/PayPalCheckout';
 import { orderService } from '@/services/orderService';
+import { slugify } from '@/utils/helpers';
 
 export default function CartPage() {
   const router = useRouter();
@@ -228,7 +229,7 @@ export default function CartPage() {
               <div className="max-h-[700px] overflow-y-auto pr-1 sm:pr-3 space-y-4">
                 {cart.map((item) => {
                   const itemImage = item.image || (item.images && item.images.length > 0 ? item.images[0] : null) || item.thumbnail;
-                  const productUrl = `/producto/${item.id}`;
+                  const productUrl = `/producto/${slugify(item.name)}`;
 
                   return (
                     <div

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { productService } from '@/services/productService';
+import { slugify } from '@/utils/helpers';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import Button from '@/components/ui/Button';
@@ -41,11 +42,16 @@ export default function ProductDetail() {
         setProduct(result.product);
         setSelectedImage(0);
 
-        const reviewsResult = await productService.getProductReviews(productId);
+        const canonicalSlug = slugify(result.product.name);
+        if (productId !== canonicalSlug) {
+          router.replace(`/producto/${canonicalSlug}`);
+        }
+
+        const reviewsResult = await productService.getProductReviews(result.product.id);
         if (reviewsResult.success) setReviews(reviewsResult.reviews);
 
         if (user?.id) {
-          const ordersResult = await productService.getEligibleProductOrders(productId, user.id);
+          const ordersResult = await productService.getEligibleProductOrders(result.product.id, user.id);
           if (ordersResult.success) {
             setEligibleOrders(ordersResult.orders);
             setReviewForm(prev => ({
@@ -99,7 +105,7 @@ export default function ProductDetail() {
 
     setReviewLoading(true);
     const result = await productService.createProductReview({
-      product_id: productId,
+      product_id: product.id,
       user_id: user.id,
       order_id: selectedOrder.order_id,
       order_item_id: selectedOrder.id,
@@ -303,7 +309,7 @@ export default function ProductDetail() {
 
               {product.seller_id && (
                 <Link
-                  href={`/vendedor/${product.seller_id}`}
+                  href={`/vendedor/${slugify(product.profiles?.name)}`}
                   className="-mt-3 inline-flex w-fit items-center gap-2 text-sm font-semibold text-slate-600 transition-colors hover:text-amber-700"
                 >
                   <UserRound className="h-4 w-4 text-amber-600" />
@@ -329,7 +335,7 @@ export default function ProductDetail() {
               </div>
 
               {product.profiles?.id && (
-                <Link href={`/vendedor/${product.profiles.id}`} className="hidden">
+                <Link href={`/vendedor/${slugify(product.profiles.name)}`} className="hidden">
                   {product.profiles.avatar_url ? (
                     <img src={product.profiles.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
                   ) : (

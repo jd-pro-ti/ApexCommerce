@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { FaStore, FaPaperPlane, FaTimes, FaShoppingCart, FaEye, FaCheckCircle } from 'react-icons/fa';
 import styles from './ChatBot.module.css';
+import { slugify } from '@/utils/helpers';
 import { useAlert } from '@/components/ui/AlertContext'; // Asegúrate de que la ruta coincida con la ubicación de tu contexto
 import { useCart } from '@/context/CartContext'; // Asegúrate de que la ruta coincida con la ubicación de tu contexto
 
@@ -112,7 +113,7 @@ const ChatBot = () => {
               <div className="flex items-center gap-2 mt-1.5">
                 <button
                   onClick={() => {
-                    router.push(`/producto/${productData.id}`);
+                    router.push(`/producto/${slugify(productData.name)}`);
                   }}
                   className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-[#010f20] rounded-md text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
                 >

@@ -7,8 +7,10 @@ import { useWishlist } from '@/context/WishlistContext';
 import { useAuth } from '@/context/AuthContext';
 import { useAlert } from '@/components/ui/AlertContext'; // <--- 1. Importamos el hook de alertas
 import { FaCheckCircle, FaHeart } from 'react-icons/fa';
+import { slugify } from '@/utils/helpers';
 
 const ProductCard = ({ product }) => {
+  const productUrl = `/producto/${slugify(product.name)}`;
   const router = useRouter();
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
@@ -48,7 +50,7 @@ const ProductCard = ({ product }) => {
     e.stopPropagation();
 
     if (!isAuthenticated) {
-      window.location.href = '/login?redirect=/producto/' + product.id;
+      window.location.href = `/login?redirect=${encodeURIComponent(productUrl)}`;
       return;
     }
 
@@ -89,7 +91,7 @@ const ProductCard = ({ product }) => {
   return (
     <div className="group bg-white rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 h-full flex flex-col overflow-hidden">
       
-      <Link href={`/producto/${product.id}`}>
+      <Link href={productUrl}>
         <div className="relative h-60 w-full bg-gray-50 overflow-hidden flex items-center justify-center p-2">
           {product.images?.[0] ? (
             <img
@@ -177,7 +179,7 @@ const ProductCard = ({ product }) => {
           {product.category || 'Producto'}
         </span>
 
-        <Link href={`/producto/${product.id}`} className="mb-2 block">
+        <Link href={productUrl} className="mb-2 block">
           <h3 className="font-medium text-[#010f20] text-sm leading-tight line-clamp-2 hover:text-[#dd9448]">
             {product.name}
           </h3>
