@@ -4,17 +4,18 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import { useAlert } from '@/components/ui/AlertContext'; // <--- 1. Importamos el hook de alertas
 import Button from '@/components/ui/Button';
-import toast from 'react-hot-toast';
 import Alert from '@/components/ui/Alert';
 import PayPalCheckout from '@/components/payments/PayPalCheckout';
 import { orderService } from '@/services/orderService';
-import { useOrders } from '@/context/OrderContext';
 
 export default function CartPage() {
   const router = useRouter();
   const { cart, total, itemsCount, updateQuantity, removeFromCart, clearCart } = useCart();
   const { isAuthenticated, user, loading: authLoading } = useAuth();
+  const { showAlert } = useAlert(); // <--- 2. Inicializamos el hook de alertas
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [paymentAlert, setPaymentAlert] = useState(null);
@@ -29,7 +30,6 @@ export default function CartPage() {
   const grandTotal = subtotal + shipping + tax;
 
   useEffect(() => {
-    // Verificar autenticación
     if (authLoading) return;
     if (!isAuthenticated) {
       router.push('/login?redirect=/carrito');
@@ -65,128 +65,50 @@ export default function CartPage() {
     setShowConfirmModal(false);
     await clearCart();
     await orderService.notifyOrder('created', { orderId: result.orderId });
-    toast.success('Pago confirmado. Tu pedido ya está siendo procesado.');
+    
+    // <--- Alerta de éxito con el sistema flotante
+    showAlert('Pago confirmado. Tu pedido ya está siendo procesado.', 'success');
     router.push('/perfil?tab=orders');
-  }, [clearCart, router]);
+  }, [clearCart, router, showAlert]);
 
   const handlePaymentError = useCallback(message => {
     setIsPaymentProcessing(false);
     setPaymentAlert({ variant: 'error', message: message || 'El pago no pudo completarse. No se descontó el stock.' });
     setError(message || 'No se pudo procesar el pago');
-  }, []);
+    showAlert('El pago no pudo completarse. Inténtalo de nuevo.', 'error');
+  }, [showAlert]);
 
   const handlePaymentCancel = useCallback(() => {
     setIsPaymentProcessing(false);
     setShowConfirmModal(false);
-  }, []);
-
-  const handleConfirmCheckout = async () => {
-    setShowConfirmModal(false);
-    setLoading(true);
-    try {
-      const cartItems = cart.map(item => ({
-        id: item.id,
-        quantity: item.quantity
-      }));
-
-      const result = await createOrder({
-        cart_items: cartItems,
-        notes: ''
-      });
-
-      if (result.success) {
-        // Pedido creado correctamente: mostrar pantalla de confirmación, limpiar carrito y mostrar toast informativo
-        clearCart();
-        const orderId = result.order?.id || result.order?.order_number || '';
-        toast.success(
-          <div>
-            <div style={{ fontWeight: 800 }}>Pedido confirmado{orderId ? ` #${orderId}` : ''}</div>
-            <div style={{ fontSize: 12, marginTop: 4 }}>Recibirás un correo con los detalles y el seguimiento.</div>
-          </div>,
-          {
-            duration: 4000,
-            style: {
-              background: 'var(--color-primary, #010f20)',
-              color: 'var(--color-on-primary, #ffffff)',
-              borderRadius: '12px',
-              padding: '12px 18px',
-              fontFamily: "'Montserrat', sans-serif",
-              fontSize: '13px',
-              fontWeight: '700'
-            },
-            iconTheme: {
-              primary: 'var(--color-emerald-500, #10b981)',
-              secondary: '#ffffff'
-            }
-          }
-        );
-        setShowCheckout(true);
-        // Redirigir al perfil a la sección Historial de Pedidos después de 4 segundos
-        setTimeout(() => {
-          router.push('/perfil?tab=orders');
-        }, 1000);
-        return;
-      } else {
-        if (result.missingFields) {
-          router.push('/perfil?return=checkout');
-        } else {
-          setError(result.error || 'Error al crear el pedido');
-        }
-      }
-    } catch (error) {
-      console.error('Error en checkout:', error);
-      setError('Error al procesar el pedido');
-    } finally {
-      setLoading(false);
-    }
-  };
+    showAlert('Operación de pago cancelada.', 'info');
+  }, [showAlert]);
 
   const handleRemoveItem = (id, name) => {
     removeFromCart(id);
-    toast.error(
-      <span>
-        &quot;<span style={{ color: '#38bdf8' }}>{name || 'El artículo'}</span>&quot; ha sido eliminado
-      </span>, 
-      {
-        style: {
-          background: 'var(--color-primary, #010f20)',
-          color: 'var(--color-on-primary, #ffffff)',
-          borderRadius: '9999px',
-          padding: '12px 20px',
-          fontFamily: "'Montserrat', sans-serif",
-          fontSize: '14px',
-          fontWeight: '700',
-        },
-        iconTheme: {
-          primary: 'var(--color-error, #ba1a1a)',
-          secondary: '#ffffff',
-        },
-      }
-    );
+    
+    // <--- Alerta roja de eliminación de producto
+    showAlert(`"${name || 'El artículo'}" ha sido eliminado del carrito.`, 'error');
   };
 
   const handleClearCart = () => {
     if (cart.length === 0) return;
     clearCart();
-    toast.error('Has vaciado todo el carrito', {
-      style: {
-        background: 'var(--color-primary, #010f20)',
-        color: 'var(--color-on-primary, #ffffff)',
-        borderRadius: '9999px',
-        padding: '12px 20px',
-        fontFamily: "'Montserrat', sans-serif",
-        fontSize: '14px',
-        fontWeight: '700',
-      },
-      iconTheme: {
-        primary: 'var(--color-error, #ba1a1a)',
-        secondary: '#ffffff',
-      },
-    });
+    
+    // <--- Alerta roja indicando que se vació todo el carrito
+    showAlert('Has vaciado todo el carrito.', 'error');
   };
 
   if (isRedirecting) {
-    return <div className="min-h-screen bg-surface pt-28 flex items-center justify-center px-4"><div className="w-full max-w-md rounded-2xl border border-surface-container bg-surface-container-lowest p-10 text-center shadow-sm"><div className="mx-auto mb-5 h-12 w-12 animate-spin rounded-full border-4 border-primary-container border-t-primary" /><h2 className="text-xl font-bold text-on-surface">Preparando tu historial de pedidos</h2><p className="mt-2 text-sm text-on-surface-variant/80">El pago fue confirmado. Estamos actualizando tu carrito y tu perfil...</p></div></div>;
+    return (
+      <div className="min-h-screen bg-surface pt-28 flex items-center justify-center px-4">
+        <div className="w-full max-w-md rounded-2xl border border-surface-container bg-surface-container-lowest p-10 text-center shadow-sm">
+          <div className="mx-auto mb-5 h-12 w-12 animate-spin rounded-full border-4 border-primary-container border-t-primary" />
+          <h2 className="text-xl font-bold text-on-surface">Preparando tu historial de pedidos</h2>
+          <p className="mt-2 text-sm text-on-surface-variant/80">El pago fue confirmado. Estamos actualizando tu carrito y tu perfil...</p>
+        </div>
+      </div>
+    );
   }
 
   if (cart.length === 0) {
@@ -289,7 +211,6 @@ export default function CartPage() {
                       className="bg-surface-container-low rounded-2xl border border-surface-container p-4 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all hover:bg-surface-container-lowest relative overflow-hidden shadow-xs group"
                     >
                       <div className="flex items-start sm:items-center gap-4 w-full md:w-auto flex-1 min-w-0">
-                        {/* Imagen con enlace al producto */}
                         <Link href={productUrl} className="w-20 h-20 sm:w-24 sm:h-24 bg-surface-container-lowest rounded-xl flex items-center justify-center flex-shrink-0 border border-surface-container overflow-hidden shadow-xs hover:border-primary transition-colors">
                           {itemImage ? (
                             <img src={itemImage} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -306,7 +227,6 @@ export default function CartPage() {
                           <span className="text-xs font-bold tracking-widest text-warm-accent uppercase block truncate" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                             {item.category || 'ACCESORIOS'}
                           </span>
-                          {/* Título con enlace al producto */}
                           <Link href={productUrl}>
                             <h3 className="font-bold text-base sm:text-lg text-on-surface tracking-tight truncate hover:text-primary transition-colors" style={{ fontFamily: "'Montserrat', sans-serif" }}>
                               {item.name}
@@ -419,7 +339,6 @@ export default function CartPage() {
         </div>
       </div>
 
-      {/* Tarjeta flotante / Alerta de confirmación con fondo opaco */}
       {showConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-inverse-surface/60 backdrop-blur-xs p-4 animate-fadeIn">
           <div className="relative bg-surface-container-lowest border border-surface-container rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto overscroll-contain p-8 text-center space-y-6">

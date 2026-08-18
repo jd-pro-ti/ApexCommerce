@@ -3,6 +3,7 @@ import { CartProvider } from '@/context/CartContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { WishlistProvider } from '@/context/WishlistContext'; // Importa el WishlistProvider
 import { OrderProvider } from '@/context/OrderContext';
+import { AlertProvider } from '@/components/ui/AlertContext'; // Importa el AlertProvider
 import AppWrapper from '@/components/common/AppWrapper'; // Importa el envoltorio
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://apex-comerce.com';
@@ -24,8 +25,8 @@ export const metadata = {
     title: 'Apex Commerce | Compra productos premium en línea',
     description: 'Descubre productos premium de tecnología, hogar y estilo de vida.',
     icons: {
-    icon: "/favicon.ico",
-  },
+      icon: "/favicon.ico",
+    },
   },
   robots: {
     index: true,
@@ -45,10 +46,12 @@ export default function RootLayout({ children }) {
           <CartProvider>
             <OrderProvider>
               <WishlistProvider>
-                {/* El AppWrapper se encarga de mostrar u ocultar la UI según la ruta */}
-                <AppWrapper>
-                  {children}
-                </AppWrapper>
+                <AlertProvider>
+                  {/* El AppWrapper se encarga de mostrar u ocultar la UI según la ruta */}
+                  <AppWrapper>
+                    {children}
+                  </AppWrapper>
+                </AlertProvider>
               </WishlistProvider>
             </OrderProvider>
           </CartProvider>

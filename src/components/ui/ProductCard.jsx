@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { useAuth } from '@/context/AuthContext';
-import toast from 'react-hot-toast';
+import { useAlert } from '@/components/ui/AlertContext'; // <--- 1. Importamos el hook de alertas
 import { FaCheckCircle, FaHeart } from 'react-icons/fa';
 
 const ProductCard = ({ product }) => {
@@ -13,6 +13,8 @@ const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { isAuthenticated } = useAuth();
+  const { showAlert } = useAlert(); // <--- 2. Inicializamos la función showAlert
+
   const [isAdding, setIsAdding] = useState(false);
   const [isBuyingNow, setIsBuyingNow] = useState(false);
   const [showAdded, setShowAdded] = useState(false);
@@ -29,35 +31,14 @@ const ProductCard = ({ product }) => {
 
     setIsAdding(true);
     await addToCart(product);
+    setIsAdding(false);
     setShowAdded(true);
 
-    toast((t) => (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <FaCheckCircle size={16} style={{ color: '#22c55e', flexShrink: 0 }} />
-        <span>
-          Agregado al carrito: <strong style={{ color: '#38bdf8' }}>{product.name}</strong>
-        </span>
-      </div>
-    ), {
-        duration: 3000,
-        position: 'bottom-center',
-        style: {
-          background: '#010f20',
-          color: '#ffffff',
-          borderRadius: '9999px',
-          padding: '12px 10px',
-          fontFamily: "'Montserrat', sans-serif",
-          fontSize: '13px',
-          fontWeight: '700',
-        },
-        iconTheme: {
-          primary: '#10b981',
-          secondary: '#ffffff',
-        },
-      });
+    // <--- 3. Lanzamos la alerta flotante de éxito
+    showAlert(`"${product.name}" se agregó al carrito correctamente.`, 'success');
 
+    // Regresa el icono del carrito a la normalidad después de 2 segundos
     setTimeout(() => {
-      setIsAdding(false);
       setShowAdded(false);
     }, 2000);
   };
@@ -74,7 +55,9 @@ const ProductCard = ({ product }) => {
     setIsBuyingNow(true);
     try {
       await addToCart(product);
+      showAlert('Producto preparado para compra directa.', 'success'); // Opcional
     } catch (error) {
+      showAlert('Hubo un error al procesar la compra.', 'error');
     }
     router.push('/carrito');
   };
@@ -93,30 +76,12 @@ const ProductCard = ({ product }) => {
     await toggleWishlist(product);
     setIsWishlistLoading(false);
 
-    toast((t) => (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <FaHeart size={16} style={{ color: wasFavorite ? '#10b981' : '#ef4444' }} />
-        <span>
-          {wasFavorite ? 'Eliminado de favoritos:' : 'Agregado a favoritos:'} <strong style={{ color: '#38bdf8' }}>{product.name}</strong>
-        </span>
-      </div>
-    ), {
-      duration: 3000,
-        position: 'bottom-center',
-        style: {
-          background: '#010f20',
-          color: '#ffffff',
-          borderRadius: '9999px',
-          padding: '12px 10px',
-          fontFamily: "'Montserrat', sans-serif",
-          fontSize: '13px',
-          fontWeight: '700',
-        },
-        iconTheme: {
-          primary: '#10b981',
-          secondary: '#ffffff',
-        },
-    });
+    // <--- 4. Lanzamos alerta dinámica según la acción de favoritos
+    if (!wasFavorite) {
+      showAlert(`"${product.name}" se añadió a tus favoritos.`, 'success');
+    } else {
+      showAlert(`"${product.name}" se eliminó de tus favoritos.`, 'info');
+    }
   };
 
   const isFavorite = isInWishlist(product.id);
@@ -228,7 +193,7 @@ const ProductCard = ({ product }) => {
           </span>
         </div>
 
-        {/* Botón de Comprar Ahora (Texto completo abajo) */}
+        {/* Botón de Comprar Ahora */}
         {product.stock > 0 && (
           <button
             onClick={handleBuyNow}

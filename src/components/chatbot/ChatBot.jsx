@@ -4,23 +4,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { FaStore, FaPaperPlane, FaTimes, FaShoppingCart, FaEye, FaCheckCircle } from 'react-icons/fa';
-import toast, { Toaster } from 'react-hot-toast'; // Importación de librería de toasts
 import styles from './ChatBot.module.css';
+import { useAlert } from '@/components/ui/AlertContext'; // Asegúrate de que la ruta coincida con la ubicación de tu contexto
 import { useCart } from '@/context/CartContext'; // Asegúrate de que la ruta coincida con la ubicación de tu contexto
-
-// --- Estilos en línea para el Toast (para mantenerlo autocontenido) ---
-const toastStyle = {
-  background: '#010f20',
-  color: '#fff',
-  borderRadius: '10px',
-  fontSize: '12px',
-  fontWeight: 'bold',
-  padding: '8px 12px',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-};
 
 const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -29,6 +15,7 @@ const ChatBot = () => {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const { addToCart } = useCart();
+  const { showAlert } = useAlert();
 
   const pathname = usePathname();
   const router = useRouter();
@@ -94,32 +81,7 @@ const ChatBot = () => {
       images: [productData.image],
       stock: productData.stock || 10
     });
-
-    toast(
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <FaCheckCircle size={16} style={{ color: '#22c55e', flexShrink: 0 }} />
-        <span>
-          Agregado al carrito: <strong style={{ color: '#38bdf8' }}>{productData.name}</strong>
-        </span>
-      </div>,
-      {
-        duration: 3000,
-        position: 'bottom-center',
-        style: {
-          background: '#010f20',
-          color: '#ffffff',
-          borderRadius: '9999px',
-          padding: '12px 20px',
-          fontFamily: "'Montserrat', sans-serif",
-          fontSize: '13px',
-          fontWeight: '700',
-        },
-        iconTheme: {
-          primary: '#10b981',
-          secondary: '#ffffff',
-        },
-      }
-    );
+    showAlert(`Agregado al carrito: ${productData.name}`, 'success');
   };
 
   // Función para procesar el texto del bot y separar tarjetas de productos

@@ -4,7 +4,6 @@ import Navbar from '@/components/common/Navbar';
 import SideBar from '@/components/common/SideBar';
 import Footer from '@/components/common/Footer';
 import ChatBot from '@/components/chatbot/ChatBot';
-import { Toaster } from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
 
 export default function AppWrapper({ children }) {
@@ -18,9 +17,6 @@ export default function AppWrapper({ children }) {
 
   return (
     <>
-      {/* Única instancia global del Toaster para toda la aplicación */}
-      <Toaster position="bottom-center" reverseOrder={false} />
-
       {!isExcluded && isClientUser && <Navbar />}
       
       <div className={`min-h-screen ${!isExcluded && isAdminOrSeller ? 'md:flex' : ''}`}>
