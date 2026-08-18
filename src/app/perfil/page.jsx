@@ -1,13 +1,13 @@
+// src/app/perfil/page.js (o la ruta correspondiente de tu perfil)
 'use client';
 
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Toaster } from 'react-hot-toast';
-import toast from 'react-hot-toast';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
 import { useOrders } from '@/context/OrderContext';
+import { useAlert } from '@/components/ui/AlertContext'; // <--- 1. Importamos el hook global de alertas
 import { profileService } from '@/services/profileService';
 import ProfileSidebar from '@/components/profile/ProfileSidebar';
 import ProfilePromotions from '@/components/profile/ProfilePromotions';
@@ -27,13 +27,13 @@ const initialProfile = {
   }
 };
 
-const showSuccess = (message) => toast.success(message, { style: { background: '#0f172a', color: '#fff', borderRadius: '12px', padding: '14px 22px', fontFamily: 'Inter, system-ui, sans-serif', fontSize: '14px', fontWeight: '500' } });
-
 function PerfilPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, role, isAuthenticated, loading: authLoading, updateProfile: updateAuthProfile, logout } = useAuth();
   const { orders, loading: ordersLoading, error: ordersError, loadOrders, cancelOrder: cancelOrderRequest, confirmOrderDelivery } = useOrders();
+  const { showAlert } = useAlert(); // <--- 2. Inicializamos la función global de alertas
+  
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -53,25 +53,23 @@ function PerfilPageContent() {
   const [deleteAccountError, setDeleteAccountError] = useState('');
   
   const fileInputRef = useRef(null);
-  const mainContentRef = useRef(null); // Referencia para hacer scroll automático en móviles
+  const mainContentRef = useRef(null);
 
   async function loadProfile() {
     setLoading(true);
     try {
       const result = await profileService.getProfile(user.id);
       if (result.success) { setProfile(result.profile); setFormData(result.profile); }
-      else toast.error(result.error || 'Error al cargar perfil');
-    } catch { toast.error('Error al cargar perfil'); }
+      else showAlert(result.error || 'Error al cargar perfil', 'error'); // <--- Reemplazo de toast.error
+    } catch { showAlert('Error al cargar perfil', 'error'); } // <--- Reemplazo de toast.error
     finally { setLoading(false); }
   }
 
   useEffect(() => {
     if (authLoading) return;
     if (!isAuthenticated) { router.push('/login?redirect=/perfil'); return; }
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadProfile();
     loadOrders();
-  // loadProfile intentionally runs only when the authenticated user changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, isAuthenticated, user?.id, router, loadOrders]);
 
@@ -85,14 +83,12 @@ function PerfilPageContent() {
   useEffect(() => {
     const tab = searchParams?.get('tab');
     if (tab === 'orders' || tab === 'historial' || tab === 'pedidos') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveTab('orders');
     } else if (['profile', 'wishlist', 'payments-history'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
 
-  // Manejador optimizado para cambiar de pestaña y hacer scroll en pantallas móviles
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
     if (window.innerWidth < 1024 && mainContentRef.current) {
@@ -108,8 +104,8 @@ function PerfilPageContent() {
   const handleAvatarUpload = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) return toast.error('Solo se permiten imágenes');
-    if (file.size > 5 * 1024 * 1024) return toast.error('La imagen no debe superar los 5MB');
+    if (!file.type.startsWith('image/')) return showAlert('Solo se permiten imágenes', 'error'); // <--- Reemplazo
+    if (file.size > 5 * 1024 * 1024) return showAlert('La imagen no debe superar los 5MB', 'error'); // <--- Reemplazo
     setUploadingAvatar(true);
     try {
       const result = await profileService.uploadAvatar(user.id, file);
@@ -117,8 +113,8 @@ function PerfilPageContent() {
       setProfile((previous) => ({ ...previous, avatar_url: result.avatar_url }));
       setFormData((previous) => ({ ...previous, avatar_url: result.avatar_url }));
       await updateAuthProfile({ avatar_url: result.avatar_url });
-      showSuccess('Avatar actualizado correctamente');
-    } catch (error) { toast.error(error.message); }
+      showAlert('Avatar actualizado correctamente', 'success'); // <--- Reemplazo
+    } catch (error) { showAlert(error.message, 'error'); } // <--- Reemplazo
     finally { setUploadingAvatar(false); }
   };
 
@@ -135,13 +131,31 @@ function PerfilPageContent() {
       if (!profileResult.success) throw new Error(profileResult.error);
       const detailsResult = await profileService.updateProfileDetails(user.id, { ...formData.details, country: formData.details.country || 'México' });
       if (!detailsResult.success) throw new Error(detailsResult.error);
-      await updateAuthProfile({ name: formData.name }); setProfile(formData); setIsEditing(false); showSuccess('¡Información actualizada correctamente!');
-    } catch (error) { toast.error(error.message || 'Error al actualizar perfil'); }
+      await updateAuthProfile({ name: formData.name }); setProfile(formData); setIsEditing(false); 
+      showAlert('¡Información actualizada correctamente!', 'success'); // <--- Reemplazo
+    } catch (error) { showAlert(error.message || 'Error al actualizar perfil', 'error'); } // <--- Reemplazo
     finally { setSaving(false); }
   };
 
-  const cancelOrder = async (order) => { setCancellingId(order.id); const result = await cancelOrderRequest(order.id); setCancellingId(null); setConfirmingCancelId(null); if (result.success) showSuccess('Pedido cancelado correctamente'); };
-  const confirmDelivery = async (order) => { if (!window.confirm('¿Confirmas que recibiste todos los productos de este pedido?')) return; setConfirmingDeliveryId(order.id); const result = await confirmOrderDelivery(order.id); setConfirmingDeliveryId(null); if (result.success) showSuccess(result.payout?.released ? 'Entrega confirmada y pagos liberados' : 'Entrega confirmada; liberación pendiente'); else toast.error(result.error || 'No se pudo confirmar la entrega'); };
+  const cancelOrder = async (order) => { 
+    setCancellingId(order.id); 
+    const result = await cancelOrderRequest(order.id); 
+    setCancellingId(null); 
+    setConfirmingCancelId(null); 
+    if (result.success) showAlert('Pedido cancelado correctamente', 'success'); // <--- Reemplazo
+  };
+
+  const confirmDelivery = async (order) => { 
+    if (!window.confirm('¿Confirmas que recibiste todos los productos de este pedido?')) return; 
+    setConfirmingDeliveryId(order.id); 
+    const result = await confirmOrderDelivery(order.id); 
+    setConfirmingDeliveryId(null); 
+    if (result.success) {
+      showAlert(result.payout?.released ? 'Entrega confirmada y pagos liberados' : 'Entrega confirmada; liberación pendiente', 'success'); // <--- Reemplazo
+    } else {
+      showAlert(result.error || 'No se pudo confirmar la entrega', 'error'); // <--- Reemplazo
+    } 
+  };
 
   const handleDeleteAccount = async () => {
     if (!deleteReason.trim()) return setDeleteAccountError('Cuéntanos por qué deseas eliminar tu cuenta.');
@@ -150,7 +164,8 @@ function PerfilPageContent() {
       const response = await fetch('/api/account/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: deleteReason.trim() }) });
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(typeof result.error === 'string' ? result.error : 'No se pudo eliminar la cuenta.');
-      setDeleteAccountOpen(false); setDeleteReason(''); showSuccess('Solicitud enviada. El administrador revisará tu cuenta.');
+      setDeleteAccountOpen(false); setDeleteReason(''); 
+      showAlert('Solicitud enviada. El administrador revisará tu cuenta.', 'success'); // <--- Reemplazo
     } catch (error) { setDeleteAccountError(error.message); }
     finally { setDeletingAccount(false); }
   };
@@ -159,9 +174,8 @@ function PerfilPageContent() {
   
   return (
     <div className="min-h-screen bg-slate-50/60 pt-28 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-slate-800" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-      <Toaster position="top-right" />
+      {/* Se removió el Toaster de react-hot-toast ya que se usan las alertas globales */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Pasamos handleTabChange personalizado al Sidebar */}
         <ProfileSidebar 
           formData={formData} 
           role={role} 
@@ -173,7 +187,6 @@ function PerfilPageContent() {
           onLogout={() => logout?.()} 
         />
         
-        {/* Añadida la referencia principal para que el scroll móvil apunte aquí */}
         <main ref={mainContentRef} className="lg:col-span-9 space-y-6">
           <ProfilePromotions role={role} sellerApplication={sellerApplication} />
           {activeTab === 'profile' && <ProfileForm formData={formData} profile={profile} isEditing={isEditing} saving={saving} onEdit={() => setIsEditing(true)} onCancel={() => { setFormData(profile); setIsEditing(false); }} onSubmit={handleSubmit} onChange={handleChange} onDetailsChange={handleDetailsChange} />}
