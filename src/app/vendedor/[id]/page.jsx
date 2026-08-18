@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { Check } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Globe, MapPin, Package, Star, UserRound, Flag, Send, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -15,11 +16,10 @@ function Stars({ value }) {
       {[1, 2, 3, 4, 5].map(star => (
         <Star
           key={star}
-          className={`h-4 w-4 sm:h-5 sm:w-5 ${
-            star <= Math.round(Number(value) || 0)
+          className={`h-4 w-4 sm:h-5 sm:w-5 ${star <= Math.round(Number(value) || 0)
               ? 'fill-amber-400 text-amber-400'
               : 'text-slate-300'
-          }`}
+            }`}
         />
       ))}
     </span>
@@ -169,87 +169,147 @@ export default function SellerPage() {
           </Link>
         </div>
 
-        {/* Header / Perfil Principal */}
-        <section className="overflow-hidden rounded-2xl sm:rounded-3xl border border-white/80 bg-white/95 backdrop-blur-xl shadow-2xl shadow-slate-200/60">
-          <div className="h-28 sm:h-44 bg-gradient-to-r from-[#162536] via-slate-800 to-[#FFB872]" />
-          <div className="px-4 sm:px-8 lg:px-12 pb-6 sm:pb-10">
-            <div className="-mt-14 sm:-mt-16 flex flex-col gap-4 sm:gap-6 sm:flex-row sm:items-end sm:justify-between">
-              <div className="flex items-end gap-4 sm:gap-6">
-                {profile.avatar_url ? (
-                  <img
-                    src={profile.avatar_url}
-                    alt={profile.name || 'Vendedor'}
-                    className="h-24 w-24 sm:h-32 sm:w-32 rounded-2xl sm:rounded-3xl border-4 border-white object-cover shadow-xl bg-white"
-                  />
-                ) : (
-                  <span className="flex h-24 w-24 sm:h-32 sm:w-32 items-center justify-center rounded-2xl sm:rounded-3xl border-4 border-white bg-slate-200 text-slate-500 shadow-xl">
-                    <UserRound className="h-10 w-10 sm:h-14 sm:w-14" />
-                  </span>
-                )}
-                <div className="pb-0 sm:pb-1">
-                  <span className="inline-block text-[10px] sm:text-xs font-extrabold uppercase tracking-widest text-amber-700 bg-amber-50 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full border border-amber-200/50 mb-1 sm:mb-2">
-                    Vendedor Verificado
-                  </span>
-                  <h1 className="text-xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight truncate max-w-[180px] sm:max-w-xs lg:max-w-none">
-                    {profile.name || 'Vendedor'}
-                  </h1>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5 sm:gap-2.5 rounded-xl sm:rounded-2xl bg-white border border-slate-100 shadow-lg px-3 py-2 sm:px-5 sm:py-3.5 self-start sm:self-auto">
-                <Stars value={profile.seller_rating_avg} />
-                <span className="font-extrabold text-slate-900 text-base sm:text-lg ml-0.5 sm:ml-1">
-                  {Number(profile.seller_rating_avg || 0).toFixed(1)}
-                </span>
-                <span className="text-xs sm:text-sm text-slate-400">
-                  ({profile.seller_rating_count || 0})
-                </span>
-              </div>
-            </div>
+<section className="relative overflow-hidden rounded-3xl border border-white/40 bg-white/90 backdrop-blur-md shadow-2xl shadow-slate-200/50">
+  {/* Cabecera con el gradiente original */}
+  <div className="h-20 sm:h-28 bg-gradient-to-r from-[#162536] via-slate-700 to-[#FFB872]" />
 
-            <div className="mt-6 sm:mt-10 grid gap-6 sm:gap-8 md:grid-cols-[1fr_auto] border-t border-slate-100 pt-6 sm:pt-8">
-              <div>
-                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Sobre este vendedor
-                </h2>
-                <p className="mt-2 sm:mt-3 max-w-3xl text-sm sm:text-base leading-relaxed text-slate-600">
-                  {details.bio || 'Este vendedor aún no ha agregado una descripción.'}
-                </p>
-              </div>
-              <div className="space-y-2 sm:space-y-3 text-sm sm:text-base text-slate-600 bg-slate-50/90 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-100 w-full md:min-w-[200px] break-words">
-                {location && (
-                  <p className="flex items-center gap-2 sm:gap-2.5 font-medium">
-                    <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600 shrink-0" />
-                    <span className="truncate">{location}</span>
-                  </p>
-                )}
-                {details.website && (
-                  <a
-                    href={details.website}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-2 sm:gap-2.5 font-semibold text-amber-700 hover:text-amber-900 truncate"
-                  >
-                    <Globe className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
-                    <span className="truncate">Sitio web</span>
-                  </a>
-                )}
-                {Object.entries(socialMedia)
-                  .filter(([, value]) => value)
-                  .map(([network, value]) => (
-                    <a
-                      key={network}
-                      href={String(value).startsWith('http') ? value : `https://${network}.com/${String(value).replace(/^@/, '')}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="block font-semibold capitalize text-slate-600 hover:text-amber-700 transition-colors truncate"
-                    >
-                      {network}: {value}
-                    </a>
-                  ))}
-              </div>
-            </div>
+  <div className="px-5 sm:px-8 lg:px-12 pb-8 sm:pb-12">
+    {/* Fila de identidad (avatar + nombre + badge + rating a la derecha) */}
+    <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 mt-4 sm:mt-6">
+      {/* Izquierda: avatar y nombre */}
+      <div className="flex items-center gap-4 sm:gap-5">
+        <div className="relative">
+          {profile.avatar_url ? (
+            <img
+              src={profile.avatar_url}
+              alt={profile.name || 'Vendedor'}
+              className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl border-4 border-white shadow-xl object-cover"
+            />
+          ) : (
+            <span className="flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-2xl border-4 border-white bg-slate-100 text-slate-400 shadow-xl">
+              <UserRound className="h-8 w-8 sm:h-10 sm:w-10" />
+            </span>
+          )}
+          <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-[#162536] border-2 border-white shadow-md text-white text-xs font-bold">
+            ✓
+          </span>
+        </div>
+
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            {profile.name || 'Vendedor'}
+          </h1>
+          <div className="flex flex-wrap items-center gap-2 mt-1">
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#162536] bg-[#FFB872]/10 px-3 py-1 rounded-full border border-[#162536]/20">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#FFB872]" />
+              Vendedor Destacado
+            </span>
+            <span className="text-xs text-slate-400">•</span>
+            <span className="text-xs text-slate-500">Miembro desde 2021</span>
           </div>
-        </section>
+        </div>
+      </div>
+
+      {/* Derecha: Rating alineado a la derecha con margen automático */}
+      <div className="sm:ml-auto flex items-center gap-2 bg-white/80 border border-slate-200/80 rounded-full px-4 py-2 shadow-lg shadow-slate-200/30">
+        <div className="flex text-amber-400">
+          <Stars value={profile.seller_rating_avg} />
+        </div>
+        <span className="font-extrabold text-slate-900 text-lg leading-none">
+          {Number(profile.seller_rating_avg || 0).toFixed(1)}
+        </span>
+        <span className="text-xs text-slate-400 font-medium">
+          ({profile.seller_rating_count || 0})
+        </span>
+      </div>
+    </div>
+
+    {/* Panel de estadísticas rápidas (opcional) */}
+    {profile.stats && (
+      <div className="mt-4 sm:mt-6 grid grid-cols-3 gap-2 sm:gap-4 bg-slate-50/80 rounded-2xl p-3 sm:p-4 border border-slate-200/60">
+        <div className="text-center">
+          <p className="text-lg sm:text-xl font-black text-slate-800">{profile.stats.products || 0}</p>
+          <p className="text-[10px] sm:text-xs text-slate-400 uppercase tracking-wider">Productos</p>
+        </div>
+        <div className="text-center border-x border-slate-200/60">
+          <p className="text-lg sm:text-xl font-black text-slate-800">{profile.stats.sales || 0}</p>
+          <p className="text-[10px] sm:text-xs text-slate-400 uppercase tracking-wider">Ventas</p>
+        </div>
+        <div className="text-center">
+          <p className="text-lg sm:text-xl font-black text-slate-800">{profile.stats.response_time || '24h'}</p>
+          <p className="text-[10px] sm:text-xs text-slate-400 uppercase tracking-wider">Respuesta</p>
+        </div>
+      </div>
+    )}
+
+    {/* Cuerpo: descripción + contacto en grid de 3 columnas */}
+    <div className="mt-6 sm:mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Descripción - ocupa 2/3 */}
+      <div className="lg:col-span-2 space-y-3">
+        <div className="flex items-center gap-3">
+          <span className="w-1 h-6 bg-gradient-to-b from-[#162536] to-[#FFB872] rounded-full" />
+          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">Acerca de</h2>
+          <span className="flex-1 border-t border-slate-200/60" />
+        </div>
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 border border-slate-200/60 shadow-sm">
+          <p className="text-sm sm:text-base leading-relaxed text-slate-800 font-medium">
+            {details.bio || 'Este vendedor aún no ha compartido su historia, pero su trabajo habla por sí mismo.'}
+          </p>
+        </div>
+        {details.tags && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {details.tags.map((tag) => (
+              <span key={tag} className="text-xs font-medium text-[#162536] bg-[#162536]/10 px-3 py-1 rounded-full border border-[#162536]/20">
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Contacto - ocupa 1/3 */}
+      <div className="lg:col-span-1">
+        <div className="h-full bg-white/80 backdrop-blur-sm rounded-2xl p-5 border border-slate-200/60 shadow-sm space-y-4">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+            <span className="w-1 h-4 bg-[#FFB872] rounded-full" />
+            Contacto
+          </h3>
+          {location && (
+            <div className="flex items-start gap-3 text-sm">
+              <MapPin className="h-4 w-4 text-[#162536] shrink-0 mt-0.5" />
+              <span className="text-slate-800 font-medium">{location}</span>
+            </div>
+          )}
+          {details.website && (
+            <a
+              href={details.website}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-3 text-sm text-[#162536] hover:text-[#FFB872] transition-colors group"
+            >
+              <Globe className="h-4 w-4 shrink-0" />
+              <span className="border-b border-transparent group-hover:border-[#FFB872] transition-all">Sitio web</span>
+            </a>
+          )}
+          {Object.entries(socialMedia)
+            .filter(([, value]) => value)
+            .map(([network, value]) => (
+              <a
+                key={network}
+                href={String(value).startsWith('http') ? value : `https://${network}.com/${String(value).replace(/^@/, '')}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-3 text-sm text-slate-700 hover:text-[#162536] transition-colors group"
+              >
+                <span className="font-mono text-xs uppercase tracking-wider text-slate-400 w-12 shrink-0">{network}</span>
+                <span className="truncate group-hover:underline decoration-[#162536] underline-offset-2">{value}</span>
+              </a>
+            ))}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
         {/* Productos del Vendedor - Organizados por Categoría en Carruseles */}
         <section className="space-y-8 sm:space-y-10">
@@ -395,11 +455,10 @@ export default function SellerPage() {
                       aria-label={`${star} estrellas`}
                     >
                       <Star
-                        className={`h-7 w-7 sm:h-10 sm:w-10 transition-colors ${
-                          star <= (hoverRating || ratingForm.rating)
+                        className={`h-7 w-7 sm:h-10 sm:w-10 transition-colors ${star <= (hoverRating || ratingForm.rating)
                             ? 'fill-amber-400 text-amber-400 drop-shadow-md'
                             : 'text-slate-300'
-                        }`}
+                          }`}
                       />
                     </button>
                   ))}
