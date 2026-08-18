@@ -23,11 +23,6 @@ async function getMerchantIds(productIds) {
   const result = await response.json()
   if (!response.ok) throw new Error(result.error || 'No se pudieron consultar los vendedores PayPal')
   if (!result.merchantIds?.length) throw new Error('Ningún vendedor del carrito tiene PayPal conectado')
-  console.log('[PayPal] Merchant IDs del carrito:', {
-    productCount: productIds.length,
-    sellerCount: result.merchantIds.length,
-    merchantIds: result.merchantIds
-  })
   return result.merchantIds
 }
 
@@ -38,12 +33,6 @@ function loadPaypalSdk(merchantIds) {
     const sdkMerchantQuery = isMultiSeller
       ? '*'
       : encodeURIComponent(merchantIds[0])
-    console.log('[PayPal] Configurando SDK:', {
-      sellerCount: merchantIds.length,
-      merchantIds,
-      sdkMerchantQuery,
-      isMultiSeller
-    })
     const existing = document.querySelector('script[data-apex-paypal]')
     if (existing) {
       const existingMerchantQuery = new URL(existing.src, window.location.origin).searchParams.get('merchant-id')
@@ -66,7 +55,6 @@ function loadPaypalSdk(merchantIds) {
     }
     const script = document.createElement('script')
     script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '')}&merchant-id=${sdkMerchantQuery}&currency=MXN&buyer-country=MX&locale=es_MX&intent=capture&components=buttons&enable-funding=card`
-    console.log('[PayPal] SDK URL merchant-id:', sdkMerchantQuery)
     script.dataset.merchantId = merchantIdValue
     if (isMultiSeller) script.setAttribute('data-merchant-id', merchantIdValue)
     script.async = true

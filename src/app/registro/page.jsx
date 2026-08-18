@@ -1,15 +1,13 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import Button from '@/components/ui/Button';
-import { Package, Gift, Tag, UserPlus, Eye, EyeOff, CheckCircle2, Circle } from 'lucide-react';
+import { Package, Gift, Tag, UserPlus, MailCheck, CheckCircle2, Circle } from 'lucide-react';
 import Alert from '@/components/ui/Alert';
 import { validateEmail, validatePassword } from '@/utils/validation';
 
 export default function RegistroPage() {
-  const router = useRouter();
   const { register, loginWithGoogle } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
@@ -85,9 +83,6 @@ export default function RegistroPage() {
 
       if (result.success) {
         setSuccess(true);
-        setTimeout(() => {
-          router.push('/');
-        }, 2000);
       } else {
         setError(result.error || 'Ocurrió un error al registrar el usuario.');
       }
@@ -125,9 +120,7 @@ export default function RegistroPage() {
       <div className="min-h-screen flex items-center justify-center py-12 px-4 bg-[#f1f3f6]">
         <div className="bg-white rounded-3xl shadow-xl border border-[#efedef] max-w-md w-full p-8 md:p-10 text-center">
           <div className="flex justify-center mb-6 text-emerald-500">
-             <svg className="w-16 h-16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <MailCheck className="w-16 h-16" strokeWidth={1.5} />
           </div>
           <h2
             className="text-2xl font-bold text-[#010f20] mb-2"
@@ -139,13 +132,16 @@ export default function RegistroPage() {
             className="text-xs text-[#44474c] mb-6"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
-            Tu cuenta ha sido creada correctamente. En unos momentos serás redirigido a tu panel.
+            Tu cuenta ha sido creada correctamente. Revisa tu correo y confirma tu cuenta para poder continuar.
+          </p>
+          <p className="text-xs text-[#44474c] mb-6" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            Te enviamos un correo a <strong>{formData.email}</strong> para validar tu cuenta. Haz clic en el enlace de confirmación para continuar.
           </p>
           <div
-            className="animate-pulse text-xs font-bold uppercase tracking-widest text-[#010f20]/40"
+            className="text-xs font-bold uppercase tracking-widest text-[#010f20]/40"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
-            Redirigiendo...
+            Esperando confirmación...
           </div>
         </div>
       </div>
