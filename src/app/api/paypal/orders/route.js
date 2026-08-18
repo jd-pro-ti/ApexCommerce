@@ -40,6 +40,7 @@ export async function POST(request) {
 
     const body = await request.json().catch(() => ({}))
     if (!Array.isArray(body.cartItems) || !body.cartItems.length) return NextResponse.json({ error: 'El carrito estÃ¡ vacÃ­o' }, { status: 400 })
+    const requestedMerchantIds = [...new Set((Array.isArray(body.merchantIds) ? body.merchantIds : []).filter(Boolean).map(String))].sort()
     const { data: createdSessionId, error: sessionError } = await supabase.rpc('create_paypal_checkout_session', {
       p_user_id: user.id, p_customer_name: profile.name, p_customer_email: profile.email, p_customer_phone: shipping.phone,
       p_shipping_address: shipping.address, p_shipping_address_line2: shipping.address_line2 || '', p_shipping_city: shipping.city,
@@ -67,6 +68,16 @@ export async function POST(request) {
     for (const sellerId of sellerIds) {
       const account = accountsBySeller.get(sellerId)
       if (!account || account.onboarding_status !== 'connected' || !account.paypal_merchant_id || account.payments_receivable === false || account.permissions_granted === false) throw new Error('Uno de los vendedores no puede recibir pagos en PayPal')
+    }
+    const expectedMerchantIds = [...new Set(sellerIds.map((sellerId) => accountsBySeller.get(sellerId).paypal_merchant_id).filter(Boolean).map(String))].sort()
+    console.log('[PayPal] Validando merchant IDs antes de crear orden:', {
+      sellerCount: sellerIds.length,
+      sellerIds,
+      requestedMerchantIds,
+      expectedMerchantIds
+    })
+    if (requestedMerchantIds.length !== expectedMerchantIds.length || requestedMerchantIds.some((id, index) => id !== expectedMerchantIds[index])) {
+      throw new Error('La configuración de vendedores PayPal no coincide con el carrito')
     }
 
     const groups = sellerIds.map((sellerId) => {
