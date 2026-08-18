@@ -1,4 +1,4 @@
-// src/app/perfil/page.js (o la ruta correspondiente de tu perfil)
+// src/app/perfil/page.js
 'use client';
 
 import { Suspense, useEffect, useRef, useState } from 'react';
@@ -17,6 +17,7 @@ import WishlistPanel from '@/components/profile/WishlistPanel';
 import PaymentHistoryPanel from '@/components/profile/PaymentHistoryPanel';
 import DeleteAccountModal from '@/components/profile/DeleteAccountModal';
 import { getAge, validateName, validatePhone, validatePostalCode } from '@/utils/validation';
+import { CircleAlert, PackageCheck, X } from 'lucide-react';
 
 const initialProfile = {
   id: '', name: '', email: '', avatar_url: '', role: '', status: '',
@@ -46,6 +47,7 @@ function PerfilPageContent() {
   const [confirmingCancelId, setConfirmingCancelId] = useState(null);
   const [cancellingId, setCancellingId] = useState(null);
   const [confirmingDeliveryId, setConfirmingDeliveryId] = useState(null);
+  const [deliveryToConfirm, setDeliveryToConfirm] = useState(null);
   const [sellerApplication, setSellerApplication] = useState(null);
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
   const [deleteReason, setDeleteReason] = useState('');
@@ -60,8 +62,8 @@ function PerfilPageContent() {
     try {
       const result = await profileService.getProfile(user.id);
       if (result.success) { setProfile(result.profile); setFormData(result.profile); }
-      else showAlert(result.error || 'Error al cargar perfil', 'error'); // <--- Reemplazo de toast.error
-    } catch { showAlert('Error al cargar perfil', 'error'); } // <--- Reemplazo de toast.error
+      else showAlert(result.error || 'Error al cargar perfil', 'error'); // <--- Reemplazo de toast
+    } catch { showAlert('Error al cargar perfil', 'error'); } // <--- Reemplazo de toast
     finally { setLoading(false); }
   }
 
@@ -146,16 +148,18 @@ function PerfilPageContent() {
   };
 
   const confirmDelivery = async (order) => { 
-    if (!window.confirm('¿Confirmas que recibiste todos los productos de este pedido?')) return; 
+    setDeliveryToConfirm(null); 
     setConfirmingDeliveryId(order.id); 
     const result = await confirmOrderDelivery(order.id); 
     setConfirmingDeliveryId(null); 
     if (result.success) {
-      showAlert(result.payout?.released ? 'Entrega confirmada y pagos liberados' : 'Entrega confirmada; liberación pendiente', 'success'); // <--- Reemplazo
+      showAlert(result.payout?.released ? 'Entrega confirmada' : 'Entrega confirmada; liberación pendiente', 'success'); // <--- Reemplazo
     } else {
       showAlert(result.error || 'No se pudo confirmar la entrega', 'error'); // <--- Reemplazo
     } 
   };
+
+  const requestDeliveryConfirmation = (order) => setDeliveryToConfirm(order);
 
   const handleDeleteAccount = async () => {
     if (!deleteReason.trim()) return setDeleteAccountError('Cuéntanos por qué deseas eliminar tu cuenta.');
@@ -174,7 +178,7 @@ function PerfilPageContent() {
   
   return (
     <div className="min-h-screen bg-slate-50/60 pt-28 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-slate-800" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-      {/* Se removió el Toaster de react-hot-toast ya que se usan las alertas globales */}
+      {/* Se eliminó <Toaster /> ya que usamos las alertas globales */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <ProfileSidebar 
           formData={formData} 
@@ -190,11 +194,46 @@ function PerfilPageContent() {
         <main ref={mainContentRef} className="lg:col-span-9 space-y-6">
           <ProfilePromotions role={role} sellerApplication={sellerApplication} />
           {activeTab === 'profile' && <ProfileForm formData={formData} profile={profile} isEditing={isEditing} saving={saving} onEdit={() => setIsEditing(true)} onCancel={() => { setFormData(profile); setIsEditing(false); }} onSubmit={handleSubmit} onChange={handleChange} onDetailsChange={handleDetailsChange} />}
-          {activeTab === 'orders' && <OrdersPanel orders={orders} loading={ordersLoading} error={ordersError} searchTerm={orderSearchTerm} statusFilter={orderStatusFilter} onSearchChange={setOrderSearchTerm} onStatusChange={setOrderStatusFilter} confirmingCancelId={confirmingCancelId} cancellingId={cancellingId} confirmingDeliveryId={confirmingDeliveryId} onCancelRequest={setConfirmingCancelId} onCancel={cancelOrder} onConfirmDelivery={confirmDelivery} />}
+          {activeTab === 'orders' && <OrdersPanel orders={orders} loading={ordersLoading} error={ordersError} searchTerm={orderSearchTerm} statusFilter={orderStatusFilter} onSearchChange={setOrderSearchTerm} onStatusChange={setOrderStatusFilter} confirmingCancelId={confirmingCancelId} cancellingId={cancellingId} confirmingDeliveryId={confirmingDeliveryId} onCancelRequest={setConfirmingCancelId} onCancel={cancelOrder} onConfirmDelivery={requestDeliveryConfirmation} />}
           {activeTab === 'wishlist' && <WishlistPanel />}
           {activeTab === 'payments-history' && <PaymentHistoryPanel orders={orders} />}
         </main>
       </div>
+
+      {deliveryToConfirm && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="delivery-confirmation-title">
+          <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div className="flex items-start justify-between border-b border-slate-100 px-6 py-5 sm:px-7">
+              <div className="flex items-start gap-3">
+                <div className="rounded-2xl bg-emerald-100 p-3 text-emerald-700">
+                  <PackageCheck className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-600">Confirmar entrega</p>
+                  <h2 id="delivery-confirmation-title" className="mt-1 text-xl font-extrabold text-slate-950">¿Recibiste tu pedido?</h2>
+                </div>
+              </div>
+              <button type="button" onClick={() => setDeliveryToConfirm(null)} className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="Cerrar confirmación">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="px-6 py-6 sm:px-7">
+              <div className="flex items-start gap-3 rounded-2xl border border-amber-100 bg-amber-50/70 p-4">
+                <CircleAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+                <p className="text-sm leading-6 text-slate-700">Confirma solo si recibiste todos los productos de la orden <strong>#{deliveryToConfirm.order_number}</strong></p>
+              </div>
+              <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <button type="button" onClick={() => setDeliveryToConfirm(null)} className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+                  Todavía no
+                </button>
+                <button type="button" onClick={() => confirmDelivery(deliveryToConfirm)} className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-700">
+                  Sí, recibí todo
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

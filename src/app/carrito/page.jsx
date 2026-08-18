@@ -23,6 +23,7 @@ export default function CartPage() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [profileChecking, setProfileChecking] = useState(false);
   
   const subtotal = total;
   const shipping = 0;
@@ -45,12 +46,36 @@ export default function CartPage() {
     }
   }, [authLoading, isAuthenticated, user?.role, router]);
 
-  const handlePreCheckout = () => {
+  const handlePreCheckout = async () => {
     if (!isAuthenticated) {
       router.push('/login');
       return;
     }
-    setShowConfirmModal(true);
+    if (profileChecking) return;
+    setProfileChecking(true);
+    const profileCheck = await orderService.checkProfileComplete(user.id);
+    setProfileChecking(false);
+    if (!profileCheck.success) {
+      showAlert('No pudimos verificar tu perfil. Inténtalo de nuevo.', 'error');
+      return;
+    }
+    if (!profileCheck.isComplete) {
+      const missingLabels = {
+        name: 'nombre',
+        email: 'correo electrónico',
+        phone: 'teléfono',
+        address: 'dirección',
+        city: 'ciudad',
+        state: 'estado',
+        postal_code: 'código postal'
+      };
+      const missing = profileCheck.missingFields.map((field) => missingLabels[field] || field).join(', ');
+      showAlert(`Completa tu perfil para continuar con la compra. Falta: ${missing}.`, 'error');
+      return;
+    }
+    // PayPal registra listeners globales en la ventana. Una navegación
+    // completa garantiza que el checkout empiece con una instancia limpia.
+    window.location.assign('/checkout');
   };
 
   const paypalCartItems = useMemo(() => cart.map(item => ({
@@ -319,7 +344,7 @@ export default function CartPage() {
                   <Button
                     onClick={handlePreCheckout}
                     className="w-full !bg-primary hover:!bg-primary-container !text-on-primary text-sm font-bold py-4 rounded-md transition-all tracking-wide uppercase shadow-sm focus:ring-0"
-                    loading={loading}
+                    loading={loading || profileChecking}
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                   >
                     {isAuthenticated ? 'Proceder al Pago' : 'Iniciar Sesión para Comprar'}

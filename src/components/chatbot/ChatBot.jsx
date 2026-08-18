@@ -149,6 +149,9 @@ const ChatBot = () => {
     { label: 'Consultar envíos y devoluciones', value: '¿Cómo funcionan los envíos y las devoluciones?' },
   ];
 
+  // El checkout debe permanecer despejado y el carrito queda congelado durante el pago.
+  if (pathname === '/checkout') return null;
+
   return (
     <>
       <div className={styles.chatbotContainer}>

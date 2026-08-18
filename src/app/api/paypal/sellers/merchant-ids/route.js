@@ -28,10 +28,23 @@ export async function POST(request) {
       .in('seller_id', sellerIds)
     if (accountsError) throw accountsError
 
-    const merchantIds = [...new Set((accounts || [])
-      .filter((account) => account.onboarding_status === 'connected' && account.paypal_merchant_id && account.payments_receivable !== false && account.permissions_granted !== false)
-      .map((account) => account.paypal_merchant_id))]
+    const accountsBySeller = new Map((accounts || []).map((account) => [account.seller_id, account]))
+    const unavailableSeller = sellerIds.find((sellerId) => {
+      const account = accountsBySeller.get(sellerId)
+      return !account || account.onboarding_status !== 'connected' || !account.paypal_merchant_id
+        || account.payments_receivable === false || account.permissions_granted === false
+    })
+    if (unavailableSeller) {
+      return NextResponse.json({ error: 'Todos los vendedores del carrito deben tener PayPal conectado', merchantIds: [] }, { status: 409 })
+    }
 
+    const merchantIds = [...new Set(sellerIds.map((sellerId) => accountsBySeller.get(sellerId).paypal_merchant_id))]
+
+    console.log('[PayPal] Merchant IDs calculados:', {
+      sellerCount: sellerIds.length,
+      sellerIds,
+      merchantIds
+    })
     return NextResponse.json({ merchantIds })
   } catch (error) {
     console.error('PayPal merchant ids failed:', error)
