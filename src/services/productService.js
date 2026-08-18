@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { v4 as uuidv4 } from 'uuid'
+import { slugify } from '@/utils/helpers'
 
 export const productService = {
   // ============================================
@@ -442,13 +443,13 @@ export const productService = {
     }
   },
 
-  async getPublicProductById(productId) {
+  async getPublicProductById(productIdentifier) {
     try {
       if (!isSupabaseConfigured()) {
         throw new Error('Supabase no está configurado')
       }
 
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('products')
         .select(`
           *,
@@ -462,11 +463,28 @@ export const productService = {
             avatar_url
           )
         `)
-        .eq('id', productId)
+        .eq('id', productIdentifier)
         .eq('status', 'active')
-        .single()
+        .maybeSingle()
+
+      // Los enlaces nuevos usan el slug del nombre; los UUID antiguos siguen
+      // funcionando con la primera búsqueda.
+      if (!data) {
+        const fallback = await supabase
+          .from('products')
+          .select(`
+            *,
+            categories!inner (id, name),
+            profiles:seller_id (id, name, avatar_url)
+          `)
+          .eq('status', 'active')
+
+        error = fallback.error
+        data = fallback.data?.find(product => slugify(product.name) === productIdentifier)
+      }
 
       if (error) throw error
+      if (!data) throw new Error('Producto no encontrado')
 
       const product = {
         ...data,
@@ -560,23 +578,27 @@ export const productService = {
     try {
       if (!isSupabaseConfigured()) throw new Error('Supabase no está configurado')
 
+      const profilesLookup = await supabase
+        .from('profiles')
+        .select('id, name, avatar_url, seller_rating_avg, seller_rating_count')
+      if (profilesLookup.error) throw profilesLookup.error
+      const resolvedProfile = profilesLookup.data?.find(profile => profile.id === sellerId || slugify(profile.name) === sellerId)
+      if (!resolvedProfile) throw new Error('Vendedor no encontrado')
+      const resolvedSellerId = resolvedProfile.id
+
       const [profileResult, detailsResponse, productsResult, ratingsResult] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('id, name, avatar_url, seller_rating_avg, seller_rating_count')
-          .eq('id', sellerId)
-          .maybeSingle(),
-        fetch(`/api/sellers/${encodeURIComponent(sellerId)}/profile`, { cache: 'no-store' }),
+        Promise.resolve({ data: resolvedProfile, error: null }),
+        fetch(`/api/sellers/${encodeURIComponent(resolvedSellerId)}/profile`, { cache: 'no-store' }),
         supabase
           .from('products')
           .select('id, name, price, images, stock, rating_avg, rating_count, categories(id, name)')
-          .eq('seller_id', sellerId)
+          .eq('seller_id', resolvedSellerId)
           .eq('status', 'active')
           .order('created_at', { ascending: false }),
         supabase
           .from('seller_ratings')
           .select('id, rating, comment, created_at, user_id, profiles:user_id(name, avatar_url)')
-          .eq('seller_id', sellerId)
+          .eq('seller_id', resolvedSellerId)
           .eq('status', 'approved')
           .order('created_at', { ascending: false })
       ])

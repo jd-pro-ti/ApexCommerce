@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import Button from '@/components/ui/Button';
@@ -10,11 +10,16 @@ import { ShoppingBag, Package, Gift, Tag, Eye, EyeOff, ArrowLeft } from 'lucide-
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, loginWithGoogle } = useAuth();
   
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(() => (
+    searchParams.get('error') === 'account_suspended'
+      ? 'Tu cuenta está suspendida. No puedes iniciar sesión en este momento. Si crees que se trata de un error, contacta con soporte.'
+      : ''
+  ));
 
   const [formData, setFormData] = useState({
     email: '',
