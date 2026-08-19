@@ -37,7 +37,7 @@ export default function ProductDetail() {
     setLoading(true);
     try {
       const result = await productService.getPublicProductById(productId);
-      
+
       if (result.success && result.product) {
         setProduct(result.product);
         setSelectedImage(0);
@@ -60,7 +60,7 @@ export default function ProductDetail() {
             }));
           }
         }
-        
+
         const relatedResult = await productService.getPublicProducts({
           category: result.product.category,
           limit: 5
@@ -135,7 +135,7 @@ export default function ProductDetail() {
   const handleAddToCart = () => {
     if (!isAuthenticated) return router.push('/login?redirect=/producto/' + productId);
     setAddingToCart(true);
-    
+
     // Agregamos una sola vez con la cantidad seleccionada (evitando bucles de inserción individual)
     for (let i = 0; i < quantity; i++) {
       addToCart(product);
@@ -150,7 +150,7 @@ export default function ProductDetail() {
 
   const handleBuyNow = async () => {
     if (!isAuthenticated) return router.push('/login?redirect=/producto/' + productId);
-    
+
     try {
       // Intentamos agregar el producto una vez (o las veces de la cantidad) 
       // El CartContext ya maneja si existe o no de manera local/remota
@@ -159,7 +159,7 @@ export default function ProductDetail() {
       }
     } catch (err) {
     }
-    
+
     // Redirige de inmediato al carrito para finalizar la compra
     router.push('/carrito');
   };
@@ -181,11 +181,10 @@ export default function ProductDetail() {
         <div className="bg-slate-50/80 rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
             {Object.entries(product.specifications).map(([key, value], index) => (
-              <div 
-                key={index} 
-                className={`flex items-center justify-between p-5 ${
-                  index % 2 === 0 ? 'bg-white/60' : 'bg-slate-50/60'
-                }`}
+              <div
+                key={index}
+                className={`flex items-center justify-between p-5 ${index % 2 === 0 ? 'bg-white/60' : 'bg-slate-50/60'
+                  }`}
               >
                 <span className="text-sm font-semibold text-slate-600 uppercase tracking-wide">
                   {key}
@@ -217,8 +216,8 @@ export default function ProductDetail() {
         </div>
         <h2 className="text-xl font-bold text-slate-900 mb-2 tracking-tight">Producto no encontrado</h2>
         <p className="text-slate-600 text-base mb-8">El producto que buscas no existe o ya no está disponible.</p>
-        <Link 
-          href="/catalogo" 
+        <Link
+          href="/catalogo"
           className="inline-flex items-center gap-2.5 bg-slate-900 text-white px-6 py-3.5 rounded-xl text-sm font-semibold uppercase tracking-wider hover:bg-slate-800 transition-all shadow-xs"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -230,7 +229,7 @@ export default function ProductDetail() {
 
   return (
     <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-20 text-slate-800 bg-white relative" style={{ fontFamily: "Inter, system-ui, -apple-system, sans-serif" }}>
-      
+
       {/* TOAST FLOTANTE */}
       {showAddedToast && (
         <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-800">
@@ -257,12 +256,11 @@ export default function ProductDetail() {
             {product.images?.length > 0 && (
               <div className="flex sm:flex-col gap-3 overflow-x-auto sm:overflow-y-auto max-h-[500px] scrollbar-none py-1 order-2 sm:order-1">
                 {product.images.map((img, idx) => (
-                  <button 
-                    key={idx} 
-                    onClick={() => setSelectedImage(idx)} 
-                    className={`w-20 h-20 rounded-xl overflow-hidden border transition-all flex-shrink-0 bg-slate-50 ${
-                      selectedImage === idx ? 'border-slate-900 shadow-xs ring-2 ring-slate-900/10' : 'border-slate-200 opacity-60 hover:opacity-100'
-                    }`}
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedImage(idx)}
+                    className={`w-20 h-20 rounded-xl overflow-hidden border transition-all flex-shrink-0 bg-slate-50 ${selectedImage === idx ? 'border-slate-900 shadow-xs ring-2 ring-slate-900/10' : 'border-slate-200 opacity-60 hover:opacity-100'
+                      }`}
                   >
                     <img src={img} alt={`Miniatura ${idx + 1}`} className="w-full h-full object-cover" />
                   </button>
@@ -272,10 +270,10 @@ export default function ProductDetail() {
 
             <div className="flex-1 bg-slate-50/70 rounded-2xl h-[420px] sm:h-[500px] flex items-center justify-center overflow-hidden relative order-1 sm:order-2 border border-slate-200/60">
               {product.images?.[selectedImage] ? (
-                <img 
-                  src={product.images[selectedImage]} 
-                  alt={product.name} 
-                  className="w-full h-full object-contain p-6 transition-transform duration-500 hover:scale-105" 
+                <img
+                  src={product.images[selectedImage]}
+                  alt={product.name}
+                  className="w-full h-full object-contain p-6 transition-transform duration-500 hover:scale-105"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-slate-300">
@@ -298,11 +296,10 @@ export default function ProductDetail() {
                 <span className="text-xs text-slate-500 font-bold uppercase tracking-wider bg-slate-100 px-3 py-1 rounded-full">
                   {product.category || 'General'}
                 </span>
-                <span className={`text-xs font-semibold px-3 py-1.5 rounded-full border ${
-                  product.stock > 0 
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
+                <span className={`text-xs font-semibold px-3 py-1.5 rounded-full border ${product.stock > 0
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                     : 'bg-rose-50 text-rose-800 border-rose-200'
-                }`}>
+                  }`}>
                   {product.stock > 0 ? `Stock disponible (${product.stock})` : 'Agotado'}
                 </span>
               </div>
@@ -351,7 +348,7 @@ export default function ProductDetail() {
 
               <div className="pt-3 pb-2 border-t border-slate-100">
                 <div className="text-4xl font-extrabold text-slate-900 tracking-tight">
-                  ${product.price?.toLocaleString('es-MX', { minimumFractionDigits: 2 })} 
+                  ${product.price?.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                   <span className="text-sm font-bold text-slate-500 ml-1.5">MXN</span>
                 </div>
                 <span className="text-xs text-slate-500 font-medium">Impuestos incluidos</span>
@@ -362,16 +359,16 @@ export default function ProductDetail() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold uppercase tracking-wider text-slate-800">Cantidad:</span>
                   <div className="flex items-center border border-slate-300 w-36 rounded-xl bg-slate-50 overflow-hidden shadow-xs">
-                    <button 
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))} 
+                    <button
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
                       disabled={product.stock <= 0}
                       className="px-4 py-2.5 hover:bg-slate-200 transition-colors text-slate-800 font-bold disabled:opacity-40 text-sm"
                     >
                       -
                     </button>
                     <span className="flex-1 text-center text-sm font-bold text-slate-900">{quantity}</span>
-                    <button 
-                      onClick={() => setQuantity(Math.min(product.stock || 1, quantity + 1))} 
+                    <button
+                      onClick={() => setQuantity(Math.min(product.stock || 1, quantity + 1))}
                       disabled={product.stock <= 0 || quantity >= product.stock}
                       className="px-4 py-2.5 hover:bg-slate-200 transition-colors text-slate-800 font-bold disabled:opacity-40 text-sm"
                     >
@@ -382,8 +379,8 @@ export default function ProductDetail() {
 
                 {/* Botonera de compra */}
                 <div className="space-y-3 pt-2">
-                  <button 
-                    onClick={handleBuyNow} 
+                  <button
+                    onClick={handleBuyNow}
                     disabled={product.stock <= 0}
                     className="w-full bg-slate-900 text-white py-4 px-6 uppercase tracking-wider text-xs font-bold hover:bg-slate-800 transition-all rounded-xl shadow-md cursor-pointer disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed flex items-center justify-center gap-2.5"
                   >
@@ -391,8 +388,8 @@ export default function ProductDetail() {
                     <span>Comprar ahora</span>
                   </button>
 
-                  <button 
-                    onClick={handleAddToCart} 
+                  <button
+                    onClick={handleAddToCart}
                     disabled={addingToCart || product.stock <= 0}
                     className="w-full bg-white text-slate-900 border-2 border-slate-300 py-3.5 px-6 uppercase tracking-wider text-xs font-bold hover:bg-slate-50 transition-all rounded-xl shadow-xs cursor-pointer disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed flex items-center justify-center gap-2.5"
                   >
@@ -496,7 +493,7 @@ export default function ProductDetail() {
         </h3>
 
         {relatedProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
             {relatedProducts.slice(0, 4).map((prod) => (
               <ProductCard key={prod.id} product={prod} />
             ))}
