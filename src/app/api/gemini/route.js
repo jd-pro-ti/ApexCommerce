@@ -40,7 +40,7 @@ function shouldUseFallback(response, data) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { history, userRole } = body;
+    const { history } = body;
 
     if (!history || !Array.isArray(history)) {
       return NextResponse.json({ error: 'El historial es requerido' }, { status: 400 });
@@ -57,7 +57,7 @@ export async function POST(request) {
       .select('id, name, price, stock, images')
       // Gemini solo puede recomendar productos que recibe en este contexto.
       // El límite anterior de 30 ocultaba productos como celulares o escritorios.
-      .limit(1000);
+      .limit(100);
 
     if (dbError) {
       console.error('Error Supabase:', dbError.message);
@@ -71,12 +71,9 @@ export async function POST(request) {
         }).join('\n')
       : "No hay productos registrados.";
 
-    let scopeInstruction = "El usuario es un CLIENTE buscando productos.";
-    if (userRole === "ADMINISTRADOR") scopeInstruction = "El usuario es un ADMINISTRADOR.";
-    if (userRole === "VENDEDOR") scopeInstruction = "El usuario es un VENDEDOR.";
-
     const systemPromptContent = `Eres Apex-ito, un asistente amigable y divertido de Apex Commerce.
-Contexto: ${scopeInstruction}
+Contexto: El usuario es un CLIENTE buscando productos.
+Rol de asesor: Ayuda al cliente a elegir productos del catalogo segun su necesidad, presupuesto y preferencias.
 
 Catálogo real de Supabase:
 ${catalogSummary}

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { FaStore, FaPaperPlane, FaTimes, FaShoppingCart, FaEye, FaImage } from 'react-icons/fa';
 import styles from './ChatBot.module.css';
 import { slugify } from '@/utils/helpers';
+import { useAuth } from '@/context/AuthContext';
 import { useAlert } from '@/components/ui/AlertContext'; // Asegúrate de que la ruta coincida con la ubicación de tu contexto
 import { useCart } from '@/context/CartContext'; // Asegúrate de que la ruta coincida con la ubicación de tu contexto
 
@@ -19,11 +20,14 @@ const ChatBot = () => {
   const fileInputRef = useRef(null);
   const { addToCart } = useCart();
   const { showAlert } = useAlert();
+  const { role, user } = useAuth();
 
   const pathname = usePathname();
   const router = useRouter();
 
   const getUserRoleContext = () => {
+    if (role === 'vendedor') return 'VENDEDOR';
+    if (role === 'admin') return 'ADMINISTRADOR';
     if (pathname?.includes('/admin')) return "ADMINISTRADOR";
     if (pathname?.includes('/vendedor')) return "VENDEDOR";
     return "CLIENTE";
@@ -72,12 +76,14 @@ const ChatBot = () => {
 
     try {
       const currentRole = getUserRoleContext();
-      const response = await fetch('/api/gemini', {
+      const endpoint = currentRole === 'VENDEDOR' ? '/api/seller-ia' : '/api/gemini';
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           history: messages.concat(userMessage),
-          userRole: currentRole
+          userRole: currentRole,
+          sellerId: currentRole === 'VENDEDOR' ? user?.id : undefined,
         }),
       });
 
@@ -114,7 +120,51 @@ const ChatBot = () => {
   };
 
   // Función para procesar el texto del bot y separar tarjetas de productos
+  const sellerActions = {
+    PEDIDOS: { title: 'Gestionar pedidos', description: 'Revisa estados, prepara envíos y atiende tus pedidos.', path: '/dashboard/vendedor/pedidos', button: 'Ver pedidos' },
+    ANALITICAS: { title: 'Ver analíticas', description: 'Consulta ventas, productos destacados y rendimiento.', path: '/dashboard/vendedor/analiticas', button: 'Abrir analíticas' },
+    NOTIFICACIONES: { title: 'Revisar notificaciones', description: 'Consulta avisos importantes de tu tienda.', path: '/dashboard/vendedor/notificaciones', button: 'Ver notificaciones' },
+    PRODUCTOS: { title: 'Gestionar productos', description: 'Administra inventario, precios y publicaciones.', path: '/dashboard/vendedor/productos', button: 'Ver productos' },
+    GANANCIAS: { title: 'Consultar ganancias', description: 'Revisa tus ingresos y pagos liberados.', path: '/dashboard/vendedor/ganancias', button: 'Ver ganancias' },
+    PERFIL: { title: 'Editar perfil', description: 'Actualiza la información de tu cuenta de vendedor.', path: '/dashboard/vendedor/perfil', button: 'Abrir perfil' },
+  };
+
+  const renderSellerMessage = (content) => {
+    const actionRegex = /\[ACCION:(PEDIDOS|ANALITICAS|NOTIFICACIONES|PRODUCTOS|GANANCIAS|PERFIL)\]/gi;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = actionRegex.exec(content)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(<span key={`seller-text-${lastIndex}`}>{content.substring(lastIndex, match.index).trim()}</span>);
+      }
+      const action = sellerActions[match[1].toUpperCase()];
+      if (action) {
+        parts.push(
+          <div key={`seller-action-${match.index}`} className={styles.actionCard}>
+            <p className={styles.actionTitle}>{action.title}</p>
+            <p className={styles.actionDescription}>{action.description}</p>
+            <button type="button" onClick={() => router.push(action.path)} className={styles.actionButton}>
+              {action.button}
+            </button>
+          </div>
+        );
+      }
+      lastIndex = actionRegex.lastIndex;
+    }
+
+    if (lastIndex < content.length) {
+      parts.push(<span key={`seller-text-${lastIndex}`}>{content.substring(lastIndex).trim()}</span>);
+    }
+    return parts.length > 0 ? parts : content;
+  };
+
   const renderMessageContent = (content) => {
+    if (getUserRoleContext() === 'VENDEDOR') {
+      return renderSellerMessage(content.replace(/\[PRODUCT(?:O)?:.*?\]/g, '').trim());
+    }
+
     // Gemini a veces abrevia PRODUCTO como PRODUCT; aceptamos ambas variantes.
     const productRegex = /\[PRODUCT(?:O)?:(.*?)\]/g;
     const parts = [];
@@ -193,7 +243,7 @@ const ChatBot = () => {
           <div className={styles.chatWindow}>
             <div className={styles.chatHeader}>
               <FaStore size={24} />
-              <span>Apex-ito</span>
+              <span>Apex-ito{getUserRoleContext() === 'VENDEDOR' ? ' Vendedor' : ''}</span>
               <button onClick={toggleChat} className={styles.closeButton}>
                 <FaTimes />
               </button>

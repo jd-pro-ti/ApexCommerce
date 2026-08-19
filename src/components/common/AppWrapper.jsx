@@ -27,7 +27,7 @@ export default function AppWrapper({ children }) {
         </main>
       </div>
 
-      {!isExcluded && isClientUser && <ChatBot />}
+      {!isExcluded && (isClientUser || role === 'vendedor') && <ChatBot />}
       {!isExcluded && isClientUser && <Footer />}
     </>
   );
