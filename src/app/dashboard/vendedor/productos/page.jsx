@@ -7,13 +7,13 @@ import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import {
-  Plus,
-  Search,
-  Package,
-  FolderOpen,
-  Edit3,
-  Trash2,
+import { 
+  Plus, 
+  Search, 
+  Package, 
+  FolderOpen, 
+  Edit3, 
+  Trash2, 
   AlertTriangle,
   ArrowLeft
 } from 'lucide-react';
@@ -79,7 +79,7 @@ export default function SellerProducts() {
       draft: 'Borrador'
     };
     return (
-      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${styles[status] || styles.draft}`} style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <span className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider ${styles[status] || styles.draft}`} style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
         {labels[status] || status}
       </span>
     );
@@ -99,25 +99,25 @@ export default function SellerProducts() {
   }
 
   return (
-    <div className="bg-[#f8f9fa] min-h-screen pt-28 md:pt-12 pb-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
+    <div className="bg-[#f8f9fa] min-h-screen pt-5 md:pt-12 pb-16 px-2 sm:px-6 lg:px-8" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+      <div className="max-w-7xl mx-auto">
+        
         {/* Cabecera de la sección */}
-        <div className="bg-white rounded-2xl border border-[#efedef] p-6 sm:p-8 shadow-sm mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="bg-white rounded-2xl border border-[#efedef] p-4 sm:p-8 shadow-sm mb-6 sm:mb-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
           <div>
-            <span
+            <span 
               className="text-[10px] font-bold tracking-widest text-[#dd9448] uppercase block mb-1"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
               GESTIÓN DE INVENTARIO
             </span>
-            <h1
-              className="text-2xl sm:text-3xl font-bold text-[#010f20] tracking-tight"
+            <h1 
+              className="text-2xl sm:text-3xl font-extrabold text-[#010f20] tracking-tight"
               style={{ fontFamily: "'Montserrat', sans-serif" }}
             >
               Mis Productos
             </h1>
-            <p
+            <p 
               className="text-xs sm:text-sm text-[#44474c]/70 mt-1"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
@@ -125,12 +125,12 @@ export default function SellerProducts() {
             </p>
           </div>
 
-          <Link href="/dashboard/vendedor/productos/nuevo" className="self-start sm:self-center">
-            <Button
-              className="!bg-[#0b1523] hover:!bg-slate-800 !text-white text-xs font-bold py-3 px-5 rounded-md transition-all tracking-wide uppercase shadow-sm focus:ring-0 flex items-center gap-2 cursor-pointer"
+          <Link href="/dashboard/vendedor/productos/nuevo" className="w-full sm:w-auto">
+            <Button 
+              className="w-full sm:w-auto !bg-[#0b1523] hover:!bg-slate-800 !text-white text-xs font-bold py-3 px-5 rounded-xl transition-all tracking-wide uppercase shadow-sm focus:ring-0 flex items-center justify-center gap-2 cursor-pointer"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
-              <Plus className="w-4 h-4" /> Agregar Producto
+              <Plus className="w-4 h-4 shrink-0" /> Agregar Producto
             </Button>
           </Link>
         </div>
@@ -142,8 +142,8 @@ export default function SellerProducts() {
         )}
 
         {/* Búsqueda */}
-        <div className="mb-8">
-          <div className="relative max-w-md">
+        <div className="mb-6 sm:mb-8">
+          <div className="relative w-full sm:max-w-md">
             <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 z-10">
               <Search className="w-4 h-4" />
             </span>
@@ -151,33 +151,33 @@ export default function SellerProducts() {
               placeholder="Buscar productos por nombre o categoría..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 w-full rounded-xl"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             />
           </div>
         </div>
 
-        {/* Grid de productos */}
+        {/* Grid de productos: 2 columnas en móviles (grid-cols-2) y hasta 3 en pantallas grandes (lg:grid-cols-3) */}
         {filteredProducts.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-[#efedef] p-12 text-center shadow-sm">
+          <div className="bg-white rounded-2xl border border-[#efedef] p-8 sm:p-12 text-center shadow-sm">
             <div className="w-16 h-16 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner">
               <Package className="w-8 h-8" />
             </div>
-            <h3
+            <h3 
               className="text-lg font-bold text-[#010f20] mb-1"
               style={{ fontFamily: "'Montserrat', sans-serif" }}
             >
               No tienes productos
             </h3>
-            <p
-              className="text-xs text-[#44474c]/70 mb-6 max-w-sm mx-auto"
+            <p 
+              className="text-xs sm:text-sm text-[#44474c]/70 mb-6 max-w-sm mx-auto"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
               Comienza agregando tu primer producto a la tienda para empezar a vender.
             </p>
-            <Link href="/dashboard/vendedor/productos/nuevo">
-              <Button
-                className="!bg-[#0b1523] hover:!bg-slate-800 !text-white text-xs font-bold py-2.5 px-5 rounded-md transition-all shadow-sm focus:ring-0"
+            <Link href="/dashboard/vendedor/productos/nuevo" className="inline-block w-full sm:w-auto">
+              <Button 
+                className="w-full sm:w-auto !bg-[#0b1523] hover:!bg-slate-800 !text-white text-xs font-bold py-3 px-5 rounded-xl transition-all shadow-sm focus:ring-0"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
                 Agregar Producto
@@ -185,88 +185,89 @@ export default function SellerProducts() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             {filteredProducts.map((product) => (
-              <div
+              <div 
                 key={product.id}
                 className="bg-white rounded-2xl border border-[#efedef] overflow-hidden shadow-sm hover:border-slate-300 transition-all flex flex-col justify-between"
               >
                 <div>
                   <div className="relative">
-                    <div className="h-48 bg-[#fafbfc] overflow-hidden border-b border-[#efedef]">
+                    {/* Contenedor con altura fija y object-contain para mostrar la imagen completa sin distorsionar */}
+                    <div className="h-32 sm:h-48 bg-slate-900/5 overflow-hidden border-b border-[#efedef] flex items-center justify-center p-2">
                       {product.images && product.images.length > 0 ? (
                         <img
                           src={product.images[0]}
                           alt={product.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-300">
-                          <Package className="w-12 h-12" />
+                          <Package className="w-10 h-10" />
                         </div>
                       )}
                     </div>
-                    <div className="absolute top-3 right-3">
+                    <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
                       {getStatusBadge(product.status)}
                     </div>
                   </div>
 
-                  <div className="p-5">
-                    <div className="flex justify-between items-start gap-2 mb-2">
-                      <h3
-                        className="font-bold text-[#010f20] text-sm sm:text-base truncate"
+                  <div className="p-3 sm:p-5">
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-1 sm:gap-2 mb-2">
+                      <h3 
+                        className="font-bold text-[#010f20] text-xs sm:text-base truncate"
                         style={{ fontFamily: "'Montserrat', sans-serif" }}
                       >
                         {product.name}
                       </h3>
-                      <span
-                        className="font-bold text-sm text-[#dd9448] shrink-0"
+                      <span 
+                        className="font-bold text-xs sm:text-sm text-[#dd9448] shrink-0"
                         style={{ fontFamily: "'Montserrat', sans-serif" }}
                       >
                         ${product.price.toFixed(2)}
                       </span>
                     </div>
 
-                    <p
-                      className="text-xs text-[#44474c]/70 mb-4 line-clamp-2"
+                    <p 
+                      className="text-[11px] sm:text-xs text-[#44474c]/70 mb-3 sm:mb-4 line-clamp-2"
                       style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                     >
                       {product.description || 'Sin descripción'}
                     </p>
 
-                    <div className="flex items-center justify-between text-xs text-[#44474c]/60 pt-3 border-t border-[#efedef] mb-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                      <span className="flex items-center gap-1.5">
-                        <FolderOpen className="w-3.5 h-3.5 text-slate-400" /> {product.category}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-[10px] sm:text-xs text-[#44474c]/60 pt-2 sm:pt-3 border-t border-[#efedef] mb-3 sm:mb-4 gap-1 sm:gap-0" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                      <span className="flex items-center gap-1 truncate max-w-full">
+                        <FolderOpen className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 text-slate-400" /> <span className="truncate">{product.category}</span>
                       </span>
-                      <span className="flex items-center gap-1.5 font-medium text-slate-700">
-                        <Package className="w-3.5 h-3.5 text-slate-400" /> Stock: {product.stock}
+                      <span className="flex items-center gap-1 font-medium text-slate-700 shrink-0">
+                        <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400" /> Stock: {product.stock}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-5 pt-0">
-                  <div className="flex gap-2">
+                <div className="p-3 sm:p-5 pt-0">
+                  <div className="flex gap-1.5 sm:gap-2">
                     <Link href={`/dashboard/vendedor/productos/${product.id}/editar`} className="flex-1">
-                      <Button
+                      <Button 
                         variant="outline"
                         size="sm"
-                        className="w-full border border-gray-200 hover:border-slate-800 text-slate-700 text-xs font-semibold py-2.5 rounded-xl transition-all shadow-sm focus:ring-0 flex items-center justify-center gap-1.5"
+                        className="w-full border border-gray-200 hover:border-slate-800 text-slate-700 text-[11px] sm:text-xs font-semibold py-2 sm:py-2.5 rounded-xl transition-all shadow-sm focus:ring-0 flex items-center justify-center gap-1"
                         style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                       >
-                        <Edit3 className="w-3.5 h-3.5" /> Editar
+                        <Edit3 className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden xs:inline">Editar</span>
                       </Button>
                     </Link>
-                    <Button
+                    <Button 
                       variant="danger"
                       size="sm"
                       onClick={() => {
                         setSelectedProduct(product);
                         setShowDeleteModal(true);
                       }}
-                      className="!bg-red-50 hover:!bg-red-100 !text-red-600 border border-red-100 py-2.5 px-3 rounded-xl transition-all shadow-sm focus:ring-0 flex items-center justify-center cursor-pointer"
+                      className="!bg-red-50 hover:!bg-red-100 !text-red-600 border border-red-100 py-2 px-2.5 sm:py-2.5 sm:px-3 rounded-xl transition-all shadow-sm focus:ring-0 flex items-center justify-center cursor-pointer shrink-0"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </Button>
                   </div>
                 </div>
@@ -278,34 +279,26 @@ export default function SellerProducts() {
         {/* Modal de confirmación de eliminación */}
         {showDeleteModal && selectedProduct && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-xl border border-[#efedef]">
+            <div className="bg-white rounded-2xl max-w-md w-full p-5 sm:p-8 shadow-xl border border-[#efedef]">
               <div className="w-12 h-12 bg-red-50 text-red-600 rounded-xl flex items-center justify-center mb-4 shadow-inner">
                 <AlertTriangle className="w-6 h-6" />
               </div>
-              <h2
+              <h2 
                 className="text-xl font-bold text-[#010f20] mb-2"
                 style={{ fontFamily: "'Montserrat', sans-serif" }}
               >
                 Eliminar Producto
               </h2>
-              <p
+              <p 
                 className="text-xs sm:text-sm text-[#44474c]/70 mb-6"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
                 ¿Estás seguro de que deseas eliminar <span className="font-semibold text-slate-900">{selectedProduct.name}</span>? Esta acción no se puede deshacer y eliminará todas las imágenes asociadas.
               </p>
-              <div className="flex gap-3">
-                <Button
-                  variant="danger"
-                  className="flex-1 !bg-red-600 hover:!bg-red-700 !text-white text-xs font-bold py-3 rounded-xl transition-all shadow-sm focus:ring-0 cursor-pointer"
-                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                  onClick={handleDelete}
-                >
-                  Eliminar
-                </Button>
-                <Button
+              <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
+                <Button 
                   variant="outline"
-                  className="flex-1 border border-gray-200 text-slate-700 text-xs font-semibold py-3 rounded-xl transition-all shadow-sm focus:ring-0 cursor-pointer"
+                  className="w-full sm:flex-1 border border-gray-200 text-slate-700 text-xs font-semibold py-3 rounded-xl transition-all shadow-sm focus:ring-0 cursor-pointer"
                   style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                   onClick={() => {
                     setShowDeleteModal(false);
@@ -313,6 +306,14 @@ export default function SellerProducts() {
                   }}
                 >
                   Cancelar
+                </Button>
+                <Button 
+                  variant="danger"
+                  className="w-full sm:flex-1 !bg-red-600 hover:!bg-red-700 !text-white text-xs font-bold py-3 rounded-xl transition-all shadow-sm focus:ring-0 cursor-pointer"
+                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                  onClick={handleDelete}
+                >
+                  Eliminar
                 </Button>
               </div>
             </div>

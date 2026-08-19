@@ -42,8 +42,6 @@ export default function Sidebar() {
 
   useEffect(() => {
     if (role !== 'vendedor') return undefined;
-    // Sincroniza el contador al montar y después mediante Realtime/polling.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadUnreadNotifications();
     const interval = window.setInterval(loadUnreadNotifications, 30000);
     const handleRead = (event) => setUnreadNotifications((current) => Math.max(0, current - Number(event.detail?.count || 0)));
@@ -83,57 +81,44 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Botón flotante para abrir el menú en móvil */}
-      {!mobileOpen && (
+      {/* Barra superior móvil tipo header para evitar que se encima en el contenido */}
+      <div className="lg:hidden w-full bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-40 shadow-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-600 border border-amber-500/20">
+            <FiUserCheck className="w-3.5 h-3.5" />
+          </div>
+          <span className="font-bold text-slate-900 text-sm tracking-tight" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+            Apex<span className="text-[#FFB872]">Commerce</span>
+          </span>
+        </div>
         <button
           onClick={() => setMobileOpen(true)}
-          className="
-      lg:hidden
-      fixed
-      top-4
-      left-4
-      z-[60]
-      w-11
-      h-11
-      rounded-xl
-      bg-white
-      border
-      border-slate-200
-      shadow-md
-      flex
-      items-center
-      justify-center
-      text-slate-700
-      hover:bg-slate-50
-      active:scale-95
-      transition-all
-      cursor-pointer
-    "
+          className="p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 active:scale-95 transition-all flex items-center justify-center cursor-pointer"
           aria-label="Abrir menú"
         >
           <FiMenu className="w-5 h-5" />
         </button>
-      )}
+      </div>
 
-      {/* Capa oscura de fondo (Backdrop) cuando el menú móvil está activo */}
+      {/* Capa oscura de fondo (Backdrop) cuando el menú lateral móvil está abierto */}
       {mobileOpen && (
         <div
           onClick={() => setMobileOpen(false)}
-          className="fixed inset-0 bg-black/50 backdrop-blur-xs z-40 lg:hidden transition-opacity"
+          className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 lg:hidden transition-opacity"
         />
       )}
 
       {/* Estructura del Sidebar */}
       <aside
-        className={`fixed lg:sticky top-0 h-screen bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-50 shadow-sm ${collapsed ? 'w-20' : 'w-64'
-          } ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-          }`}
+        className={`fixed lg:sticky top-0 h-screen bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-50 shadow-sm ${
+          collapsed ? 'w-20' : 'w-64'
+        } ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
-        {/* Header del Sidebar con Logo y Botón de cierre móvil */}
+        {/* Header interno del Sidebar (Visible en desktop o dentro del drawer móvil) */}
         <div className="p-5 flex items-center justify-between border-b border-slate-100">
           {!collapsed ? (
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-primary-container/20 flex items-center justify-center text-primary border border-primary/10 shadow-xs flex-shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 border border-amber-500/20 shadow-xs flex-shrink-0">
                 <FiUserCheck className="w-4 h-4" />
               </div>
               <span className="font-bold text-slate-900 text-base tracking-tight ml-2" style={{ fontFamily: "'Montserrat', sans-serif" }}>
@@ -193,10 +178,11 @@ export default function Sidebar() {
                     key={item.name}
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
-                    className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group relative ${isActive
-                      ? 'bg-amber-50/80 text-amber-700 font-bold shadow-sm'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                      }`}
+                    className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group relative ${
+                      isActive
+                        ? 'bg-amber-50/80 text-amber-700 font-bold shadow-sm'
+                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    }`}
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                   >
                     <div className="flex items-center gap-3">
@@ -222,7 +208,6 @@ export default function Sidebar() {
                       </div>
                     )}
 
-                    {/* Indicador lateral activo */}
                     {isActive && (
                       <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-amber-500 rounded-r-full"></span>
                     )}
@@ -233,7 +218,7 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* Footer del Sidebar (Settings, Logout y Copyright) */}
+        {/* Footer del Sidebar */}
         <div className="p-4 border-t border-slate-100 space-y-2">
           <Link
             href={role === 'admin' ? '/dashboard/admin/configuraciones' : '/dashboard/vendedor/configuraciones'}

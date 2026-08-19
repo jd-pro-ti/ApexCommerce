@@ -237,12 +237,11 @@ export default function NewProduct() {
   }
 
   return (
-    <div className="bg-[#f8f9fa] min-h-screen pt-28 md:pt-12 pb-20">
-      {/* Contenedor ampliado a max-w-7xl para aprovechar pantallas grandes */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="bg-[#f8f9fa] min-h-screen pt-5 md:pt-12 pb-20 px-3 sm:px-6 lg:px-8 overflow-x-hidden" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+      <div className="max-w-7xl mx-auto w-full">
         
         {/* Cabecera y Navegación */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <span 
             className="text-[11px] font-bold tracking-widest text-[#dd9448] uppercase block mb-1"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
@@ -250,13 +249,13 @@ export default function NewProduct() {
             INVENTARIO
           </span>
           <h1 
-            className="text-3xl sm:text-4xl font-bold text-[#010f20] tracking-tight"
+            className="text-2xl sm:text-4xl font-extrabold text-[#010f20] tracking-tight"
             style={{ fontFamily: "'Montserrat', sans-serif" }}
           >
             Nuevo Producto
           </h1>
           <p 
-            className="text-sm text-[#44474c]/70 mt-1.5"
+            className="text-xs sm:text-sm text-[#44474c]/70 mt-1.5"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
             Completa los datos para agregar un nuevo artículo a tu tienda.
@@ -264,20 +263,20 @@ export default function NewProduct() {
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-medium" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs sm:text-sm font-medium" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
           {/* Grid de 12 columnas para un diseño fluido y proporcionado */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
             
             {/* Columna Principal: Información General (8 de 12 columnas) */}
-            <div className="lg:col-span-8">
-              <div className="bg-white rounded-2xl border border-[#efedef] p-8 sm:p-10 shadow-sm">
+            <div className="lg:col-span-8 min-w-0">
+              <div className="bg-white rounded-2xl border border-[#efedef] p-4 sm:p-10 shadow-sm overflow-hidden">
                 <h3 
-                  className="font-bold text-[#010f20] text-lg mb-6 pb-4 border-b border-[#efedef]"
+                  className="font-bold text-[#010f20] text-base sm:text-lg mb-6 pb-4 border-b border-[#efedef]"
                   style={{ fontFamily: "'Montserrat', sans-serif" }}
                 >
                   Información del Producto
@@ -390,7 +389,7 @@ export default function NewProduct() {
                     </div>
                   </div>
 
-                  <div className="pt-2">
+                  <div className="pt-2 overflow-hidden">
                     <SpecificationsInput
                       value={specifications}
                       onChange={setSpecifications}
@@ -408,11 +407,11 @@ export default function NewProduct() {
                       name="featured"
                       checked={formData.featured}
                       onChange={handleChange}
-                      className="h-5 w-5 text-slate-900 focus:ring-slate-800 border-gray-300 rounded cursor-pointer"
+                      className="h-5 w-5 text-slate-900 focus:ring-slate-800 border-gray-300 rounded cursor-pointer shrink-0"
                     />
                     <label 
                       htmlFor="featured" 
-                      className="ml-3 text-sm font-medium text-slate-700 select-none cursor-pointer"
+                      className="ml-3 text-xs sm:text-sm font-medium text-slate-700 select-none cursor-pointer"
                       style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                     >
                       Destacar producto en la tienda principal
@@ -423,17 +422,17 @@ export default function NewProduct() {
             </div>
 
             {/* Columna Lateral: Imágenes y Acciones (4 de 12 columnas) */}
-            <div className="lg:col-span-4 space-y-6">
-              <div className="bg-white rounded-2xl border border-[#efedef] p-6 sm:p-8 shadow-sm">
+            <div className="lg:col-span-4 space-y-6 min-w-0">
+              <div className="bg-white rounded-2xl border border-[#efedef] p-4 sm:p-8 shadow-sm overflow-hidden">
                 <h3 
-                  className="font-bold text-[#010f20] text-lg mb-5 pb-3 border-b border-[#efedef]"
+                  className="font-bold text-[#010f20] text-base sm:text-lg mb-5 pb-3 border-b border-[#efedef]"
                   style={{ fontFamily: "'Montserrat', sans-serif" }}
                 >
                   Imágenes
                 </h3>
                 
                 <div className="space-y-5">
-                  <div className="border-2 border-dashed border-gray-200 hover:border-slate-400 rounded-2xl p-6 text-center transition-colors bg-[#fafbfc]">
+                  <div className="border-2 border-dashed border-gray-200 hover:border-slate-400 rounded-2xl p-4 sm:p-6 text-center transition-colors bg-[#fafbfc]">
                     <input
                       type="file"
                       accept="image/*"
@@ -477,7 +476,7 @@ export default function NewProduct() {
                           <button
                             type="button"
                             onClick={() => removeImage(image)}
-                            className="absolute top-2 right-2 bg-red-600 text-white rounded-lg w-7 h-7 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md cursor-pointer"
+                            className="absolute top-2 right-2 bg-red-600 text-white rounded-lg w-7 h-7 flex items-center justify-center opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity shadow-md cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -496,21 +495,21 @@ export default function NewProduct() {
               </div>
 
               {/* Botones de acción */}
-              <div className="bg-white rounded-2xl border border-[#efedef] p-6 shadow-sm space-y-3">
+              <div className="bg-white rounded-2xl border border-[#efedef] p-5 sm:p-6 shadow-sm space-y-3">
                 <Button 
                   type="submit" 
-                  className="w-full !bg-[#0b1523] hover:!bg-slate-800 !text-white text-sm font-bold py-4 rounded-xl transition-all shadow-sm focus:ring-0 uppercase tracking-wide flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full !bg-[#0b1523] hover:!bg-slate-800 !text-white text-xs sm:text-sm font-bold py-3.5 sm:py-4 rounded-xl transition-all shadow-sm focus:ring-0 uppercase tracking-wide flex items-center justify-center gap-2 cursor-pointer"
                   style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                   loading={loading}
                 >
-                  <Plus className="w-4 h-4" /> {loading ? 'Creando...' : 'Crear Producto'}
+                  <Plus className="w-4 h-4 shrink-0" /> {loading ? 'Creando...' : 'Crear Producto'}
                 </Button>
                 
                 <Link href="/dashboard/vendedor/productos" className="block">
                   <Button 
                     type="button"
                     variant="outline" 
-                    className="w-full border border-gray-200 hover:border-slate-800 text-slate-700 text-sm font-semibold py-3.5 rounded-xl transition-all shadow-sm focus:ring-0 cursor-pointer"
+                    className="w-full border border-gray-200 hover:border-slate-800 text-slate-700 text-xs sm:text-sm font-semibold py-3.5 rounded-xl transition-all shadow-sm focus:ring-0 cursor-pointer"
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                   >
                     Cancelar

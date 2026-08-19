@@ -228,7 +228,7 @@ export default function EditProduct() {
   }
 
   return (
-    <div className="bg-[#f8f9fa] min-h-screen pt-28 md:pt-12 pb-20">
+    <div className="bg-[#f8f9fa] min-h-screen pt-5 md:pt-12 pb-20">
       {/* Contenedor ampliado a max-w-7xl para aprovechar pantallas grandes */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
