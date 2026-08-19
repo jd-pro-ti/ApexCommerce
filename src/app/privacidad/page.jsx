@@ -5,7 +5,7 @@ export const metadata = {
 
 export default function PrivacyPage() {
   return (
-    <main className="min-h-screen bg-[#f8f9fa] px-6 py-16 text-[#010f20]">
+    <main className="min-h-screen bg-[#f8f9fa] px-6 py-24 text-[#010f20]">
       <article className="mx-auto max-w-3xl rounded-3xl bg-white p-8 shadow-sm sm:p-12">
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#dd9448]">Apex Commerce</p>
         <h1 className="mt-3 text-3xl font-extrabold">Aviso de Privacidad</h1>

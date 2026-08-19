@@ -4,6 +4,7 @@ import { useRef, useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { useAlert } from '@/components/ui/AlertContext'; // <-- Importa tu contexto de alertas
 import { productService } from '@/services/productService';
 import SpecificationsInput from '@/components/dashboard/SpecificationsInput';
 import Button from '@/components/ui/Button';
@@ -20,18 +21,19 @@ export default function EditProduct() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
+  const { showAlert } = useAlert(); // <-- Inicializa el hook de alertas
   const productId = params.id;
-  
+   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [images, setImages] = useState([]);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+   
   const [specifications, setSpecifications] = useState({});
   const pendingSpecificationRef = useRef({ key: '', value: '' });
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -63,15 +65,14 @@ export default function EditProduct() {
 
   const loadProduct = async () => {
     setLoading(true);
-    setError('');
     try {
       const result = await productService.getProductById(productId);
       if (result.success) {
         const product = result.product;
-        // Verificar que el vendedor es el dueño del producto
         if (product.seller_id !== user.id) {
-          setError('No tienes permiso para editar este producto');
+          showAlert('No tienes permiso para editar este producto', 'error');
           setLoading(false);
+          router.push('/dashboard/vendedor/productos');
           return;
         }
         setFormData({
@@ -86,10 +87,10 @@ export default function EditProduct() {
         setImages(product.images || []);
         setSpecifications(product.specifications || {});
       } else {
-        setError(result.error || 'Error al cargar el producto');
+        showAlert(result.error || 'Error al cargar el producto', 'error');
       }
     } catch (error) {
-      setError('Error al cargar el producto');
+      showAlert('Error al cargar el producto', 'error');
     } finally {
       setLoading(false);
     }
@@ -110,16 +111,15 @@ export default function EditProduct() {
     setUploadingImages(true);
     try {
       const result = await productService.uploadImages(files, productId);
-      
+       
       if (result.success) {
         setImages(prev => [...prev, ...result.urls]);
-        setSuccess('Imágenes subidas correctamente');
-        setTimeout(() => setSuccess(''), 3000);
+        showAlert('Imágenes subidas correctamente', 'success');
       } else {
-        setError(result.error || 'Error al subir imágenes');
+        showAlert(result.error || 'Error al subir imágenes', 'error');
       }
     } catch (error) {
-      setError('Error al subir imágenes');
+      showAlert('Error al subir imágenes', 'error');
     } finally {
       setUploadingImages(false);
     }
@@ -130,33 +130,33 @@ export default function EditProduct() {
       const result = await productService.deleteImage(imageUrl);
       if (result.success) {
         setImages(images.filter(img => img !== imageUrl));
-        setSuccess('Imagen eliminada correctamente');
-        setTimeout(() => setSuccess(''), 3000);
+        showAlert('Imagen eliminada correctamente', 'success');
+      } else {
+        showAlert(result.error || 'Error al eliminar la imagen', 'error');
       }
     } catch (error) {
-      setError('Error al eliminar imagen');
+      showAlert('Error al eliminar imagen', 'error');
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
     setSaving(true);
 
     if (!formData.name.trim()) {
-      setError('El nombre del producto es requerido');
+      showAlert('El nombre del producto es requerido', 'error');
       setSaving(false);
       return;
     }
 
     const descriptionWords = formData.description.trim().split(/\s+/).filter(Boolean).length;
     if (descriptionWords < 20) {
-      setError('La descripción debe tener al menos 20 palabras');
+      showAlert('La descripción debe tener al menos 20 palabras', 'error');
       setSaving(false);
       return;
     }
 
+    // Sincronizar especificaciones pendientes si las hay en el input de texto
     const specificationsToSave = { ...specifications };
     const latestPendingSpecification = pendingSpecificationRef.current;
     if (latestPendingSpecification.key.trim() && latestPendingSpecification.value.trim()) {
@@ -165,26 +165,27 @@ export default function EditProduct() {
 
     const validSpecifications = Object.entries(specificationsToSave)
       .filter(([key, value]) => key.trim() && String(value).trim());
+     
     if (validSpecifications.length < 2) {
-      setError('Agrega al menos 2 características o detalles del producto');
+      showAlert('Agrega al menos 2 características o detalles del producto', 'error');
       setSaving(false);
       return;
     }
 
     if (!formData.price || parseFloat(formData.price) <= 0) {
-      setError('El precio debe ser mayor a 0');
+      showAlert('El precio debe ser mayor a 0', 'error');
       setSaving(false);
       return;
     }
 
     if (!formData.category_id) {
-      setError('La categoría es requerida');
+      showAlert('La categoría es requerida', 'error');
       setSaving(false);
       return;
     }
 
     if (!formData.stock || parseInt(formData.stock) < 0) {
-      setError('El stock debe ser un número válido');
+      showAlert('El stock debe ser un número válido', 'error');
       setSaving(false);
       return;
     }
@@ -203,17 +204,17 @@ export default function EditProduct() {
       };
 
       const result = await productService.updateProduct(productId, updateData);
-      
+       
       if (result.success) {
-        setSuccess('Producto actualizado correctamente');
+        showAlert('Producto actualizado correctamente', 'success');
         setTimeout(() => {
           router.push('/dashboard/vendedor/productos');
         }, 1500);
       } else {
-        setError(result.error || 'Error al actualizar producto');
+        showAlert(result.error || 'Error al actualizar producto', 'error');
       }
     } catch (error) {
-      setError('Error al actualizar producto');
+      showAlert('Error al actualizar producto', 'error');
     } finally {
       setSaving(false);
     }
@@ -229,9 +230,8 @@ export default function EditProduct() {
 
   return (
     <div className="bg-[#f8f9fa] min-h-screen pt-5 md:pt-12 pb-20">
-      {/* Contenedor ampliado a max-w-7xl para aprovechar pantallas grandes */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+         
         {/* Cabecera y Navegación */}
         <div className="mb-8">
           <span 
@@ -254,23 +254,10 @@ export default function EditProduct() {
           </p>
         </div>
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-medium" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm font-medium" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-            {success}
-          </div>
-        )}
-
         <form onSubmit={handleSubmit}>
-          {/* Grid de 12 columnas para un diseño fluido y proporcionado */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            
-            {/* Columna Principal: Información General (8 de 12 columnas) */}
+             
+            {/* Columna Principal */}
             <div className="lg:col-span-8">
               <div className="bg-white rounded-2xl border border-[#efedef] p-8 sm:p-10 shadow-sm">
                 <h3 
@@ -419,7 +406,7 @@ export default function EditProduct() {
               </div>
             </div>
 
-            {/* Columna Lateral: Imágenes y Acciones (4 de 12 columnas) */}
+            {/* Columna Lateral: Imágenes y Acciones */}
             <div className="lg:col-span-4 space-y-6">
               <div className="bg-white rounded-2xl border border-[#efedef] p-6 sm:p-8 shadow-sm">
                 <h3 
@@ -428,7 +415,7 @@ export default function EditProduct() {
                 >
                   Imágenes
                 </h3>
-                
+                 
                 <div className="space-y-5">
                   <div className="border-2 border-dashed border-gray-200 hover:border-slate-400 rounded-2xl p-6 text-center transition-colors bg-[#fafbfc]">
                     <input
@@ -502,7 +489,7 @@ export default function EditProduct() {
                 >
                   <Save className="w-4 h-4" /> {saving ? 'Guardando...' : 'Guardar Cambios'}
                 </Button>
-                
+                 
                 <Link href="/dashboard/vendedor/productos" className="block">
                   <Button 
                     type="button"

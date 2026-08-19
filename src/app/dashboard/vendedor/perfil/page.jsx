@@ -13,6 +13,7 @@ import SellerProfileAlert from '@/components/ui/SellerProfileAlert';
 import { getAge, validateName, validatePhone, validatePostalCode } from '@/utils/validation';
 import { Camera, Edit3, LogOut, Save, User, MapPin, BriefcaseBusiness, Bell, Globe, Trash2 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
+import { useAlert } from '@/components/ui/AlertContext';
 
 const defaultProfile = {
   name: '',
@@ -85,9 +86,11 @@ function VendedorPerfilPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fileInputRef = useRef(null);
-  const formContainerRef = useRef(null); // Referencia para el scroll automático
+  const formContainerRef = useRef(null);
 
   const { user, isAuthenticated, loading: authLoading, updateProfile: updateAuthProfile, logout } = useAuth();
+  const { showAlert } = useAlert();
+
   const [profile, setProfile] = useState(defaultProfile);
   const [formData, setFormData] = useState(defaultProfile);
   const [activeTab, setActiveTab] = useState('profile');
@@ -104,7 +107,6 @@ function VendedorPerfilPageContent() {
   const [deleteAccountError, setDeleteAccountError] = useState('');
   const [profileRequirements, setProfileRequirements] = useState([]);
 
-  // Efecto para realizar el scroll automático suave cada vez que cambie de pestaña
   useEffect(() => {
     if (formContainerRef.current) {
       formContainerRef.current.scrollIntoView({
@@ -134,10 +136,10 @@ function VendedorPerfilPageContent() {
       setProfile(nextProfile);
       setFormData(nextProfile);
     } else {
-      toast.error(result.error || 'No se pudo cargar el perfil');
+      showAlert(result.error || 'No se pudo cargar el perfil', 'error');
     }
     setLoading(false);
-  }, [user?.id]);
+  }, [user?.id, showAlert]);
 
   const loadPaypalAccount = useCallback(async () => {
     if (!user?.id) return;
@@ -173,6 +175,7 @@ function VendedorPerfilPageContent() {
       window.location.href = result.actionUrl;
     } catch (error) {
       setPaypalError(error.message);
+      showAlert(error.message, 'error');
       setPaypalLoading(false);
     }
   };
@@ -190,9 +193,10 @@ function VendedorPerfilPageContent() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'No se pudo desconectar PayPal');
       setPaypalAccount(null);
-      toast.success('Cuenta PayPal desconectada. Ya puedes conectar otra cuenta.');
+      showAlert('Cuenta PayPal desconectada. Ya puedes conectar otra cuenta.', 'success');
     } catch (error) {
       setPaypalError(error.message);
+      showAlert(error.message, 'error');
     } finally {
       setPaypalLoading(false);
     }
@@ -239,11 +243,11 @@ function VendedorPerfilPageContent() {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      toast.error('Solo se permiten imágenes');
+      showAlert('Solo se permiten imágenes', 'error');
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('La imagen no debe superar los 5MB');
+      showAlert('La imagen no debe superar los 5MB', 'error');
       return;
     }
 
@@ -253,9 +257,9 @@ function VendedorPerfilPageContent() {
       setProfile((current) => ({ ...current, avatar_url: result.avatar_url }));
       setFormData((current) => ({ ...current, avatar_url: result.avatar_url }));
       await updateAuthProfile({ avatar_url: result.avatar_url });
-      toast.success('Imagen actualizada correctamente');
+      showAlert('Imagen actualizada correctamente', 'success');
     } else {
-      toast.error(result.error || 'No se pudo actualizar la imagen');
+      showAlert(result.error || 'No se pudo actualizar la imagen', 'error');
     }
     setUploadingAvatar(false);
     event.target.value = '';
@@ -284,9 +288,9 @@ function VendedorPerfilPageContent() {
       await updateAuthProfile({ name: formData.name, avatar_url: formData.avatar_url });
       setProfile(formData);
       setIsEditing(false);
-      toast.success('Perfil actualizado correctamente');
+      showAlert('Perfil actualizado correctamente', 'success');
     } catch (error) {
-      toast.error(error.message || 'No se pudo actualizar el perfil');
+      showAlert(error.message || 'No se pudo actualizar el perfil', 'error');
     } finally {
       setSaving(false);
     }
@@ -322,7 +326,7 @@ function VendedorPerfilPageContent() {
       }
       setDeleteAccountOpen(false);
       setDeleteReason('');
-      toast.success('Solicitud enviada. El administrador revisará tu cuenta.');
+      showAlert('Solicitud enviada. El administrador revisará tu cuenta.', 'success');
     } catch (error) {
       setDeletingAccount(false);
       setDeleteAccountError(error.message);
@@ -341,7 +345,6 @@ function VendedorPerfilPageContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 px-3 py-6 text-slate-800 sm:px-6 lg:px-10" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
-      <Toaster position="top-center" />
       {profileRequirements.length > 0 && <SellerProfileAlert missing={profileRequirements} onClose={closeProfileRequirements} />}
       <div className="mx-auto max-w-7xl">
         <div className="mb-6 sm:mb-8">
@@ -414,7 +417,7 @@ function VendedorPerfilPageContent() {
                   <p className="mt-1 max-w-2xl text-xs sm:text-sm text-slate-500">Recibe el 85% de tus ventas. Apex Commerce retiene el 15% de comisión.</p>
                   {paypalAccount?.onboarding_status === 'pending' && <p className="mt-2 text-xs font-semibold text-amber-600">Onboarding pendiente. Continúa el proceso en PayPal.</p>}
                   {paypalAccount?.onboarding_status === 'connected' && <p className="mt-2 text-xs font-semibold text-emerald-600">Cuenta PayPal conectada correctamente.</p>}
-                  {paypalError && <Alert variant="error" className="mt-3">{paypalError}</Alert>}
+                  {paypalError && <div className="mt-3 rounded-xl bg-rose-50 p-3 text-xs text-rose-700">{paypalError}</div>}
                 </div>
                 <div className="flex shrink-0 flex-wrap items-center gap-2">
                   {paypalAccount?.onboarding_status === 'connected' && (
@@ -484,7 +487,7 @@ function VendedorPerfilPageContent() {
                         <ProfileField inputClass={inputClass} disabled={!isEditing} label="Referencia" name="reference" value={formData.details.reference} onChange={handleDetailsChange} placeholder="Punto de referencia para ubicarte" />
                       </div>
                     </div>
-                    <Alert variant="info" className="mt-5 text-xs sm:text-sm">Es necesario completar correctamente toda tu ubicación. Si está incompleta, tus pagos podrían no llegar correctamente.</Alert>
+                    <div className="mt-5 rounded-xl bg-blue-50 p-4 text-xs sm:text-sm text-blue-800">Es necesario completar correctamente toda tu ubicación. Si está incompleta, tus pagos podrían no llegar correctamente.</div>
                   </>
                 )}
 

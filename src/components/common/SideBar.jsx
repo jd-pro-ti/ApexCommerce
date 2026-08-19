@@ -145,21 +145,6 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* Buscador */}
-        {!collapsed && (
-          <div className="px-4 py-4">
-            <div className="relative flex items-center">
-              <FiSearch className="absolute left-3 text-slate-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Buscar elemento..."
-                className="w-full bg-slate-100 text-slate-900 text-xs rounded-xl pl-9 pr-4 py-2.5 border border-transparent focus:outline-none focus:border-[#38bdf8] focus:bg-white transition-colors placeholder:text-slate-400"
-                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-              />
-            </div>
-          </div>
-        )}
-
         {/* Contenido desplazable del menú */}
         <div className="flex-1 overflow-y-auto px-3 py-2 space-y-6 scrollbar-thin scrollbar-thumb-slate-200">
           <div>

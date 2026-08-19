@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import Button from '@/components/ui/Button';
-import { Package, Gift, Tag, UserPlus, MailCheck, CheckCircle2, Circle } from 'lucide-react';
+import { Package, Gift, Tag, UserPlus, MailCheck, CheckCircle2, Circle, Eye, EyeOff } from 'lucide-react';
 import Alert from '@/components/ui/Alert';
 import { validateEmail, validatePassword } from '@/utils/validation';
 
@@ -49,8 +49,6 @@ export default function RegistroPage() {
     }
     if (!validatePassword(formData.password)) {
       setError('La contraseña debe tener mínimo 8 caracteres, mayúscula, minúscula, número y símbolo');
-      return false;
-      setError('La contraseña debe contener al menos 6 caracteres');
       return false;
     }
     if (formData.password !== formData.confirmPassword) {
@@ -230,35 +228,72 @@ export default function RegistroPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-bold text-[#010f20] mb-1 uppercase tracking-wider" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Contraseña</label>
-                <input 
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Mínimo 8 caracteres"
-                  value={formData.password} 
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })} 
-                  required 
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#efedef] text-sm focus:outline-none focus:border-[#010f20] transition-colors bg-[#fdfdfd] text-[#010f20]" 
-                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }} 
-                />
-                <button type="button" onClick={() => setShowPassword((current) => !current)} className="mt-1 text-[10px] font-bold text-slate-500 hover:text-slate-900">{showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}</button>
-                <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1 text-[10px] text-slate-500">{passwordChecks.map(([label, valid]) => <span key={label} className={`flex items-center gap-1 ${valid ? 'text-emerald-600' : ''}`}>{valid ? <CheckCircle2 className="h-3 w-3" /> : <Circle className="h-3 w-3" />}{label}</span>)}</div>
+                <div className="relative">
+                  <input 
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Mínimo 8 caracteres"
+                    value={formData.password} 
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })} 
+                    required 
+                    className="w-full px-4 py-2.5 pr-10 rounded-xl border border-[#efedef] text-sm focus:outline-none focus:border-[#010f20] transition-colors bg-[#fdfdfd] text-[#010f20] [&::-ms-reveal]:hidden [&::-ms-clear]:hidden" 
+                    style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", WebkitTextSecurity: showPassword ? 'none' : undefined }} 
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword((current) => !current)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#44474c] hover:text-[#010f20] cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-[11px] font-bold text-[#010f20] mb-1 uppercase tracking-wider" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Confirmar</label>
-                <input 
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder="Repite contraseña" 
-                  value={formData.confirmPassword} 
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} 
-                  required 
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#efedef] text-sm focus:outline-none focus:border-[#010f20] transition-colors bg-[#fdfdfd] text-[#010f20]" 
-                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }} 
-                />
-                <button type="button" onClick={() => setShowConfirmPassword((current) => !current)} className="mt-1 text-[10px] font-bold text-slate-500 hover:text-slate-900">{showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}</button>
+                <div className="relative">
+                  <input 
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="Repite contraseña" 
+                    value={formData.confirmPassword} 
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} 
+                    required 
+                    className="w-full px-4 py-2.5 pr-10 rounded-xl border border-[#efedef] text-sm focus:outline-none focus:border-[#010f20] transition-colors bg-[#fdfdfd] text-[#010f20] [&::-ms-reveal]:hidden [&::-ms-clear]:hidden" 
+                    style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }} 
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowConfirmPassword((current) => !current)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#44474c] hover:text-[#010f20] cursor-pointer"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Botón principal de Registro con color principal (#010f20) y hover en cobre (#dd9448) */}
-            <label className="flex items-start gap-2 text-xs text-[#44474c]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            {/* Requisitos de Contraseña */}
+            <div className="bg-[#f9fafc] p-2.5 rounded-xl border border-[#efedef]">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-[#010f20]/60 mb-1.5" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                Requisitos de seguridad:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {passwordChecks.map(([label, valid]) => (
+                  <span 
+                    key={label} 
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium transition-all ${
+                      valid 
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                        : 'bg-white text-[#44474c] border border-[#efedef]'
+                    }`}
+                    style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                  >
+                    {valid ? <CheckCircle2 className="h-3 w-3 text-emerald-600 shrink-0" /> : <Circle className="h-3 w-3 text-[#44474c]/40 shrink-0" />}
+                    {label}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <label className="flex items-start gap-2 text-xs text-[#44474c] pt-1" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               <input type="checkbox" checked={acceptedTerms} onChange={(e) => { setAcceptedTerms(e.target.checked); if (error) setError(''); }} className="mt-0.5 h-4 w-4 rounded border-[#efedef] text-[#010f20] focus:ring-[#010f20]" />
               <span>Acepto los <Link href="/terminos" target="_blank" className="font-bold text-[#010f20] underline">Términos y condiciones</Link> y el <Link href="/privacidad" target="_blank" className="font-bold text-[#010f20] underline">Aviso de Privacidad</Link>.</span>
             </label>

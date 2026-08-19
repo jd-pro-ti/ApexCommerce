@@ -2,6 +2,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { useAlert } from '@/components/ui/AlertContext';
 import { productService } from '@/services/productService';
 import { profileService } from '@/services/profileService';
 import { supabase } from '@/lib/supabase';
@@ -20,8 +21,8 @@ import {
 export default function NewProduct() {
   const router = useRouter();
   const { user } = useAuth();
+  const { showAlert } = useAlert();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [images, setImages] = useState([]);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -125,10 +126,10 @@ export default function NewProduct() {
       if (result.success) {
         setImages(prev => [...prev, ...result.urls]);
       } else {
-        setError(result.error || 'Error al subir imágenes');
+        showAlert(result.error || 'Error al subir imágenes', 'error');
       }
     } catch (error) {
-      setError('Error al subir imágenes');
+      showAlert('Error al subir imágenes', 'error');
     } finally {
       setUploadingImages(false);
     }
@@ -139,51 +140,45 @@ export default function NewProduct() {
       const result = await productService.deleteImage(imageUrl);
       if (result.success) {
         setImages(images.filter(img => img !== imageUrl));
+      } else {
+        showAlert(result.error || 'Error al eliminar imagen', 'error');
       }
     } catch (error) {
-      setError('Error al eliminar imagen');
+      showAlert('Error al eliminar imagen', 'error');
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
 
     if (!profileValidation.valid) {
       router.push(`/dashboard/vendedor/perfil?required=1&missing=${missingRequirements.join(',')}`);
       return;
     }
 
-    setLoading(true);
-
     if (!formData.name.trim()) {
-      setError('El nombre del producto es requerido');
-      setLoading(false);
+      showAlert('El nombre del producto es requerido', 'error');
       return;
     }
 
     const descriptionWords = formData.description.trim().split(/\s+/).filter(Boolean).length;
     if (descriptionWords < 20) {
-      setError('La descripción debe tener al menos 20 palabras');
-      setLoading(false);
+      showAlert('La descripción debe tener al menos 20 palabras', 'error');
       return;
     }
 
     if (!formData.price || parseFloat(formData.price) <= 0) {
-      setError('El precio debe ser mayor a 0');
-      setLoading(false);
+      showAlert('El precio debe ser mayor a 0', 'error');
       return;
     }
 
     if (!formData.category_id) {
-      setError('La categoría es requerida');
-      setLoading(false);
+      showAlert('La categoría es requerida', 'error');
       return;
     }
 
     if (!formData.stock || parseInt(formData.stock) < 0) {
-      setError('El stock debe ser un número válido');
-      setLoading(false);
+      showAlert('El stock debe ser un número válido', 'error');
       return;
     }
 
@@ -195,10 +190,11 @@ export default function NewProduct() {
 
     const validSpecifications = Object.entries(specificationsToSave).filter(([key, value]) => key.trim() && String(value).trim());
     if (validSpecifications.length < 2) {
-      setError('Agrega al menos 2 características o detalles del producto');
-      setLoading(false);
+      showAlert('Agrega al menos 2 características o detalles del producto', 'error');
       return;
     }
+
+    setLoading(true);
 
     try {
       const productData = {
@@ -217,12 +213,13 @@ export default function NewProduct() {
       const result = await productService.createProduct(productData);
       
       if (result.success) {
+        showAlert('Producto creado correctamente', 'success');
         router.push('/dashboard/vendedor/productos');
       } else {
-        setError(result.error || 'Error al crear producto');
+        showAlert(result.error || 'Error al crear producto', 'error');
       }
     } catch (error) {
-      setError('Error al crear producto');
+      showAlert('Error al crear producto', 'error');
     } finally {
       setLoading(false);
     }
@@ -261,12 +258,6 @@ export default function NewProduct() {
             Completa los datos para agregar un nuevo artículo a tu tienda.
           </p>
         </div>
-
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs sm:text-sm font-medium" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-            {error}
-          </div>
-        )}
 
         <form onSubmit={handleSubmit}>
           {/* Grid de 12 columnas para un diseño fluido y proporcionado */}

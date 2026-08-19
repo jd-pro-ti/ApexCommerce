@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { ArrowLeft, CheckCircle2, Clock, Package, Truck, XCircle } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useOrders } from '@/context/OrderContext';
+import { useAlert } from '@/components/ui/AlertContext'; // <-- Importa tu contexto de alertas
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import toast from 'react-hot-toast';
 
 const labels = { pending: 'Pendiente', processing: 'En proceso', shipped: 'Enviado', delivered: 'Entregado', cancelled: 'Cancelado' };
 const colors = { pending: 'bg-yellow-50 text-yellow-700 border-yellow-200', processing: 'bg-blue-50 text-blue-700 border-blue-200', shipped: 'bg-purple-50 text-purple-700 border-purple-200', delivered: 'bg-emerald-50 text-emerald-700 border-emerald-200', cancelled: 'bg-rose-50 text-rose-700 border-rose-200' };
@@ -15,6 +15,7 @@ export default function SellerOrderDetail() {
   const { id } = useParams();
   const router = useRouter();
   const { getOrder, updateOrderItemStatus } = useOrders();
+  const { showAlert } = useAlert(); // <-- Inicializa el hook de alertas
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
@@ -29,9 +30,11 @@ export default function SellerOrderDetail() {
     setUpdatingId(item.id);
     const result = await updateOrderItemStatus(item.id, status);
     setUpdatingId(null);
-    if (!result?.success) return toast.error(result?.error || 'No se pudo actualizar el estado.');
+    if (!result?.success) {
+      return showAlert(result?.error || 'No se pudo actualizar el estado.', 'error');
+    }
     setOrder((previous) => ({ ...previous, order_items: previous.order_items.map((entry) => entry.id === item.id ? { ...entry, status } : entry) }));
-    toast.success(`Producto actualizado a ${labels[status]}.`);
+    showAlert(`Producto actualizado a ${labels[status]}.`, 'success');
   };
 
   if (loading) return <div className="min-h-[60vh] flex items-center justify-center"><LoadingSpinner size="lg" /></div>;

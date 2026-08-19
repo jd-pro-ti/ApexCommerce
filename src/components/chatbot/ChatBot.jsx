@@ -160,7 +160,7 @@ const ChatBot = () => {
     return parts.length > 0 ? parts : content;
   };
 
-  const renderMessageContent = (content) => {
+const renderMessageContent = (content) => {
     if (getUserRoleContext() === 'VENDEDOR') {
       return renderSellerMessage(content.replace(/\[PRODUCT(?:O)?:.*?\]/g, '').trim());
     }
@@ -179,32 +179,32 @@ const ChatBot = () => {
       try {
         const productData = JSON.parse(match[1]);
         parts.push(
-          <div key={match.index} className="my-2 p-2.5 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center gap-3">
+          <div key={match.index} className="my-2 p-2.5 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center gap-2.5 sm:gap-3">
             <img
               src={productData.image && productData.image !== 'sin-imagen' ? productData.image : '/placeholder.png'}
               alt={productData.name}
-              className="w-14 h-14 object-cover rounded-lg border border-gray-100 flex-shrink-0"
+              className="w-12 h-12 sm:w-14 sm:h-14 object-cover rounded-lg border border-gray-100 flex-shrink-0"
             />
             <div className="flex-1 min-w-0">
               <p className="font-extrabold text-xs text-[#010f20] truncate">{productData.name}</p>
-              <p className="text-[11px] font-bold text-emerald-600">${productData.price}</p>
+              <p className="text-[11px] font-bold text-emerald-600 mb-1">${productData.price}</p>
 
-              <div className="flex items-center gap-2 mt-1.5">
+              <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => {
                     router.push(`/producto/${slugify(productData.name)}`);
                   }}
-                  className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-[#010f20] rounded-md text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                  className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-[#010f20] rounded-md text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap"
                 >
-                  <FaEye size={10} /> Ver
+                  <FaEye size={9} /> Ver
                 </button>
                 <button
                   onClick={() => {
                     handleAddToCartReal(productData);
                   }}
-                  className="px-2 py-1 bg-[#010f20] hover:bg-[#010f20]/90 text-white rounded-md text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                  className="px-2 py-1 bg-[#010f20] hover:bg-[#010f20]/90 text-white rounded-md text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap"
                 >
-                  <FaShoppingCart size={10} /> Comprar
+                  <FaShoppingCart size={9} /> Comprar
                 </button>
               </div>
             </div>

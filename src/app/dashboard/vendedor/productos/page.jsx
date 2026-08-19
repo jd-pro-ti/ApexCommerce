@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { useAlert } from '@/components/ui/AlertContext';
 import { productService } from '@/services/productService';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -20,9 +21,9 @@ import {
 
 export default function SellerProducts() {
   const { user } = useAuth();
+  const { showAlert } = useAlert();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -35,16 +36,15 @@ export default function SellerProducts() {
 
   const loadProducts = async () => {
     setLoading(true);
-    setError('');
     try {
       const result = await productService.getSellerProducts(user.id);
       if (result.success) {
         setProducts(result.products);
       } else {
-        setError(result.error || 'Error al cargar productos');
+        showAlert(result.error || 'Error al cargar productos', 'error');
       }
     } catch (error) {
-      setError('Error al cargar productos');
+      showAlert('Error al cargar productos', 'error');
     } finally {
       setLoading(false);
     }
@@ -59,11 +59,12 @@ export default function SellerProducts() {
         setProducts(products.filter(p => p.id !== selectedProduct.id));
         setShowDeleteModal(false);
         setSelectedProduct(null);
+        showAlert('Producto eliminado correctamente', 'success');
       } else {
-        setError(result.error || 'Error al eliminar producto');
+        showAlert(result.error || 'Error al eliminar producto', 'error');
       }
     } catch (error) {
-      setError('Error al eliminar producto');
+      showAlert('Error al eliminar producto', 'error');
     }
   };
 
@@ -101,7 +102,7 @@ export default function SellerProducts() {
   return (
     <div className="bg-[#f8f9fa] min-h-screen pt-5 md:pt-12 pb-16 px-2 sm:px-6 lg:px-8" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
       <div className="max-w-7xl mx-auto">
-        
+
         {/* Cabecera de la sección */}
         <div className="bg-white rounded-2xl border border-[#efedef] p-4 sm:p-8 shadow-sm mb-6 sm:mb-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
           <div>
@@ -135,12 +136,6 @@ export default function SellerProducts() {
           </Link>
         </div>
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-medium" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-            {error}
-          </div>
-        )}
-
         {/* Búsqueda */}
         <div className="mb-6 sm:mb-8">
           <div className="relative w-full sm:max-w-md">
@@ -157,7 +152,7 @@ export default function SellerProducts() {
           </div>
         </div>
 
-        {/* Grid de productos: 2 columnas en móviles (grid-cols-2) y hasta 3 en pantallas grandes (lg:grid-cols-3) */}
+        {/* Grid de productos */}
         {filteredProducts.length === 0 ? (
           <div className="bg-white rounded-2xl border border-[#efedef] p-8 sm:p-12 text-center shadow-sm">
             <div className="w-16 h-16 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner">
@@ -193,7 +188,6 @@ export default function SellerProducts() {
               >
                 <div>
                   <div className="relative">
-                    {/* Contenedor con altura fija y object-contain para mostrar la imagen completa sin distorsionar */}
                     <div className="h-32 sm:h-48 bg-slate-900/5 overflow-hidden border-b border-[#efedef] flex items-center justify-center p-2">
                       {product.images && product.images.length > 0 ? (
                         <img
