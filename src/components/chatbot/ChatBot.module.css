@@ -285,3 +285,48 @@
 .messagesContainer::-webkit-scrollbar-thumb:hover {
   background: #b0b8c4;
 }
+.imageButton {
+  background: transparent;
+  color: #2C3B4D;
+  border: none;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 1.1rem;
+}
+.imageButton:disabled {
+  color: #aaa;
+  cursor: not-allowed;
+}
+.imagePreview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-top: 1px solid #edf2f7;
+  background: white;
+  color: #2C3B4D;
+  font-size: 0.75rem;
+}
+.imagePreview img {
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.imagePreview span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.imagePreview button {
+  border: none;
+  background: transparent;
+  color: #777778;
+  cursor: pointer;
+}

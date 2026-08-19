@@ -3,7 +3,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { FaStore, FaPaperPlane, FaTimes, FaShoppingCart, FaEye, FaCheckCircle } from 'react-icons/fa';
+import { FaStore, FaPaperPlane, FaTimes, FaShoppingCart, FaEye, FaImage } from 'react-icons/fa';
 import styles from './ChatBot.module.css';
 import { slugify } from '@/utils/helpers';
 import { useAlert } from '@/components/ui/AlertContext'; // Asegúrate de que la ruta coincida con la ubicación de tu contexto
@@ -13,8 +13,10 @@ const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [selectedImage, setSelectedImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
   const { addToCart } = useCart();
   const { showAlert } = useAlert();
 
@@ -33,13 +35,39 @@ const ChatBot = () => {
 
   const toggleChat = () => setIsOpen(!isOpen);
 
+  const handleImageChange = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showAlert('Selecciona un archivo de imagen válido', 'error');
+      return;
+    }
+
+    if (file.size > 4 * 1024 * 1024) {
+      showAlert('La imagen no debe superar 4 MB', 'error');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => setSelectedImage({
+      name: file.name,
+      mimeType: file.type,
+      data: String(reader.result).split(',')[1],
+      preview: String(reader.result),
+    });
+    reader.readAsDataURL(file);
+  };
+
   const handleSend = async (text) => {
     const messageText = text || input;
-    if (!messageText.trim()) return;
+    if (!messageText.trim() && !selectedImage) return;
 
-    const userMessage = { role: 'user', content: messageText };
+    const userMessage = { role: 'user', content: messageText, image: selectedImage };
     setMessages((prev) => [...prev, userMessage]);
     if (!text) setInput('');
+    setSelectedImage(null);
     setLoading(true);
 
     try {
@@ -87,7 +115,8 @@ const ChatBot = () => {
 
   // Función para procesar el texto del bot y separar tarjetas de productos
   const renderMessageContent = (content) => {
-    const productRegex = /\[PRODUCTO:(.*?)\]/g;
+    // Gemini a veces abrevia PRODUCTO como PRODUCT; aceptamos ambas variantes.
+    const productRegex = /\[PRODUCT(?:O)?:(.*?)\]/g;
     const parts = [];
     let lastIndex = 0;
     let match;
@@ -197,6 +226,9 @@ const ChatBot = () => {
                       className={`${styles.message} ${msg.role === 'user' ? styles.userMessage : styles.botMessage
                         }`}
                     >
+                      {msg.image?.preview && (
+                        <img src={msg.image.preview} alt="Imagen enviada" className="mb-2 max-h-40 w-full rounded-lg object-contain" />
+                      )}
                       {renderMessageContent(msg.content)}
                     </div>
                   ))}
@@ -211,6 +243,23 @@ const ChatBot = () => {
             </div>
 
             <div className={styles.inputContainer}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={loading}
+                className={styles.imageButton}
+                title="Adjuntar imagen"
+                aria-label="Adjuntar imagen"
+              >
+                <FaImage />
+              </button>
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -221,12 +270,22 @@ const ChatBot = () => {
               />
               <button
                 onClick={() => handleSend()}
-                disabled={loading || !input.trim()}
+                disabled={loading || (!input.trim() && !selectedImage)}
                 className={styles.sendButton}
               >
                 <FaPaperPlane />
               </button>
             </div>
+
+            {selectedImage && (
+              <div className={styles.imagePreview}>
+                <img src={selectedImage.preview} alt="Vista previa" />
+                <span>{selectedImage.name}</span>
+                <button type="button" onClick={() => setSelectedImage(null)} aria-label="Quitar imagen">
+                  <FaTimes />
+                </button>
+              </div>
+            )}
 
             <div className={styles.chatFooter}>
               Desarrollado por <span>Optima Cart</span>
