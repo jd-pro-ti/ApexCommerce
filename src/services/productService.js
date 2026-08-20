@@ -374,7 +374,6 @@ export const productService = {
           )
         `)
         .eq('status', 'active')
-        .order('created_at', { ascending: false })
 
       if (filters.category_id) {
         query = query.eq('category_id', filters.category_id)
@@ -402,22 +401,28 @@ export const productService = {
         query = query.eq('featured', true)
       }
 
-      if (filters.sortBy) {
-        switch (filters.sortBy) {
-          case 'price_asc':
-          case 'price-asc':
-            query = query.order('price', { ascending: true })
-            break
-          case 'price_desc':
-          case 'price-desc':
-            query = query.order('price', { ascending: false })
-            break
-          case 'name':
-            query = query.order('name', { ascending: true })
-            break
-          default:
-            query = query.order('created_at', { ascending: false })
-        }
+      // El primer order() es el criterio principal en Supabase. La fecha
+      // solo se usa como desempate para precio y nombre.
+      switch (filters.sortBy) {
+        case 'price_asc':
+        case 'price-asc':
+          query = query
+            .order('price', { ascending: true })
+            .order('created_at', { ascending: false })
+          break
+        case 'price_desc':
+        case 'price-desc':
+          query = query
+            .order('price', { ascending: false })
+            .order('created_at', { ascending: false })
+          break
+        case 'name':
+          query = query
+            .order('name', { ascending: true })
+            .order('created_at', { ascending: false })
+          break
+        default:
+          query = query.order('created_at', { ascending: false })
       }
 
       const { data, error } = await query
