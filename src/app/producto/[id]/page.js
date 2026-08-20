@@ -30,8 +30,10 @@ export default function ProductDetail() {
   const [reviews, setReviews] = useState([]);
   const [eligibleOrders, setEligibleOrders] = useState([]);
   const [reviewForm, setReviewForm] = useState({ orderItemId: '', rating: 5, title: '', comment: '' });
+  const [reviewHoverRating, setReviewHoverRating] = useState(0);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewMessage, setReviewMessage] = useState('');
+  const [reviewPublished, setReviewPublished] = useState(false);
 
   const loadProduct = async () => {
     setLoading(true);
@@ -115,6 +117,15 @@ export default function ProductDetail() {
     });
 
     if (result.success) {
+      const count = Number(product.rating_count || 0);
+      const average = Number(product.rating_avg || 0);
+      const nextCount = count + 1;
+      setProduct(prev => ({
+        ...prev,
+        rating_count: nextCount,
+        rating_avg: ((average * count) + Number(reviewForm.rating)) / nextCount
+      }));
+      setReviewPublished(true);
       setReviews(prev => [{ ...result.review, profiles: { name: user.name || 'Tú' } }, ...prev]);
       setReviewForm(prev => ({ ...prev, title: '', comment: '' }));
       setReviewMessage('Tu reseña fue publicada correctamente.');
@@ -124,8 +135,8 @@ export default function ProductDetail() {
     setReviewLoading(false);
   };
 
-  const renderStars = (value, size = 'w-4 h-4') => (
-    <span className="inline-flex items-center gap-0.5" aria-label={`${value} de 5 estrellas`}>
+  const renderStars = (value, size = 'h-4 w-4 sm:h-5 sm:w-5') => (
+    <span className="inline-flex items-center gap-0.5 sm:gap-1" aria-label={`${value} de 5 estrellas`}>
       {[1, 2, 3, 4, 5].map(star => (
         <Star key={star} className={`${size} ${star <= Math.round(Number(value) || 0) ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}`} />
       ))}
@@ -324,12 +335,17 @@ export default function ProductDetail() {
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <button
+                type="button"
+                onClick={() => document.getElementById('product-reviews')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                aria-label="Ver comentarios del producto"
+                className="mt-4 flex w-full cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-left transition-colors hover:border-slate-300 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
+              >
                 {renderStars(product.rating_avg)}
                 <span className="text-xs font-semibold text-slate-600">
                   {Number(product.rating_avg || 0).toFixed(1)} ({product.rating_count || 0} reseñas)
                 </span>
-              </div>
+              </button>
 
               {product.profiles?.id && (
                 <Link href={`/vendedor/${slugify(product.profiles.name)}`} className="hidden">
@@ -435,16 +451,16 @@ export default function ProductDetail() {
       </div>
 
       {/* RESEÑAS DEL PRODUCTO */}
-      <section className="mt-20 border-t border-slate-200 pt-12">
+      <section id="product-reviews" className="mt-20 scroll-mt-24 border-t border-slate-200 pt-12">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 className="text-2xl font-bold text-slate-900">Opiniones de clientes</h2>
             <p className="mt-1 text-sm text-slate-500">Experiencias de personas que compraron este producto.</p>
           </div>
-          <div className="flex items-center gap-2">{renderStars(product.rating_avg, 'w-5 h-5')}<span className="font-bold text-slate-900">{Number(product.rating_avg || 0).toFixed(1)}</span></div>
+          <div className="flex items-center gap-2">{renderStars(product.rating_avg)}<span className="font-bold text-slate-900">{Number(product.rating_avg || 0).toFixed(1)}</span></div>
         </div>
 
-        {isAuthenticated && eligibleOrders.length > 0 && (
+        {isAuthenticated && eligibleOrders.length > 0 && !reviewPublished && (
           <form onSubmit={handleReviewSubmit} className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">Califica tu compra</h3>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -454,20 +470,36 @@ export default function ProductDetail() {
                 </select>
               </label>
               <label className="text-sm font-semibold text-slate-700">Calificación
-                <select value={reviewForm.rating} onChange={event => setReviewForm({ ...reviewForm, rating: event.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 font-normal">
-                  {[5, 4, 3, 2, 1].map(value => <option key={value} value={value}>{value} estrellas</option>)}
-                </select>
+                <div className="mt-1.5 flex flex-wrap items-center gap-2 sm:gap-3">
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                      onMouseEnter={() => setReviewHoverRating(star)}
+                      onMouseLeave={() => setReviewHoverRating(0)}
+                      className="cursor-pointer p-1 transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-1"
+                      aria-label={`${star} estrellas`}
+                    >
+                      <Star className={`h-7 w-7 sm:h-10 sm:w-10 transition-colors ${star <= (reviewHoverRating || reviewForm.rating) ? 'fill-amber-400 text-amber-400 drop-shadow-md' : 'text-slate-300'}`} />
+                    </button>
+                  ))}
+                  <span className="ml-1 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-bold text-slate-800 shadow-sm">
+                    {reviewForm.rating} de 5 estrellas
+                  </span>
+                </div>
               </label>
             </div>
             <input value={reviewForm.title} onChange={event => setReviewForm({ ...reviewForm, title: event.target.value })} placeholder="Título de tu opinión (opcional)" className="mt-4 w-full rounded-xl border border-slate-300 px-3 py-2.5" />
             <textarea value={reviewForm.comment} onChange={event => setReviewForm({ ...reviewForm, comment: event.target.value })} placeholder="Cuéntanos qué te pareció..." rows="3" className="mt-3 w-full rounded-xl border border-slate-300 px-3 py-2.5" />
             <div className="mt-4 flex items-center justify-between gap-4">
               <p className="text-xs text-slate-500">Solo puedes calificar productos de pedidos entregados.</p>
-              <Button type="submit" loading={reviewLoading} className="shrink-0"><Send className="mr-2 h-4 w-4" />Publicar</Button>
+              <Button type="submit" loading={reviewLoading} className="shrink-0"><Send className="mr-2 h-4 w-4" />{reviewLoading ? 'Publicando...' : 'Publicar'}</Button>
             </div>
-            {reviewMessage && <p className="mt-3 text-sm text-slate-600">{reviewMessage}</p>}
           </form>
         )}
+
+        {reviewMessage && <p className="mt-3 text-sm text-slate-600">{reviewMessage}</p>}
 
         {!isAuthenticated && <p className="mt-6 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">Inicia sesión después de comprar para dejar una opinión.</p>}
         {isAuthenticated && eligibleOrders.length === 0 && <p className="mt-6 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">Podrás calificar este producto cuando tu pedido haya sido entregado.</p>}

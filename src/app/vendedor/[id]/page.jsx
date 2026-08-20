@@ -208,7 +208,12 @@ export default function SellerPage() {
       </div>
 
       {/* Derecha: Rating alineado a la derecha con margen automático */}
-      <div className="sm:ml-auto flex items-center gap-2 bg-white/80 border border-slate-200/80 rounded-full px-4 py-2 shadow-lg shadow-slate-200/30">
+      <button
+        type="button"
+        onClick={() => document.getElementById('seller-reviews')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+        aria-label="Ver opiniones sobre el vendedor"
+        className="sm:ml-auto flex cursor-pointer items-center gap-2 rounded-full border border-slate-200/80 bg-white/80 px-4 py-2 text-left shadow-lg shadow-slate-200/30 transition-colors hover:border-slate-300 hover:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
+      >
         <div className="flex text-amber-400">
           <Stars value={profile.seller_rating_avg} />
         </div>
@@ -218,7 +223,7 @@ export default function SellerPage() {
         <span className="text-xs text-slate-400 font-medium">
           ({profile.seller_rating_count || 0})
         </span>
-      </div>
+      </button>
     </div>
 
     {/* Panel de estadísticas rápidas (opcional) */}
@@ -412,7 +417,7 @@ export default function SellerPage() {
         </section>
 
         {/* Sección de Opiniones e Interacción con Estrellas Interactivas */}
-        <section className="bg-white/95 backdrop-blur-xl p-4 sm:p-8 lg:p-10 rounded-2xl sm:rounded-3xl border border-white/80 shadow-2xl shadow-slate-200/60 space-y-6 sm:space-y-8">
+        <section id="seller-reviews" className="scroll-mt-24 bg-white/95 backdrop-blur-xl p-4 sm:p-8 lg:p-10 rounded-2xl sm:rounded-3xl border border-white/80 shadow-2xl shadow-slate-200/60 space-y-6 sm:space-y-8">
           <div className="flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Opiniones sobre el vendedor</h2>
