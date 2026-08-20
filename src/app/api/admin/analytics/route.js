@@ -36,7 +36,9 @@ export async function GET(request) {
       grossSales += gross; platformCommission += commission; sellerPayout += payoutAmount;
       const seller = sellerMap.get(payout.seller_id); const sellerTotal = sellerMapTotals.get(payout.seller_id) || { id: payout.seller_id, name: seller?.name || 'Vendedor', orders: 0, sales: 0, commission: 0, payout: 0 };
       sellerTotal.orders += 1; sellerTotal.sales += gross; sellerTotal.commission += commission; sellerTotal.payout += payoutAmount; sellerMapTotals.set(payout.seller_id, sellerTotal);
-      const month = new Date(payout.created_at).toLocaleDateString('es-MX', { month: 'short', year: '2-digit' }); const monthTotal = monthMap.get(month) || { label: month, sales: 0, commission: 0 }; monthTotal.sales += gross; monthTotal.commission += commission; monthMap.set(month, monthTotal);
+      const date = new Date(payout.created_at);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const month = date.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' }); const monthTotal = monthMap.get(monthKey) || { label: month, sales: 0, commission: 0 }; monthTotal.sales += gross; monthTotal.commission += commission; monthMap.set(monthKey, monthTotal);
     }
     for (const item of items || []) {
       if (item.status === 'cancelled') continue;
@@ -44,6 +46,8 @@ export async function GET(request) {
       product.quantity += Number(item.quantity || 0); product.sales += Number(item.subtotal || 0); product.commission += Number(item.subtotal || 0) * 0.15; productMap.set(key, product);
     }
     const sellerResults = [...sellerMapTotals.values()].map((item) => ({ ...item, sales: Number(item.sales.toFixed(2)), commission: Number(item.commission.toFixed(2)), payout: Number(item.payout.toFixed(2)) })).sort((a, b) => b.sales - a.sales);
-    return NextResponse.json({ currency: 'MXN', totals: { grossSales, platformCommission, sellerPayout, orders: orderIds.length, sellers: sellerIds.length, products: productMap.size, users: totalUsers || 0, clients: Math.max(0, (totalUsers || 0) - sellerIds.length - 1), reports: totalReports || 0 }, topSeller: sellerResults[0] || null, monthly: [...monthMap.values()].map((item) => ({ ...item, sales: Number(item.sales.toFixed(2)), commission: Number(item.commission.toFixed(2)) })), sellers: sellerResults, products: [...productMap.values()].map((item) => ({ ...item, sales: Number(item.sales.toFixed(2)), commission: Number(item.commission.toFixed(2)) })).sort((a, b) => b.sales - a.sales).slice(0, 12) });
+    const now = new Date();
+    const monthly = Array.from({ length: 6 }, (_, index) => { const date = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1); const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`; const item = monthMap.get(key) || { label: date.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' }), sales: 0, commission: 0 }; return { ...item, sales: Number(item.sales.toFixed(2)), commission: Number(item.commission.toFixed(2)) }; });
+    return NextResponse.json({ currency: 'MXN', totals: { grossSales, platformCommission, sellerPayout, orders: orderIds.length, sellers: sellerIds.length, products: productMap.size, users: totalUsers || 0, clients: Math.max(0, (totalUsers || 0) - sellerIds.length - 1), reports: totalReports || 0 }, topSeller: sellerResults[0] || null, monthly, sellers: sellerResults, products: [...productMap.values()].map((item) => ({ ...item, sales: Number(item.sales.toFixed(2)), commission: Number(item.commission.toFixed(2)) })).sort((a, b) => b.sales - a.sales).slice(0, 12) });
   } catch (error) { console.error('Admin analytics failed:', error); return NextResponse.json({ error: error.message || 'No se pudieron cargar las analíticas' }, { status: 500 }); }
 }

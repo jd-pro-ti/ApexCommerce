@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Check, X, ArrowLeft, ShieldCheck, Trash2, UserPlus, Sparkles, RefreshCw } from 'lucide-react'
+import { Check, X, ArrowLeft, ShieldCheck, Trash2, UserPlus, Sparkles, RefreshCw, SlidersHorizontal } from 'lucide-react'
 import Link from 'next/link'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 
@@ -10,6 +10,8 @@ export default function AdminRequestsPage() {
   const [deletionRequests, setDeletionRequests] = useState([])
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
+  const [sellerFilter, setSellerFilter] = useState('all')
+  const [deletionFilter, setDeletionFilter] = useState('all')
 
   const load = async () => {
     setLoading(true)
@@ -71,6 +73,8 @@ export default function AdminRequestsPage() {
         return 'bg-rose-50 text-rose-600 border border-rose-200/60 shadow-sm'
     }
   }
+
+  const filterRequests = (requests, filter) => filter === 'all' ? requests : requests.filter((item) => item.status === filter)
 
   const Actions = ({ item, type }) => (
     item.status === 'pending' && (
@@ -146,11 +150,12 @@ export default function AdminRequestsPage() {
                 </h2>
               </div>
 
-              {sellerRequests.length === 0 ? (
+              <RequestFilters value={sellerFilter} onChange={setSellerFilter} />
+              {filterRequests(sellerRequests, sellerFilter).length === 0 ? (
                 <Empty />
               ) : (
                 <div className="space-y-4">
-                  {sellerRequests.map((app) => (
+                  {filterRequests(sellerRequests, sellerFilter).map((app) => (
                     <article key={app.id} className="bg-white/90 backdrop-blur-xl rounded-3xl border border-white/80 p-5 sm:p-8 shadow-xl space-y-6">
                       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                         <div className="space-y-1">
@@ -188,6 +193,10 @@ export default function AdminRequestsPage() {
                           <span className="text-slate-400 font-bold uppercase text-[10px] block mb-0.5">Domicilio</span>
                           <b className="text-slate-800 font-bold break-words block">{app.address}, {app.city}, {app.state}, CP {app.postal_code}</b>
                         </div>
+                        <div className="col-span-2 lg:col-span-4 pt-2 border-t border-slate-200/60 min-w-0">
+                          <span className="text-slate-400 font-bold uppercase text-[10px] block mb-0.5">Razón de la solicitud</span>
+                          <b className="text-slate-800 font-bold break-words block">{app.notes || 'No proporcionada'}</b>
+                        </div>
                       </div>
                     </article>
                   ))}
@@ -206,11 +215,12 @@ export default function AdminRequestsPage() {
                 </h2>
               </div>
 
-              {deletionRequests.length === 0 ? (
+              <RequestFilters value={deletionFilter} onChange={setDeletionFilter} />
+              {filterRequests(deletionRequests, deletionFilter).length === 0 ? (
                 <Empty />
               ) : (
                 <div className="space-y-4">
-                  {deletionRequests.map((item) => (
+                  {filterRequests(deletionRequests, deletionFilter).map((item) => (
                     <article key={item.id} className="bg-white/90 backdrop-blur-xl rounded-3xl border border-white/80 p-5 sm:p-8 shadow-xl space-y-4">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="space-y-1">
@@ -251,6 +261,19 @@ function Empty() {
   return (
     <div className="bg-white/80 backdrop-blur-xl rounded-3xl border border-white/80 p-8 text-center text-xs font-semibold text-slate-400 shadow-xl">
       No hay solicitudes todavía.
+    </div>
+  )
+}
+
+function RequestFilters({ value, onChange }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200/70 bg-white/70 p-2 shadow-sm">
+      <span className="mr-1 inline-flex items-center gap-1.5 px-2 text-[10px] font-bold uppercase tracking-wide text-slate-400"><SlidersHorizontal className="h-3.5 w-3.5" />Filtrar</span>
+      {[['all', 'Todas'], ['pending', 'Pendientes'], ['approved', 'Aprobadas'], ['rejected', 'Rechazadas']].map(([key, label]) => (
+        <button key={key} type="button" onClick={() => onChange(key)} className={`rounded-xl px-3 py-2 text-xs font-bold transition ${value === key ? 'bg-slate-900 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100'}`}>
+          {label}
+        </button>
+      ))}
     </div>
   )
 }

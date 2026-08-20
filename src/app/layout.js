@@ -11,19 +11,19 @@ const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://apex-comerce.com';
 export const metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'Apex Commerce | Compra productos premium en línea',
+    default: 'Apex Commerce | Compra productos en línea',
     template: '%s | Apex Commerce',
   },
-  description: 'Descubre productos premium de tecnología, hogar y estilo de vida en Apex Commerce.',
+  description: 'Descubre productos de tecnología, hogar y estilo de vida en Apex Commerce.',
   applicationName: 'Apex Commerce',
-  keywords: ['tienda en línea', 'productos premium', 'tecnología', 'hogar', 'Apex Commerce'],
+  keywords: ['tienda en línea', 'productos', 'tecnología', 'hogar', 'Apex Commerce'],
   openGraph: {
     type: 'website',
     locale: 'es_MX',
     url: '/',
     siteName: 'Apex Commerce',
-    title: 'Apex Commerce | Compra productos premium en línea',
-    description: 'Descubre productos premium de tecnología, hogar y estilo de vida.',
+    title: 'Apex Commerce | Compra productos en línea',
+    description: 'Descubre productos de tecnología, hogar y estilo de vida.',
     icons: {
       icon: "/favicon.ico",
     },

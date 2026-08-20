@@ -23,6 +23,7 @@ export default function AdminAnalyticsPage() {
   const [data, setData] = useState(null); 
   const [loading, setLoading] = useState(true); 
   const [error, setError] = useState('');
+  const [activeMonth, setActiveMonth] = useState(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -66,6 +67,7 @@ export default function AdminAnalyticsPage() {
       };
     }, { current: 0, parts: [] }).parts.join(', ');
   }, [data]);
+  const commissionRate = data?.totals?.grossSales ? ((data.totals.platformCommission / data.totals.grossSales) * 100).toFixed(1) : '0.0';
 
   if (loading) {
     return (
@@ -193,7 +195,8 @@ export default function AdminAnalyticsPage() {
                 <div className="flex h-56 sm:h-64 items-end gap-3 min-w-[450px] border-b border-l border-slate-200/80 px-4 pb-0 pt-2">
                   {data?.monthly?.length ? (
                     data.monthly.map((item) => (
-                      <div key={item.label} className="flex h-full min-w-12 flex-1 flex-col items-center justify-end gap-2">
+                      <div key={item.label} className="group relative flex h-full min-w-12 flex-1 flex-col items-center justify-end gap-2" onMouseEnter={() => setActiveMonth(item)} onFocus={() => setActiveMonth(item)} tabIndex={0}>
+                        <div className={`pointer-events-none absolute bottom-[88%] z-10 w-36 rounded-xl bg-slate-900 px-3 py-2 text-center text-[10px] text-white shadow-lg transition-opacity ${activeMonth?.label === item.label ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}><strong className="block">{item.label}</strong><span>Ventas: {money(item.sales)}</span><br /><span>Comisión: {money(item.commission)}</span></div>
                         <div className="flex h-[88%] w-full items-end justify-center gap-1.5">
                           <div 
                             title={`Ventas ${money(item.sales)}`} 
@@ -203,7 +206,7 @@ export default function AdminAnalyticsPage() {
                           <div 
                             title={`Comisión ${money(item.commission)}`} 
                             className="w-3 rounded-t-lg bg-emerald-500 transition-all hover:bg-emerald-600 shadow-sm" 
-                            style={{ height: `${Math.max(5, (item.commission / maxSales) * 100)}%` }} 
+                            style={{ height: `${item.commission ? Math.max(5, (item.commission / maxSales) * 100) : 0}%` }}
                           />
                         </div>
                         <span className="mb-2 text-[10px] font-semibold text-slate-500 whitespace-nowrap">{item.label}</span>
@@ -234,9 +237,9 @@ export default function AdminAnalyticsPage() {
               <p className="text-[11px] sm:text-xs text-slate-500 mb-4 sm:mb-6 truncate">Distribución porcentual de las ganancias.</p>
 
               <div className="my-2 flex items-center justify-center relative">
-                <div className="h-40 w-40 sm:h-44 sm:w-44 rounded-full shadow-inner shrink-0" style={{ background: pie || '#e2e8f0' }} />
+                 <div className="h-40 w-40 sm:h-44 sm:w-44 rounded-full shadow-inner shrink-0" style={{ background: pie ? `conic-gradient(${pie})` : '#e2e8f0' }} />
                 <div className="absolute flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-white text-center text-[9px] sm:text-[10px] font-extrabold text-slate-700 shadow-md border border-slate-100">
-                  Apex<br />15%
+                   Apex<br />{commissionRate}%
                 </div>
               </div>
             </div>
